@@ -1,0 +1,11 @@
+# Ferretería San José
+# El catálogo y el inicio sí se indexan; el área de empleados no.
+User-agent: *
+Allow: /
+Disallow: /interno.html
+Disallow: /inventario-admin.html
+Disallow: /analisis-inventario.html
+Disallow: /vinetas-precios.html
+Disallow: /calculadora-fletes.html
+Disallow: /usuarios.js
+Disallow: /api/

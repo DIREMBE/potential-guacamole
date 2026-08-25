@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catálogo de productos — Ferretería San José</title>
+<meta name="description" content="Catálogo de productos de Ferretería San José. Arma tu cotización y confírmala por WhatsApp.">
+<link rel="icon" type="image/png" href="assets/emblem.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0C2036; --ink-2:#102A42; --ink-3:#112B41;
+  --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.16);
+  --tx:#EAF2F9; --tx-2:#98AEC3; --tx-3:#5D7A95;
+  --orange:#F15930; --orange-2:#d6481c; --blue:#0070C0; --wa:#25D366; --wa-2:#1eb955;
+  --ok:#4CAF6D;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--tx);font-family:'Barlow',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+button,input,select{font-family:inherit}
+::selection{background:var(--orange);color:#fff}
+
+/* ---------- Encabezado ---------- */
+header.top{position:sticky;top:0;z-index:50;background:#08182A;border-bottom:3px solid var(--orange)}
+.top-in{max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:12px clamp(16px,4vw,40px)}
+.top-in .logo{height:40px;width:auto}
+.brand{display:flex;flex-direction:column;line-height:1.1}
+.brand .n{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:19px}
+.brand .s{font-size:12px;color:var(--tx-3);text-transform:uppercase;letter-spacing:.08em}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.lnk{font-size:13.5px;color:var(--tx-2)}
+.lnk:hover{color:var(--orange)}
+.cart-btn{position:relative;display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:#fff;font-weight:700;font-size:14px;padding:9px 15px;border:none;border-radius:8px;cursor:pointer;transition:background .15s}
+.cart-btn:hover{background:var(--orange-2)}
+.cart-btn .badge{background:#fff;color:var(--orange);border-radius:999px;font-size:12px;font-weight:700;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
+
+/* ---------- Barra de filtros ---------- */
+.filters{background:#08182A;border-bottom:1px solid var(--line);position:sticky;top:67px;z-index:40}
+.filters-in{max-width:1280px;margin:0 auto;padding:12px clamp(16px,4vw,40px);display:flex;flex-direction:column;gap:10px}
+.search-row{display:flex;gap:10px;flex-wrap:wrap}
+.search{flex:1;min-width:220px;position:relative}
+.search input{width:100%;height:42px;padding:0 14px 0 40px;border-radius:9px;border:1px solid var(--line-2);background:var(--ink-2);color:var(--tx);font-size:15px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23A79E8F' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:14px center}
+.search input:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(241,89,48,.18)}
+.search input::placeholder{color:var(--tx-3)}
+.chk{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;color:var(--tx-2);white-space:nowrap;cursor:pointer;padding:0 4px}
+.chk input{accent-color:var(--orange);width:16px;height:16px}
+.cats{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.cats::-webkit-scrollbar{height:6px}.cats::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:3px}
+.cat{flex:0 0 auto;background:var(--ink-2);border:1px solid var(--line);color:var(--tx-2);font-size:13px;font-weight:600;padding:7px 13px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.cat:hover{border-color:var(--line-2);color:var(--tx)}
+.cat.on{background:var(--orange);border-color:var(--orange);color:#fff}
+
+/* ---------- Marcas ---------- */
+.marcas-band{background:#08182A;border-bottom:1px solid var(--line)}
+.marcas-in{max-width:1280px;margin:0 auto;padding:14px clamp(16px,4vw,40px) 16px}
+.marcas-h{font-size:11.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--tx-2);margin-bottom:10px}
+.marcas-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.marcas-row::-webkit-scrollbar{height:6px}.marcas-row::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:3px}
+.mk{flex:0 0 auto;width:118px;height:60px;display:flex;align-items:center;justify-content:center;background:#fff;border:0;border-radius:8px;padding:9px 13px;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(12,32,54,.28),inset 0 0 20px 8px rgba(12,32,54,.26);transition:box-shadow .16s ease}
+.mk img{max-width:100%;max-height:30px;width:auto;object-fit:contain;display:block;pointer-events:none}
+.mk.sq img{max-height:42px}
+.mk:hover{box-shadow:inset 0 0 0 1px rgba(241,89,48,.55),inset 0 0 16px 6px rgba(12,32,54,.12)}
+.mk.on{box-shadow:inset 0 0 0 1px rgba(241,89,48,.6),inset 0 0 16px 6px rgba(12,32,54,.12),0 0 0 2px rgba(241,89,48,.45)}
+
+/* ---------- Sugerencias del buscador ---------- */
+.search{position:relative}
+.sug{position:absolute;left:0;right:0;top:46px;z-index:60;background:#08182A;border:1px solid var(--line-2);
+  border-radius:10px;box-shadow:0 18px 44px rgba(0,0,0,.55);max-height:340px;overflow:auto;display:none}
+.sug.on{display:block}
+.sug button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;
+  padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--line);color:var(--tx);font-size:14px}
+.sug button:last-child{border-bottom:0}
+.sug button:hover,.sug button.act{background:rgba(241,89,48,.14)}
+.sug .th{width:36px;height:36px;flex-shrink:0;border-radius:6px;background:var(--ink-3);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.sug .th img{width:100%;height:100%;object-fit:contain;background:#fff}
+.sug .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sug .pr{font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--orange);white-space:nowrap}
+.sug .none{padding:12px;color:var(--tx-3);font-style:italic}
+@keyframes destello{0%,100%{box-shadow:0 0 0 0 rgba(241,89,48,0)}30%{box-shadow:0 0 0 4px rgba(241,89,48,.75)}}
+.card.destacar{animation:destello 1.6s ease-out 2;border-color:var(--orange)}
+
+/* ---------- Grid de productos ---------- */
+main{max-width:1280px;margin:0 auto;padding:22px clamp(16px,4vw,40px) 80px}
+.count-line{color:var(--tx-2);font-size:13.5px;margin:0 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:16px}
+.card{background:var(--ink-2);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}
+.card:hover{transform:translateY(-3px);border-color:rgba(241,89,48,.45);box-shadow:0 14px 34px rgba(0,0,0,.42)}
+.ph{position:relative;aspect-ratio:4/3;background:var(--ink-3);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.ph img{width:100%;height:100%;object-fit:contain;background:#fff}
+.ph .noimg{opacity:.3}
+.tag{position:absolute;top:8px;left:8px;background:var(--orange);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px}
+.stock{position:absolute;top:8px;right:8px;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:rgba(20,18,16,.85);border:1px solid var(--line-2)}
+.stock.si{color:var(--ok)} .stock.no{color:var(--tx-3)}
+.body{padding:12px 13px 13px;display:flex;flex-direction:column;gap:7px;flex:1}
+.cat-lbl{font-size:11px;color:var(--tx-3);text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+.name{font-size:14.5px;font-weight:600;line-height:1.3;min-height:2.6em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.price-row{display:flex;align-items:baseline;gap:6px;margin-top:auto}
+.price{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:25px;color:var(--orange);line-height:1}
+.unit{font-size:12px;color:var(--tx-3)}
+.price.consultar{font-size:17px;color:var(--tx-2);font-weight:600}
+.add{width:100%;background:transparent;border:1.5px solid var(--orange);color:var(--orange);font-weight:700;font-size:13.5px;padding:9px;border-radius:8px;cursor:pointer;transition:all .15s}
+.add:hover{background:var(--orange);color:#fff}
+.add.in{background:var(--ok);border-color:var(--ok);color:#fff}
+.empty{text-align:center;color:var(--tx-3);padding:70px 20px;font-size:15px}
+.more{display:block;margin:26px auto 0;background:var(--ink-2);border:1px solid var(--line-2);color:var(--tx);font-weight:600;font-size:14px;padding:11px 26px;border-radius:9px;cursor:pointer}
+.more:hover{border-color:var(--orange);color:var(--orange)}
+
+/* ---------- Cotización (panel lateral) ---------- */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:80;opacity:0;pointer-events:none;transition:opacity .2s}
+.ov.on{opacity:1;pointer-events:auto}
+.cart{position:fixed;top:0;right:0;bottom:0;width:min(430px,100%);background:var(--ink-2);border-left:1px solid var(--line);z-index:90;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s cubic-bezier(.3,0,.2,1)}
+.cart.on{transform:none}
+.cart-h{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.cart-h h2{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:20px;margin:0;letter-spacing:.02em}
+.x{margin-left:auto;background:none;border:none;color:var(--tx-2);font-size:24px;cursor:pointer;line-height:1;padding:2px 6px}
+.x:hover{color:var(--tx)}
+.cart-body{flex:1;overflow-y:auto;padding:14px 18px}
+.ci{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
+.ci .th{width:52px;height:52px;border-radius:7px;background:var(--ink-3);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.ci .th img{width:100%;height:100%;object-fit:contain;background:#fff}
+.ci .info{flex:1;min-width:0}
+.ci .nm{font-size:13.5px;font-weight:600;line-height:1.3}
+.ci .pr{font-size:12.5px;color:var(--tx-2);margin-top:3px}
+.qty{display:flex;align-items:center;gap:0;margin-top:7px;border:1px solid var(--line-2);border-radius:7px;width:fit-content;overflow:hidden}
+.qty button{background:var(--ink-3);border:none;color:var(--tx);width:28px;height:28px;font-size:16px;cursor:pointer;line-height:1}
+.qty button:hover{background:var(--orange);color:#fff}
+.qty input{width:46px;height:28px;text-align:center;background:var(--ink-2);border:none;border-left:1px solid var(--line);border-right:1px solid var(--line);color:var(--tx);font-size:13.5px;font-family:'Barlow',sans-serif}
+.qty input:focus{outline:none}
+.ci .rm{background:none;border:none;color:var(--tx-3);cursor:pointer;font-size:17px;align-self:flex-start;padding:2px 4px}
+.ci .rm:hover{color:#F6A07F}
+.ci .sub{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;color:var(--orange);white-space:nowrap;align-self:center}
+.cart-empty{text-align:center;color:var(--tx-3);padding:50px 16px;font-size:14.5px;line-height:1.6}
+.cart-f{border-top:1px solid var(--line);padding:14px 18px 18px;background:var(--ink-3)}
+.tot{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.tot .l{font-size:13.5px;color:var(--tx-2);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.tot .v{font-family:'Anton',sans-serif;font-size:27px;color:var(--orange)}
+.fld{margin-bottom:9px}
+.fld input,.fld textarea{width:100%;background:var(--ink-2);border:1px solid var(--line-2);border-radius:8px;color:var(--tx);font-size:14px;padding:9px 12px}
+.fld textarea{resize:vertical;min-height:52px}
+.fld input:focus,.fld textarea:focus{outline:none;border-color:var(--orange)}
+.fld input::placeholder,.fld textarea::placeholder{color:var(--tx-3)}
+.wa{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:var(--wa);color:#08301A;font-weight:700;font-size:15.5px;padding:13px;border:none;border-radius:9px;cursor:pointer;transition:background .15s}
+.wa:hover{background:var(--wa-2)}
+.wa svg{width:20px;height:20px}
+.note{font-size:11.5px;color:var(--tx-3);text-align:center;margin-top:9px;line-height:1.5}
+.clr{background:none;border:none;color:var(--tx-3);font-size:12.5px;cursor:pointer;text-decoration:underline;display:block;margin:8px auto 0}
+.clr:hover{color:#F6A07F}
+
+footer.ft{border-top:1px solid var(--line);text-align:center;color:var(--tx-3);font-size:12.5px;padding:24px 20px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(16px);opacity:0;background:#08182A;border:1px solid var(--line-2);color:var(--tx);padding:11px 18px;border-radius:9px;font-size:14px;z-index:120;transition:.2s;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%)}
+@media(max-width:640px){
+  .filters{top:63px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px}
+  .price{font-size:22px}
+  .brand .s{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <img class="logo" src="assets/emblem.png" alt="Ferretería San José" onerror="this.style.display='none'">
+    <div class="brand">
+      <span class="n">Ferretería San José</span>
+      <span class="s">Buen servicio y calidad siempre</span>
+    </div>
+    <div class="top-actions">
+      <a class="lnk" href="index.html">← Inicio</a>
+      <button class="cart-btn" id="btn-cart">
+        Mi cotización <span class="badge" id="cart-count">0</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="filters">
+  <div class="filters-in">
+    <div class="search-row">
+      <div class="search">
+        <input id="q" type="search" autocomplete="off" placeholder="Buscar producto… (ej. cemento, martillo, PVC)">
+        <div class="sug" id="sug"></div>
+      </div>
+      <label class="chk"><input type="checkbox" id="f-stock" checked> Solo con existencia</label>
+      <label class="chk"><input type="checkbox" id="f-img"> Solo con foto</label>
+    </div>
+    <div class="cats" id="cats"></div>
+  </div>
+</div>
+
+<section class="marcas-band">
+  <div class="marcas-in">
+    <div class="marcas-h">Marcas destacadas</div>
+    <div class="marcas-row" id="marcas"></div>
+  </div>
+</section>
+
+<main>
+  <p class="count-line" id="count-line">Cargando catálogo…</p>
+  <div class="grid" id="grid"></div>
+  <button class="more" id="more" style="display:none">Ver más productos</button>
+</main>
+
+<footer class="ft">
+  Ferretería San José · Corinto, Morazán, El Salvador · WhatsApp 7493-9560<br>
+  Los precios pueden variar. Confirma disponibilidad y precio final por WhatsApp.
+</footer>
+
+<!-- Panel de cotización -->
+<div class="ov" id="ov"></div>
+<aside class="cart" id="cart" aria-label="Mi cotización">
+  <div class="cart-h">
+    <h2>Mi cotización</h2>
+    <button class="x" id="btn-close" aria-label="Cerrar">×</button>
+  </div>
+  <div class="cart-body" id="cart-body"></div>
+  <div class="cart-f">
+    <div class="tot"><span class="l">Total estimado</span><span class="v" id="tot">US$0.00</span></div>
+    <div class="fld"><input id="c-nombre" type="text" placeholder="Tu nombre (opcional)" autocomplete="name"></div>
+    <div class="fld"><input id="c-tel" type="tel" placeholder="Tu teléfono (opcional)" autocomplete="tel"></div>
+    <div class="fld"><textarea id="c-nota" placeholder="Nota o detalle adicional (opcional)"></textarea></div>
+    <button class="wa" id="btn-wa">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.9-2-1-.3-.1-.5-.2-.7.1-.2.3-.7 1-.9 1.2-.2.2-.3.2-.6.1-.3-.2-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5 0-.2 0-.4 0-.5 0-.2-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3M12 21.5c-1.7 0-3.3-.5-4.7-1.3l-3.3.9.9-3.2C4 16.4 3.5 14.8 3.5 13 3.5 8.3 7.3 4.5 12 4.5s8.5 3.8 8.5 8.5-3.8 8.5-8.5 8.5m0-18.5C6.5 3 2 7.5 2 13c0 1.9.5 3.7 1.5 5.3L2 24l5.9-1.5c1.5.8 3.3 1.3 5.1 1.3 5.5 0 10-4.5 10-10S17.5 3 12 3z"/></svg>
+      Enviar por WhatsApp
+    </button>
+    <p class="note">Se abrirá WhatsApp con tu pedido listo para enviar. Te confirmamos precio y existencia.</p>
+    <button class="clr" id="btn-clear">Vaciar cotización</button>
+  </div>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.mini.min.js"></script>
+<script src="inventario.js"></script>
+<script>
+(function(){
+  'use strict';
+  var WA = '50374939560';                 // WhatsApp de la ferretería
+  var CART_KEY = 'fsj-cotizacion';
+  var PAGE = 24;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var money = function(n){ return 'US$' + (Number(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); };
+  var esc = function(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); };
+
+  var NOIMG = '<svg class="noimg" width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#98AEC3" stroke-width="1.5"><path d="M3 5h18v14H3z"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="8.5" cy="9" r="1.5"/></svg>';
+
+  var cart = {};        // item -> {item, nombre, precio, unidad, cant}
+  var params = new URLSearchParams(location.search);
+  var mostrados = PAGE;
+  var filtro = { q:'', categoria:'', soloConExistencia:true, soloConImagen:false };
+  var lista = [];
+
+  /* ------------------------- Cotización (carrito) ------------------------ */
+  function loadCart(){
+    try { var r = localStorage.getItem(CART_KEY); if(r) cart = JSON.parse(r) || {}; } catch(e){ cart = {}; }
+  }
+  function saveCart(){ try{ localStorage.setItem(CART_KEY, JSON.stringify(cart)); }catch(e){} }
+  function cartCount(){ var n=0; for(var k in cart) n += cart[k].cant; return n; }
+  function cartTotal(){ var t=0; for(var k in cart) t += cart[k].cant * (Number(cart[k].precio)||0); return t; }
+
+  function addToCart(p){
+    var k = String(p.item);
+    if(window.Inventario && Inventario.marcarVisto) Inventario.marcarVisto(k);
+    if(cart[k]) cart[k].cant++;
+    else cart[k] = { item:k, nombre:p.nombre, precio:Number(p.precio)||0, unidad:p.unidad||'', cant:1 };
+    saveCart(); renderCart(); renderGrid();
+    toast('Agregado: ' + p.nombre);
+  }
+  function setQty(item, n){
+    var k = String(item); if(!cart[k]) return;
+    n = Math.max(0, Math.min(9999, parseInt(n,10)||0));
+    if(n === 0) delete cart[k]; else cart[k].cant = n;
+    saveCart(); renderCart(); renderGrid();
+  }
+
+  function renderCart(){
+    var body = $('cart-body'), keys = Object.keys(cart);
+    $('cart-count').textContent = cartCount();
+    var aConsultar = keys.filter(function(k){ return !(cart[k].precio > 0); }).length;
+    // Si todo está por cotizar, un "US$0.00" confunde: mejor un guion.
+    $('tot').textContent = (keys.length && aConsultar === keys.length) ? '—' : money(cartTotal());
+    var lbl = document.querySelector('.tot .l');
+    if(lbl) lbl.textContent = !aConsultar ? 'Total estimado'
+      : (aConsultar === keys.length ? 'Total (por cotizar)' : 'Total (faltan '+aConsultar+' por cotizar)');
+    if(!keys.length){
+      body.innerHTML = '<div class="cart-empty">Tu cotización está vacía.<br>Busca productos y pulsa <b>Agregar</b> para armar tu pedido.</div>';
+      return;
+    }
+    var h = '';
+    keys.forEach(function(k){
+      var c = cart[k];
+      var img = (window.Inventario && Inventario.getImagen) ? Inventario.getImagen(k) : null;
+      h += '<div class="ci" data-item="'+esc(k)+'">'+
+             '<div class="th">'+(img ? '<img src="'+img+'" alt="">' : NOIMG)+'</div>'+
+             '<div class="info">'+
+               '<div class="nm">'+esc(c.nombre)+'</div>'+
+               '<div class="pr">'+(c.precio>0 ? money(c.precio)+(c.unidad?' / '+esc(c.unidad):'') : 'Precio a consultar')+'</div>'+
+               '<div class="qty">'+
+                 '<button data-a="menos" aria-label="Quitar uno">−</button>'+
+                 '<input type="text" inputmode="numeric" value="'+c.cant+'" aria-label="Cantidad">'+
+                 '<button data-a="mas" aria-label="Agregar uno">+</button>'+
+               '</div>'+
+             '</div>'+
+             '<div class="sub">'+(c.precio>0 ? money(c.cant*c.precio) : '—')+'</div>'+
+             '<button class="rm" data-a="quitar" aria-label="Quitar">×</button>'+
+           '</div>';
+    });
+    body.innerHTML = h;
+  }
+
+  /* ------------------------- Mensaje de WhatsApp ------------------------- */
+  function buildMessage(){
+    var keys = Object.keys(cart);
+    var L = [];
+    L.push('*SOLICITUD DE COTIZACIÓN*');
+    L.push('Ferretería San José');
+    L.push('');
+    var nom = $('c-nombre').value.trim(), tel = $('c-tel').value.trim();
+    if(nom) L.push('*Cliente:* ' + nom);
+    if(tel) L.push('*Teléfono:* ' + tel);
+    if(nom || tel) L.push('');
+    L.push('*Productos solicitados:*');
+    keys.forEach(function(k, i){
+      var c = cart[k];
+      L.push((i+1) + '. ' + c.nombre);
+      if(c.precio > 0){
+        L.push('    ' + c.cant + (c.unidad ? ' ' + c.unidad : '') + ' × ' + money(c.precio) + ' = ' + money(c.cant*c.precio));
+      } else {
+        L.push('    ' + c.cant + (c.unidad ? ' ' + c.unidad : '') + ' — *precio a confirmar*');
+      }
+    });
+    L.push('');
+    // Si hay productos sin precio, el total no es el total real: se dice claro.
+    var porCotizar = keys.filter(function(k){ return !(cart[k].precio > 0); }).length;
+    if(!porCotizar){
+      L.push('*Total estimado:* ' + money(cartTotal()));
+    } else if(porCotizar === keys.length){
+      L.push('*Total:* pendiente — les pido precio de estos productos.');
+    } else {
+      L.push('*Total de lo que ya tiene precio:* ' + money(cartTotal()) +
+             ' (faltan ' + porCotizar + ' por cotizar)');
+    }
+    var nota = $('c-nota').value.trim();
+    if(nota){ L.push(''); L.push('*Nota:* ' + nota); }
+    L.push('');
+    L.push('_Enviado desde el catálogo en línea. Por favor confírmenme precio y existencia._');
+    return L.join('\n');
+  }
+  function enviarWA(){
+    if(!Object.keys(cart).length){ toast('Agrega productos primero.'); return; }
+    var url = 'https://wa.me/' + WA + '?text=' + encodeURIComponent(buildMessage());
+    window.open(url, '_blank', 'noopener');
+  }
+
+  /* ----------------------------- Catálogo -------------------------------- */
+  function renderCats(){
+    if(!window.Inventario || !Inventario.disponible()) return;
+    var cats = Inventario.categorias().slice(0, 24);
+    var h = '<button class="cat'+(filtro.categoria?'':' on')+'" data-c="">Todas</button>';
+    cats.forEach(function(c){
+      h += '<button class="cat'+(filtro.categoria===c.nombre?' on':'')+'" data-c="'+esc(c.nombre)+'">'+esc(c.nombre)+' <span style="opacity:.6">'+c.count+'</span></button>';
+    });
+    $('cats').innerHTML = h;
+  }
+
+  function renderGrid(){
+    var grid = $('grid');
+    if(!window.Inventario || !Inventario.disponible()){
+      $('count-line').textContent = '';
+      grid.innerHTML = '<div class="empty">El catálogo no está disponible en este momento.<br>Escríbenos por WhatsApp al 7493-9560 y te atendemos.</div>';
+      $('more').style.display = 'none';
+      return;
+    }
+    lista = Inventario.catalogo(filtro);
+    var visibles = lista.slice(0, mostrados);
+    $('count-line').innerHTML = lista.length
+      ? '<b>' + lista.length.toLocaleString('es-SV') + '</b> producto(s)' + (filtro.categoria ? ' en ' + esc(filtro.categoria) : '')
+      : '';
+    if(!lista.length){
+      grid.innerHTML = '<div class="empty">No encontramos productos con esa búsqueda.<br>Prueba con otra palabra o escríbenos por WhatsApp.</div>';
+      $('more').style.display = 'none';
+      return;
+    }
+    var h = '';
+    visibles.forEach(function(p){
+      var img = Inventario.getImagen(p.item);
+      var enCart = !!cart[String(p.item)];
+      var stock = Number(p.existencia)||0;
+      h += '<article class="card">'+
+             '<div class="ph">'+
+               (img ? '<img src="'+img+'" alt="'+esc(p.nombre)+'" loading="lazy">' : NOIMG)+
+               (p.destacado ? '<span class="tag">Destacado</span>' : '')+
+               '<span class="stock '+(stock>0?'si':'no')+'">'+(stock>0?'En stock':'Consultar')+'</span>'+
+             '</div>'+
+             '<div class="body">'+
+               (p.categoria ? '<span class="cat-lbl">'+esc(p.categoria)+'</span>' : '')+
+               '<h3 class="name">'+esc(p.nombre)+'</h3>'+
+               (p.precio > 0
+                 ? '<div class="price-row"><span class="price">'+money(p.precio)+'</span>'+
+                     (p.unidad ? '<span class="unit">/ '+esc(p.unidad)+'</span>' : '')+'</div>'
+                 : '<div class="price-row"><span class="price consultar">Consultar precio</span></div>')+
+               '<button class="add'+(enCart?' in':'')+'" data-item="'+esc(p.item)+'">'+
+                 (enCart ? '✓ Agregado ('+cart[String(p.item)].cant+')' : (p.precio > 0 ? 'Agregar' : 'Consultar'))+'</button>'+
+             '</div>'+
+           '</article>';
+    });
+    grid.innerHTML = h;
+    $('more').style.display = lista.length > mostrados ? 'block' : 'none';
+  }
+
+  /* ------------------- Sugerencias e ir directo al producto -------------- */
+  var sugActual = [], sugSel = -1;
+
+  function cerrarSug(){ $('sug').classList.remove('on'); $('sug').innerHTML=''; sugSel=-1; }
+
+  function pintarSug(){
+    var q = $('q').value.trim();
+    if(q.length < 2 || !window.Inventario || !Inventario.disponible()){ cerrarSug(); return; }
+    // Solo productos que el catálogo puede mostrar (si no, se elegiría algo invisible)
+    sugActual = Inventario.catalogo({ q: q }).slice(0, 8);
+    if(!sugActual.length){
+      $('sug').innerHTML = '<div class="none">Sin coincidencias</div>';
+      $('sug').classList.add('on'); return;
+    }
+    $('sug').innerHTML = sugActual.map(function(p,i){
+      var img = Inventario.getImagen(p.item);
+      return '<button data-i="'+i+'"><span class="th">'+(img?'<img src="'+img+'" alt="">':'')+'</span>'+
+        '<span class="nm">'+esc(p.nombre)+'</span><span class="pr">'+(p.precio>0?money(p.precio):'consultar')+'</span></button>';
+    }).join('');
+    $('sug').classList.add('on'); sugSel=-1;
+  }
+
+  // Lleva directamente al producto dentro del catálogo: lo busca, lo muestra y lo resalta.
+  function irAlProducto(p){
+    if(!p) return;
+    cerrarSug();
+    $('q').value = p.nombre;
+    filtro.q = p.nombre;
+    filtro.categoria = '';
+    filtro.soloConExistencia = false;   // que aparezca aunque no tenga existencia
+    filtro.soloConImagen = false;
+    $('f-stock').checked = false; $('f-img').checked = false;
+    mostrados = PAGE;
+    renderCats(); renderGrid();
+    if(window.Inventario && Inventario.marcarVisto) Inventario.marcarVisto(p.item);
+    // buscar su tarjeta y llevar la vista hasta ella
+    setTimeout(function(){
+      var idx = lista.findIndex(function(x){ return String(x.item)===String(p.item); });
+      if(idx >= 0 && idx >= mostrados){ mostrados = idx + PAGE; renderGrid(); }
+      setTimeout(function(){
+        var btn = document.querySelector('.add[data-item="'+CSS.escape(String(p.item))+'"]');
+        var card = btn ? btn.closest('.card') : null;
+        if(card){
+          card.scrollIntoView({behavior:'smooth', block:'center'});
+          card.classList.add('destacar');
+          setTimeout(function(){ card.classList.remove('destacar'); }, 3600);
+        } else {
+          toast('Consúltanos por “'+p.nombre+'”: escríbenos por WhatsApp.');
+        }
+      }, 60);
+    }, 60);
+  }
+
+  /* ------------------------------- Eventos ------------------------------- */
+  var tt;
+  function toast(m){ var t=$('toast'); t.textContent=m; t.className='toast on'; clearTimeout(tt); tt=setTimeout(function(){t.className='toast';},2200); }
+  function openCart(on){ $('cart').classList.toggle('on', on); $('ov').classList.toggle('on', on); }
+
+  var deb;
+  $('q').addEventListener('input', function(e){
+    clearTimeout(deb);
+    deb = setTimeout(function(){ filtro.q = e.target.value; mostrados = PAGE; renderGrid(); }, 180);
+  });
+  $('q').addEventListener('input', pintarSug);
+  $('q').addEventListener('focus', pintarSug);
+  $('sug').addEventListener('mousedown', function(e){
+    var b = e.target.closest('button[data-i]'); if(!b) return;
+    e.preventDefault(); irAlProducto(sugActual[+b.dataset.i]);
+  });
+  $('q').addEventListener('keydown', function(e){
+    var btns = [].slice.call($('sug').querySelectorAll('button[data-i]'));
+    if(e.key==='Escape'){ cerrarSug(); return; }
+    if(!btns.length) return;
+    if(e.key==='ArrowDown'){ e.preventDefault(); sugSel = Math.min(sugSel+1, btns.length-1); }
+    else if(e.key==='ArrowUp'){ e.preventDefault(); sugSel = Math.max(sugSel-1, 0); }
+    else if(e.key==='Enter'){ if(sugSel>=0){ e.preventDefault(); irAlProducto(sugActual[sugSel]); } return; }
+    btns.forEach(function(b,i){ b.classList.toggle('act', i===sugSel); });
+  });
+  document.addEventListener('click', function(e){ if(!e.target.closest('.search')) cerrarSug(); });
+
+  $('f-stock').addEventListener('change', function(e){ filtro.soloConExistencia = e.target.checked; mostrados = PAGE; renderGrid(); });
+  $('f-img').addEventListener('change', function(e){ filtro.soloConImagen = e.target.checked; mostrados = PAGE; renderGrid(); });
+  $('cats').addEventListener('click', function(e){
+    var b = e.target.closest('.cat'); if(!b) return;
+    filtro.categoria = b.dataset.c || ''; mostrados = PAGE; renderCats(); renderGrid();
+  });
+
+  /* ---------------------------- Marcas ---------------------------------- */
+  var MARCAS = [
+    ['STIHL','stihl.png','stihl',0],['TRUPER','truper.png','truper',0],['TOTAL','total.png','total',0],
+    ['INGCO','ingco.png','ingco',0],['EMTOP','emtop.png','emtop',0],['MAKITA','makita.png','makita',0],
+    ['DEWALT','dewalt.png','dewalt',1],['STANLEY','stanley.png','stanley',0],['IMACASA','imacasa.png','imacasa',1],
+    ['PFERD','pferd.png','pferd',0],['YALE','yale.png','yale',1],['SHERWIN-WILLIAMS','sherwin-williams.png','sherwin',1],
+    ['LANCO','lanco.png','lanco',0],['TECNOLITE','tecnolite.png','tecnolite',1],['HOLCIM','holcim.png','holcim',0],
+    ['CORINCA','corinca.png','corinca',0],['REFLEX','reflex.png','reflex',1],['HONDA','honda.png','honda',0],
+    ['KOHLER','kohler.png','kohler',0],['CASTROL','castrol.png','castrol',0],['VALVOLINE','valvoline.png','valvoline',1],
+    ['TOTALENERGIES','totalenergies.png','totalenergies',1]
+  ];
+  function renderMarcas(){
+    var actual = String(filtro.q || '').trim().toLowerCase();
+    var h = '';
+    MARCAS.forEach(function(m){
+      h += '<button class="mk'+(m[3]?' sq':'')+(actual===m[2]?' on':'')+'" data-q="'+m[2]+'" title="Ver productos '+m[0]+'" aria-label="'+m[0]+'">'+
+           '<img src="assets/marcas/'+m[1]+'" alt="'+m[0]+'" loading="lazy"></button>';
+    });
+    $('marcas').innerHTML = h;
+  }
+  $('marcas').addEventListener('click', function(e){
+    var b = e.target.closest('.mk'); if(!b) return;
+    var q = b.dataset.q;
+    if(String(filtro.q || '').trim().toLowerCase() === q) q = '';   // volver a tocar quita el filtro
+    filtro.q = q;
+    filtro.categoria = '';
+    filtro.soloConExistencia = false; $('f-stock').checked = false;
+    $('q').value = q;
+    mostrados = PAGE;
+    renderMarcas(); renderCats(); renderGrid();
+    var m = document.querySelector('main');
+    if(m) window.scrollTo({ top: m.offsetTop - 140, behavior:'smooth' });
+  });
+  renderMarcas();
+  $('grid').addEventListener('click', function(e){
+    var b = e.target.closest('.add'); if(!b) return;
+    var p = Inventario.porItem(b.dataset.item); if(p) addToCart(p);
+  });
+  $('more').addEventListener('click', function(){ mostrados += PAGE; renderGrid(); });
+  $('btn-cart').addEventListener('click', function(){ openCart(true); });
+  $('btn-close').addEventListener('click', function(){ openCart(false); });
+  $('ov').addEventListener('click', function(){ openCart(false); });
+  $('btn-wa').addEventListener('click', enviarWA);
+  $('btn-clear').addEventListener('click', function(){
+    if(!Object.keys(cart).length) return;
+    if(!confirm('¿Vaciar la cotización?')) return;
+    cart = {}; saveCart(); renderCart(); renderGrid();
+  });
+  $('cart-body').addEventListener('click', function(e){
+    var b = e.target.closest('[data-a]'); if(!b) return;
+    var it = e.target.closest('.ci').dataset.item;
+    var a = b.dataset.a;
+    if(a==='mas') setQty(it, cart[it].cant+1);
+    else if(a==='menos') setQty(it, cart[it].cant-1);
+    else if(a==='quitar') setQty(it, 0);
+  });
+  $('cart-body').addEventListener('change', function(e){
+    if(e.target.tagName !== 'INPUT') return;
+    setQty(e.target.closest('.ci').dataset.item, e.target.value);
+  });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') openCart(false); });
+
+  /* -------------------------------- Init --------------------------------- */
+  loadCart();
+  renderCart();
+  if(window.Inventario){
+    // Si un empleado cambia un precio o sube una foto, el catálogo se refresca solo.
+    Inventario.onCambio(function(){ renderCats(); renderGrid(); renderCart(); });
+    Inventario.init().then(function(){
+      renderCats(); renderGrid(); renderCart();
+      // Búsqueda que viene del inicio  (catalogo.html?q=...)
+      var q = params.get('q');
+      var item = params.get('item');
+      if(item){
+        var p = Inventario.porItem(item) || Inventario.porCodigo(item);
+        if(p){ irAlProducto(p); return; }
+      }
+      if(q){
+        $('q').value = q;
+        filtro.q = q;
+        filtro.soloConExistencia = false; $('f-stock').checked = false;
+        mostrados = PAGE; renderMarcas(); renderGrid();
+        // si hay una sola coincidencia clara, lleva directo a ella
+        if(lista.length === 1) irAlProducto(lista[0]);
+      }
+    }).catch(function(){ renderGrid(); });
+  } else { renderGrid(); }
+})();
+</script>
+</body>
+</html>

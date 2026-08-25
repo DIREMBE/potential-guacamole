@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lo más reciente — Ferretería San José</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:transparent;color:#EAF2F9;
+    font-family:'Barlow',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+  a{color:inherit;text-decoration:none}
+  img{display:block;max-width:100%}
+  .head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .head .lbl{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.18em;
+    font-size:12.5px;font-weight:600;color:#F15930}
+  .nav{margin-left:auto;display:flex;gap:8px}
+  .nav button{width:38px;height:38px;border-radius:8px;border:1px solid rgba(255,255,255,.16);
+    background:#102A42;color:#EAF2F9;font-size:17px;cursor:pointer;line-height:1;transition:.15s}
+  .nav button:hover:not(:disabled){border-color:#F15930;color:#F15930}
+  .nav button:disabled{opacity:.32;cursor:default}
+  .track{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 4*14px)/5);gap:14px;
+    overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding-bottom:4px;scrollbar-width:none}
+  .track::-webkit-scrollbar{display:none}
+  .card{scroll-snap-align:start;display:flex;flex-direction:column;background:#0F2739;
+    border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden;
+    transition:transform .15s ease,border-color .15s ease}
+  .card:hover{transform:translateY(-3px);border-color:rgba(241,89,48,.5)}
+  .ph{aspect-ratio:4/3;background:rgba(10,32,51,.55);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+  .ph img{width:100%;height:100%;object-fit:contain;background:transparent}
+  .badge{position:absolute;top:8px;left:8px;background:#F15930;color:#fff;font-size:10px;font-weight:700;
+    letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px}
+  .b{padding:12px 13px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
+  .cat{font-size:10.5px;color:#7893AC;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+  .nm{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;color:#EAF2F9;line-height:1.22;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.44em}
+  .pr{margin-top:auto;font-family:'Anton',sans-serif;font-size:23px;color:#F15930;line-height:1}
+  .un{font-size:11.5px;color:#7893AC}
+  .dots{display:flex;justify-content:center;gap:7px;margin-top:14px}
+  .dots span{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.2);cursor:pointer;transition:.15s}
+  .dots span.on{background:#F15930;width:22px;border-radius:999px}
+  .msg{color:#7893AC;font-size:15px;padding:26px 0;text-align:center}
+  @media(max-width:1024px){.track{grid-auto-columns:calc((100% - 2*14px)/3)}}
+  @media(max-width:700px){.track{grid-auto-columns:calc((100% - 14px)/1.7)}}
+</style>
+</head>
+<body>
+<div id="app"><div class="msg">Cargando productos…</div></div>
+
+<script>
+(function(){
+  'use strict';
+  var PAGE = 5, datos = null, pag = 0;
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function money(n){ return 'US$'+(Number(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  var NOIMG = '<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#50708C" stroke-width="1.5">'+
+    '<path d="M3 5h18v14H3z"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="8.5" cy="9" r="1.5"/></svg>';
+
+  function paginas(){ return Math.max(1, Math.ceil((datos?datos.length:0)/PAGE)); }
+
+  function pinta(){
+    var app = $('app');
+    if(!datos){ app.innerHTML = '<div class="msg">Cargando productos…</div>'; return; }
+    if(!datos.length){
+      app.innerHTML = '<div class="msg">Explora todos nuestros productos en el catálogo.</div>';
+      return;
+    }
+    var cards = datos.map(function(p){
+      return '<a class="card" href="catalogo.html" target="_top">'+
+        '<div class="ph">'+(p.foto?'<img src="'+p.foto+'" alt="'+esc(p.nombre)+'" loading="lazy">':NOIMG)+
+          (p.destacado?'<span class="badge">Destacado</span>':'')+'</div>'+
+        '<div class="b">'+(p.categoria?'<span class="cat">'+esc(p.categoria)+'</span>':'')+
+          '<span class="nm">'+esc(p.nombre)+'</span>'+
+          '<span class="pr">'+money(p.precio)+'</span>'+
+          (p.unidad?'<span class="un">por '+esc(p.unidad)+'</span>':'')+
+        '</div></a>';
+    }).join('');
+    var dots = '';
+    for(var i=0;i<paginas();i++) dots += '<span class="'+(i===pag?'on':'')+'" data-p="'+i+'"></span>';
+    app.innerHTML =
+      '<div class="head"><span class="lbl">Lo más reciente</span>'+
+        '<div class="nav"><button data-d="-1" aria-label="Anterior">‹</button>'+
+        '<button data-d="1" aria-label="Siguiente">›</button></div></div>'+
+      '<div class="track" id="track">'+cards+'</div>'+
+      '<div class="dots" id="dots">'+dots+'</div>';
+
+    var track = $('track');
+    track.addEventListener('scroll', function(){
+      var n = Math.round(track.scrollLeft/Math.max(1,track.clientWidth));
+      if(n!==pag && n>=0 && n<paginas()){ pag=n; marca(); }
+    }, {passive:true});
+    app.querySelectorAll('.nav button').forEach(function(b){
+      b.addEventListener('click', function(){ mover(parseInt(b.dataset.d,10)); });
+    });
+    app.querySelectorAll('.dots span').forEach(function(d){
+      d.addEventListener('click', function(){
+        pag = parseInt(d.dataset.p,10);
+        track.scrollTo({left:pag*track.clientWidth, behavior:'smooth'});
+        marca();
+      });
+    });
+    marca();
+  }
+  function marca(){
+    var d = $('dots'); if(d) d.querySelectorAll('span').forEach(function(s,i){ s.classList.toggle('on', i===pag); });
+    var bs = document.querySelectorAll('.nav button');
+    if(bs.length===2){ bs[0].disabled = pag<=0; bs[1].disabled = pag>=paginas()-1; }
+  }
+  function mover(d){
+    var n = pag+d; if(n<0||n>=paginas()) return;
+    pag = n;
+    var t = $('track'); if(t) t.scrollTo({left:pag*t.clientWidth, behavior:'smooth'});
+    marca();
+  }
+
+  fetch('showcase-data.json',{cache:'no-store'})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(d){ datos = (d && d.productos) ? d.productos.slice(0,15) : []; pinta(); })
+    .catch(function(){ datos = []; pinta(); });
+})();
+</script>
+</body>
+</html>

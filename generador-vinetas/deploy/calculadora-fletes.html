@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>Calculadora de Fletes — Ferretería San José</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy: #0475BB;
+  --blue: #2B7CC4;
+  --light-blue: #E1F0FA;
+  --orange: #F15930;
+  --orange-dark: #E8521A;
+  --ink: #0C2036;
+  --bg: #E5EBF1;
+  --surface: #FFFFFF;
+  --text: #112B41;
+  --text-muted: #5A7691;
+  --border: #C6D4E1;
+  --warning: #C76A12;
+  --danger: #C62828;
+  --highlight: #FBEFD9;
+}
+body {
+  font-family: 'Barlow Condensed', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+header {
+  background: var(--navy);
+  color: white;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+header h1 { font-size: 20px; font-weight: 600; }
+header .sub { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+.header-actions { display: flex; gap: 8px; }
+.btn-header {
+  background: rgba(255,255,255,0.12);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+.btn-header:hover { background: rgba(255,255,255,0.22); }
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+}
+@media (max-width: 900px) {
+  main { grid-template-columns: 1fr; padding: 16px; }
+  .breakdown-card { position: static !important; }
+}
+
+.form-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--light-blue);
+}
+.field { margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+.field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.field-help {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+input[type="text"], input[type="number"], select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  font-family: inherit;
+  color: var(--text);
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(46,117,182,0.15);
+}
+
+.segmented { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg-btn {
+  flex: 1 1 auto;
+  min-width: 80px;
+  padding: 10px 8px;
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  transition: all 0.15s;
+}
+.seg-btn:hover { border-color: var(--blue); }
+.seg-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
+
+.stepper {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.step-btn {
+  background: white;
+  border: none;
+  width: 38px;
+  height: 38px;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--navy);
+  font-weight: 600;
+}
+.step-btn:hover { background: var(--light-blue); }
+.step-value {
+  min-width: 44px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 8px;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.toggle input { display: none; }
+.toggle-track {
+  width: 44px;
+  height: 24px;
+  background: var(--border);
+  border-radius: 12px;
+  position: relative;
+  transition: background 0.2s;
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.toggle input:checked + .toggle-track { background: var(--navy); }
+.toggle input:checked + .toggle-track::after { transform: translateX(20px); }
+
+.search-wrap { position: relative; }
+.search-wrap input { padding-right: 32px; }
+.clear-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+}
+
+.breakdown-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  position: sticky;
+  top: 24px;
+  height: fit-content;
+}
+.total-display {
+  background: var(--navy);
+  color: white;
+  padding: 18px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.total-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  opacity: 0.85;
+}
+.total-value {
+  font-size: 36px;
+  font-weight: 700;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.total-meta { font-size: 11px; opacity: 0.8; margin-top: 4px; }
+
+.breakdown-list { font-size: 13px; }
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.breakdown-row:last-child { border-bottom: none; }
+.breakdown-row.zero { color: var(--text-muted); opacity: 0.6; }
+.breakdown-row .label { flex: 1; }
+.breakdown-row .value { font-variant-numeric: tabular-nums; font-weight: 500; }
+.breakdown-row.subtotal {
+  border-top: 2px solid var(--navy);
+  border-bottom: none;
+  padding-top: 10px;
+  margin-top: 6px;
+  font-weight: 600;
+}
+.breakdown-row.multiplier {
+  background: var(--light-blue);
+  margin: 4px -8px;
+  padding: 8px;
+  border-radius: 4px;
+  border-bottom: none;
+  font-weight: 500;
+}
+
+.warning {
+  background: var(--highlight);
+  border-left: 3px solid var(--warning);
+  padding: 10px 12px;
+  font-size: 12px;
+  border-radius: 4px;
+  margin-top: 12px;
+  color: #6E4500;
+}
+.warning strong { color: var(--warning); }
+.warning.danger { background: #FEE; border-left-color: var(--danger); color: #5C0E0E; }
+.warning.danger strong { color: var(--danger); }
+
+.copy-bar { display: flex; gap: 6px; margin-top: 14px; }
+.btn-action {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--navy);
+  background: white;
+  color: var(--navy);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+.btn-action:hover { background: var(--light-blue); }
+.btn-action.primary { background: var(--navy); color: white; }
+.btn-action.primary:hover { background: #163d5e; }
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--surface);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 20px auto;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-header h2 { font-size: 18px; color: var(--navy); }
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+.close-btn:hover { background: var(--bg); }
+.modal-body { padding: 20px; }
+.modal-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+.btn-small {
+  padding: 7px 12px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.btn-small:hover { background: var(--bg); }
+.btn-small.primary { background: var(--navy); color: white; border-color: var(--navy); }
+.btn-small.primary:hover { background: #163d5e; }
+.btn-small.danger { color: var(--danger); border-color: var(--danger); }
+.btn-small.danger:hover { background: #FFEBEE; }
+
+.matriz-search {
+  flex: 1;
+  min-width: 200px;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.matriz-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.matriz-table th {
+  background: var(--bg);
+  padding: 8px 6px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  position: sticky;
+  top: 0;
+}
+.matriz-table td { padding: 4px; border-bottom: 1px solid #EEE; }
+.matriz-table input, .matriz-table select { padding: 5px 6px; font-size: 12px; }
+.matriz-table .col-id { width: 30px; text-align: center; color: var(--text-muted); }
+.matriz-table .col-dest { min-width: 200px; }
+.matriz-table .col-muni { min-width: 130px; }
+.matriz-table .col-tarifa { width: 80px; }
+.matriz-table .col-cam { width: 70px; }
+.matriz-table .col-veh { width: 100px; }
+.matriz-table .col-min { width: 70px; }
+.matriz-table tr.hidden { display: none; }
+.matriz-table tr.warn-zero td input[type=number] { background: #FFF7E6; }
+
+.modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--bg);
+  border-radius: 0 0 10px 10px;
+  align-items: center;
+}
+.modal-footer .info { font-size: 11px; color: var(--text-muted); }
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--navy);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: transform 0.3s;
+  z-index: 200;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  background: var(--bg);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+footer { text-align: center; padding: 20px; font-size: 11px; color: var(--text-muted); }
+
+/* ====== Rebrand · Ferretería San José ====== */
+header { background: var(--ink); border-bottom: 3px solid var(--orange); padding: 14px 24px; }
+header .brand { display: flex; align-items: center; gap: 13px; text-decoration: none; color: #fff; }
+header .brand img { height: 44px; width: auto; display: block; }
+header h1 { font-family: 'Anton', sans-serif; font-weight: 400; text-transform: uppercase; letter-spacing: .02em; font-size: 24px; line-height: 1; color: #EAF2F9; }
+header .sub { font-size: 12px; color: #98AEC3; letter-spacing: .03em; margin-top: 4px; opacity: 1; }
+a.btn-header { display: inline-flex; align-items: center; text-decoration: none; }
+.btn-header { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; font-size: 13px; border-radius: 5px; }
+.btn-header.ghost { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.4); }
+.section-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .07em; color: var(--navy); border-bottom: 2px solid var(--light-blue); }
+.seg-btn, .btn-action, .btn-small { font-family: 'Barlow Condensed', sans-serif; }
+.seg-btn { font-weight: 600; font-size: 14px; }
+input[type="text"], input[type="number"], select { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; }
+.field-label { font-size: 14px; }
+.total-display { background: var(--ink); }
+.total-label { color: #B7C8D8; opacity: 1; }
+.total-value { font-family: 'Anton', sans-serif; font-weight: 400; font-size: 46px; letter-spacing: .01em; color: var(--orange); margin-top: 6px; }
+.total-meta { color: #98AEC3; opacity: 1; }
+.btn-action.primary { background: var(--orange); border-color: var(--orange); }
+.btn-action.primary:hover { background: var(--orange-dark); }
+.btn-small.primary { background: var(--orange); border-color: var(--orange); }
+.btn-small.primary:hover { background: var(--orange-dark); }
+.form-section, .breakdown-card { border-radius: 12px; }
+.toast { background: var(--ink); font-family: 'Barlow Condensed', sans-serif; font-size: 14px; }
+footer { font-family: 'Barlow Condensed', sans-serif; letter-spacing: .04em; }
+
+/* El candado (pantalla de acceso) vive en acceso.js */
+/* Maps cell */
+.matriz-table .col-maps { min-width: 190px; }
+.maps-input { min-width: 170px; }
+.maps-link { color: var(--navy); font-weight: 600; text-decoration: none; white-space: nowrap; }
+.maps-link:hover { text-decoration: underline; }
+
+@media print {
+  header, .form-section, .copy-bar, footer, .btn-header { display: none !important; }
+  main { display: block; padding: 0; }
+  .breakdown-card { position: static; box-shadow: none; border: 1px solid #999; }
+  body { background: white; }
+}
+</style>
+<script src="usuarios.js"></script>
+<script>window.FSJ_ACCESO = { sub: 'Calculadora de fletes · solo personal' };</script>
+<script src="acceso.js"></script>
+</head>
+<body>
+
+
+<header>
+  <a class="brand" href="index.html">
+    <img src="assets/emblem.png" alt="Ferretería San José">
+    <div>
+      <h1>Calculadora de Fletes</h1>
+      <div class="sub">Ferretería San José · Corinto, Morazán · Uso interno</div>
+    </div>
+  </a>
+  <div class="header-actions">
+    <a class="btn-header ghost" href="index.html">← Volver al sitio</a>
+    <button class="btn-header" onclick="resetForm()">Nueva cotización</button>
+    <button class="btn-header" onclick="openConfig()">⚙ Configuración</button>
+  </div>
+</header>
+
+<main>
+  <div>
+    <div class="form-section">
+      <div class="section-title">1. ¿A dónde va?</div>
+      <div class="field">
+        <label class="field-label">Buscar destino</label>
+        <div class="search-wrap">
+          <input type="text" id="destino-search" placeholder="Escriba parte del nombre del destino o municipio…" autocomplete="off">
+          <button class="clear-btn" onclick="clearSearch()" title="Limpiar">×</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Destino</label>
+        <select id="destino-select" size="6" style="height: auto; padding: 4px;"></select>
+        <div class="field-help" id="destino-info">Seleccione un destino de la lista</div>
+      </div>
+      <div class="field">
+        <label class="field-label">Temporada</label>
+        <div class="segmented" id="temporada-selector">
+          <button class="seg-btn" data-val="V">Verano (nov–abr)</button>
+          <button class="seg-btn" data-val="I">Invierno (may–oct)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="section-title">2. ¿Qué lleva?</div>
+      <div class="field">
+        <label class="field-label">Vehículo a usar</label>
+        <select id="vehiculo-select">
+          <option value="P1">P1 — Plataforma pequeña (1.5 ton)</option>
+          <option value="P4">P4 — Plataforma mediana (4 ton)</option>
+          <option value="P8">P8 — Plataforma grande (8 ton)</option>
+          <option value="P12">P12 — Plataforma pesada (12 ton)</option>
+          <option value="V8">V8 — Volteo (8 ton)</option>
+          <option value="T4X4-1">T4X4-1 — 4x4 pequeño (1.5 ton)</option>
+          <option value="T4X4-4">T4X4-4 — 4x4 grande (4 ton)</option>
+        </select>
+        <div class="field-help" id="vehiculo-warn"></div>
+      </div>
+      <div class="field">
+        <label class="field-label">Peso total de la carga (lb)</label>
+        <input type="number" id="peso" min="0" value="0" step="50">
+        <div class="field-help">Referencia: saco de cemento ≈ 94 lb</div>
+      </div>
+      <div class="field">
+        <label class="field-label">Cantidad de sacos</label>
+        <input type="number" id="sacos" min="0" value="0" step="1">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="section-title">3. Servicio adicional</div>
+      <div class="field">
+        <label class="toggle">
+          <input type="checkbox" id="descarga-pesada">
+          <span class="toggle-track"></span>
+          <span>Descarga manual pesada</span>
+        </label>
+        <div class="field-help">Excede 20 min para 1.5 ton, o requiere subir gradas/pendientes</div>
+      </div>
+      <div class="field">
+        <label class="field-label">Ayudantes extra (sobre los 2 incluidos)</label>
+        <div class="stepper">
+          <button class="step-btn" onclick="changeStep('ayudantes', -1)">−</button>
+          <div class="step-value" id="ayudantes-val">0</div>
+          <button class="step-btn" onclick="changeStep('ayudantes', 1)">+</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Tiempo de espera del cliente</label>
+        <div class="stepper">
+          <button class="step-btn" onclick="changeStep('espera', -15)">−</button>
+          <div class="step-value" id="espera-val">0 min</div>
+          <button class="step-btn" onclick="changeStep('espera', 15)">+</button>
+        </div>
+        <div class="field-help">Tiempo adicional al estándar (en bloques de 15 min)</div>
+      </div>
+      <div class="field">
+        <label class="toggle">
+          <input type="checkbox" id="fuera-jornada">
+          <span class="toggle-track"></span>
+          <span>Horario fuera de jornada (después 5 pm o domingo)</span>
+        </label>
+      </div>
+      <div class="field">
+        <label class="field-label">Paradas adicionales (multi-entrega)</label>
+        <div class="stepper">
+          <button class="step-btn" onclick="changeStep('paradas', -1)">−</button>
+          <div class="step-value" id="paradas-val">0</div>
+          <button class="step-btn" onclick="changeStep('paradas', 1)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="section-title">4. Pedido (opcional)</div>
+      <div class="field">
+        <label class="field-label">Valor del pedido ($)</label>
+        <input type="number" id="valor-pedido" min="0" value="0" step="1">
+        <div class="field-help">Para validar mínimos por zona</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="breakdown-card">
+      <div class="total-display">
+        <div class="total-label">Tarifa Final</div>
+        <div class="total-value" id="total">$0.00</div>
+        <div class="total-meta" id="total-meta">Seleccione un destino</div>
+      </div>
+      <div class="breakdown-list" id="breakdown"></div>
+      <div id="warnings"></div>
+      <div class="copy-bar">
+        <button class="btn-action" onclick="copyBreakdown()">Copiar</button>
+        <button class="btn-action primary" onclick="window.print()">Imprimir</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>Calculadora v3 · Ferretería San José · Tarifario interno</footer>
+
+<div class="modal-overlay" id="config-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>⚙ Configuración — Destinos y Tarifas</h2>
+      <button class="close-btn" onclick="closeConfig()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-toolbar">
+        <input type="text" class="matriz-search" id="matriz-filter" placeholder="Filtrar por destino o municipio…">
+        <button class="btn-small" onclick="addDestino()">+ Agregar destino</button>
+        <button class="btn-small" onclick="exportConfig()">↓ Exportar</button>
+        <button class="btn-small" onclick="document.getElementById('import-input').click()">↑ Importar</button>
+        <input type="file" id="import-input" accept=".json" style="display:none" onchange="importConfig(event)">
+        <button class="btn-small danger" onclick="resetDestinos()">Restaurar</button>
+      </div>
+      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+        Filas en amarillo: tarifa = $0 (sin configurar). Tarifa Final = (Tarifa + Recargos) × Multiplicador del camino (A=×1.0, B=×1.2, C=×1.5, D=×2.0).
+      </div>
+      <table class="matriz-table">
+        <thead>
+          <tr>
+            <th class="col-id">#</th>
+            <th class="col-dest">Destino</th>
+            <th class="col-muni">Municipio</th>
+            <th class="col-maps">Google Maps</th>
+            <th class="col-tarifa">Tarifa ($)</th>
+            <th class="col-cam">Camino V</th>
+            <th class="col-cam">Camino I</th>
+            <th class="col-veh">Vehíc. mín.</th>
+            <th class="col-min">Min</th>
+            <th style="width: 40px;"></th>
+          </tr>
+        </thead>
+        <tbody id="matriz-editor"></tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <div class="info" id="config-stats">…</div>
+      <div style="display:flex; gap: 8px;">
+        <button class="btn-small" onclick="closeConfig()">Cancelar</button>
+        <button class="btn-small primary" onclick="saveConfig()">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const VEH_RECARGO = { 'P1': 0, 'P4': 5, 'P8': 10, 'P12': 15, 'V8': 10, 'T4X4-1': 10, 'T4X4-4': 15 };
+const VEH_RANK = { 'P1': 1, 'P4': 2, 'P8': 3, 'V8': 3, 'P12': 4, 'T4X4-1': 5, 'T4X4-4': 6 };
+const CAMINO_MULT = { 'A': 1.0, 'B': 1.2, 'C': 1.5, 'D': 2.0 };
+const FLETE_MINIMO = 3;
+
+const DEFAULT_DESTINOS = [{"id": 1, "destino": "VARILLA NEGRA LA COLONIA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 2, "destino": "EL CAJON", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 3, "destino": "ROPILLA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 4, "destino": "SAN FELIPE ESCUELA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 5, "destino": "SAN FELIPE CAPILLA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 6, "destino": "LOS MENDEZ", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 7, "destino": "BABILONIA ESCUELA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 8, "destino": "BABILONIA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 9, "destino": "EL NAZARENO", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 10, "destino": "QUEBRADA HONDA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 11, "destino": "EL TABLON", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 12, "destino": "EL TABLON FRUTILLA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 13, "destino": "LOS VILLATOROS", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 14, "destino": "PORTILLO DE LAJA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 15, "destino": "MATAPALO 1", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 16, "destino": "MATAPALO 2", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 17, "destino": "LA PISTA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 18, "destino": "EL VOLCANSILLO .", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 19, "destino": "EL ESCORPION", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 20, "destino": "HIGUERAS", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 21, "destino": "EL CARRISAL", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 22, "destino": "LAS MARIAS", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 23, "destino": "LAS MARIAS ESCUELA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 24, "destino": "EL ESTADIO", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 25, "destino": "HACIENDA VIEJA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 26, "destino": "JALACATE", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 27, "destino": "EL RODEO", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 28, "destino": "ESTANCIAS CACOPERA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 29, "destino": "SAN FRANCISCO", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 30, "destino": "LOS VELASQUEZ", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 31, "destino": "LLANO GRANDE", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 32, "destino": "LLANO REDONDO", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 33, "destino": "LLANO BLANCO", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 34, "destino": "LLANO VERDE", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 35, "destino": "CERRO DE NUBES", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 36, "destino": "GUAYABILLA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 37, "destino": "EL POTRERON", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 38, "destino": "EL RUSIO", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 39, "destino": "EL SALAMO", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 40, "destino": "JIMILILE", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 41, "destino": "EL JUNCO", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 42, "destino": "LA PATERNA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 43, "destino": "LOS SANTOS", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 44, "destino": "LA CEIBA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 45, "destino": "LA TORTUGA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 46, "destino": "LA CUQUINCA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 47, "destino": "EL ALTILLO", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 48, "destino": "EL ALTO DEL AGUACATE", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 49, "destino": "LOS PALACIOS", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 50, "destino": "PIEDRA PARADA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 51, "destino": "LOS FUENTES", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 52, "destino": "EL POTRERITO", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 53, "destino": "LA GUACAMAYA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 54, "destino": "LA HERMITA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 55, "destino": "LOS HOYOS", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 56, "destino": "QUEBRADA SECA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 57, "destino": "TERRERO", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 58, "destino": "NACASCOLO", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 59, "destino": "HUERTAS", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 60, "destino": "EL JOVAL", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 61, "destino": "PEDERNAL", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 62, "destino": "LOMA ALTA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 63, "destino": "GUAJINIQUIL", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 64, "destino": "EL ZAPOTE", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 65, "destino": "LOS CABRERA", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 66, "destino": "EL CERESO", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}, {"id": 67, "destino": "LOS POZOS HIGUERAS", "municipio": "", "tarifa": 0, "caminoV": "B", "caminoI": "C", "vehMin": "P1", "tiempo": 30}];
+const STORAGE_KEY = 'fsj-tarifario-v3';
+
+let state = {
+  destinos: loadDestinos(),
+  destinoId: '',
+  temporada: detectTemporada(),
+  vehiculo: 'P1',
+  peso: 0,
+  sacos: 0,
+  descargaPesada: false,
+  ayudantes: 0,
+  espera: 0,
+  fueraJornada: false,
+  paradas: 0,
+  valorPedido: 0,
+  searchTerm: ''
+};
+
+function loadDestinos() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_DESTINOS));
+}
+function saveDestinos() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.destinos)); }
+  catch (e) {}
+}
+function detectTemporada() {
+  const m = new Date().getMonth() + 1;
+  return (m >= 5 && m <= 10) ? 'I' : 'V';
+}
+
+function init() {
+  populateDestinos();
+
+  document.getElementById('destino-search').addEventListener('input', e => {
+    state.searchTerm = e.target.value;
+    populateDestinos();
+  });
+  document.getElementById('destino-select').addEventListener('change', e => {
+    state.destinoId = e.target.value;
+    autofillFromDestino();
+    recalc();
+  });
+  document.querySelectorAll('#temporada-selector .seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.temporada = btn.dataset.val;
+      updateTemporadaUI();
+      autofillFromDestino();
+      recalc();
+    });
+  });
+  updateTemporadaUI();
+
+  document.getElementById('vehiculo-select').addEventListener('change', e => {
+    state.vehiculo = e.target.value; recalc();
+  });
+  document.getElementById('peso').addEventListener('input', e => {
+    state.peso = parseFloat(e.target.value) || 0; recalc();
+  });
+  document.getElementById('sacos').addEventListener('input', e => {
+    state.sacos = parseInt(e.target.value) || 0; recalc();
+  });
+  document.getElementById('descarga-pesada').addEventListener('change', e => {
+    state.descargaPesada = e.target.checked; recalc();
+  });
+  document.getElementById('fuera-jornada').addEventListener('change', e => {
+    state.fueraJornada = e.target.checked; recalc();
+  });
+  document.getElementById('valor-pedido').addEventListener('input', e => {
+    state.valorPedido = parseFloat(e.target.value) || 0; recalc();
+  });
+
+  recalc();
+}
+
+function updateTemporadaUI() {
+  document.querySelectorAll('#temporada-selector .seg-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.val === state.temporada);
+  });
+}
+
+function populateDestinos() {
+  const sel = document.getElementById('destino-select');
+  const term = state.searchTerm.trim().toLowerCase();
+  let items = state.destinos.slice();
+  if (term) {
+    items = items.filter(d =>
+      d.destino.toLowerCase().includes(term) ||
+      (d.municipio || '').toLowerCase().includes(term)
+    );
+  }
+  const groups = {};
+  items.forEach(d => {
+    const m = d.municipio || '(Sin municipio asignado)';
+    if (!groups[m]) groups[m] = [];
+    groups[m].push(d);
+  });
+  const sortedKeys = Object.keys(groups).sort((a, b) => {
+    if (a.startsWith('(Sin')) return 1;
+    if (b.startsWith('(Sin')) return -1;
+    return a.localeCompare(b);
+  });
+  let html = '';
+  if (items.length === 0) {
+    html = '<option value="">— Sin resultados —</option>';
+  } else {
+    sortedKeys.forEach(municipio => {
+      html += `<optgroup label="${escapeHtml(municipio)}">`;
+      groups[municipio].sort((a, b) => a.destino.localeCompare(b.destino)).forEach(d => {
+        const flag = (!d.tarifa || d.tarifa === 0) ? ' ⚠' : '';
+        html += `<option value="${d.id}"${d.id == state.destinoId ? ' selected' : ''}>${escapeHtml(d.destino)}${flag}</option>`;
+      });
+      html += '</optgroup>';
+    });
+  }
+  sel.innerHTML = html;
+}
+
+function clearSearch() {
+  document.getElementById('destino-search').value = '';
+  state.searchTerm = '';
+  populateDestinos();
+}
+
+function autofillFromDestino() {
+  const d = state.destinos.find(x => x.id == state.destinoId);
+  const info = document.getElementById('destino-info');
+  if (!d) { info.textContent = ''; return; }
+  const camino = state.temporada === 'V' ? d.caminoV : d.caminoI;
+  const tempLbl = state.temporada === 'V' ? 'verano' : 'invierno';
+  const muni = d.municipio ? d.municipio : '⚠ sin municipio';
+  // Auto-suggest vehicle: set to caserío's minimum
+  state.vehiculo = d.vehMin || 'P1';
+  document.getElementById('vehiculo-select').value = state.vehiculo;
+  const mapsLink = d.maps ? ` · <a href="${escapeHtml(d.maps)}" target="_blank" rel="noopener" class="maps-link">📍 Ver ubicación</a>` : '';
+  info.innerHTML = `${muni} · Tarifa $${(d.tarifa || 0).toFixed(2)} · Camino ${camino} (${tempLbl}) · Vehíc. mín. ${d.vehMin} · ~${d.tiempo} min${mapsLink}`;
+}
+
+function changeStep(field, delta) {
+  if (field === 'ayudantes') {
+    state.ayudantes = Math.max(0, state.ayudantes + delta);
+    document.getElementById('ayudantes-val').textContent = state.ayudantes;
+  } else if (field === 'espera') {
+    state.espera = Math.max(0, state.espera + delta);
+    document.getElementById('espera-val').textContent = state.espera + ' min';
+  } else if (field === 'paradas') {
+    state.paradas = Math.max(0, state.paradas + delta);
+    document.getElementById('paradas-val').textContent = state.paradas;
+  }
+  recalc();
+}
+
+function recargoPeso(lb) {
+  if (lb <= 1000) return { v: 0, lbl: 'Hasta 1,000 lb' };
+  if (lb <= 2500) return { v: 5, lbl: '1,000–2,500 lb' };
+  if (lb <= 5000) return { v: 10, lbl: '2,500–5,000 lb' };
+  return { v: 15, lbl: 'Más de 5,000 lb' };
+}
+function recargoSacos(n) {
+  if (n <= 25) return { v: 0, lbl: 'Hasta 25 sacos' };
+  if (n <= 50) return { v: 5, lbl: '26–50 sacos' };
+  return { v: 10, lbl: 'Más de 50 sacos' };
+}
+
+function recalc() {
+  const destino = state.destinos.find(d => d.id == state.destinoId);
+  const breakdown = document.getElementById('breakdown');
+  const warnings = document.getElementById('warnings');
+  const totalEl = document.getElementById('total');
+  const totalMeta = document.getElementById('total-meta');
+
+  if (!destino) {
+    breakdown.innerHTML = '<div class="empty-state">Seleccione un destino para ver el desglose.</div>';
+    warnings.innerHTML = '';
+    totalEl.textContent = '$0.00';
+    totalMeta.textContent = 'Seleccione un destino';
+    return;
+  }
+
+  const camino = state.temporada === 'V' ? destino.caminoV : destino.caminoI;
+  const mult = CAMINO_MULT[camino] || 1;
+  const base = parseFloat(destino.tarifa) || 0;
+  const rVeh = VEH_RECARGO[state.vehiculo] || 0;
+  const rPeso = recargoPeso(state.peso);
+  const rSac = recargoSacos(state.sacos);
+  const rDesc = state.descargaPesada ? 5 : 0;
+  const rAyud = state.ayudantes * 5;
+  const rEsp = Math.floor(state.espera / 15) * 5;
+  const rFuera = state.fueraJornada ? 5 : 0;
+  const rParadas = state.paradas * 3;
+
+  const subtotal = base + rVeh + rPeso.v + rSac.v + rDesc + rAyud + rEsp + rFuera + rParadas;
+  const conMult = subtotal * mult;
+  const minAplicado = conMult < FLETE_MINIMO;
+  const total = Math.max(FLETE_MINIMO, conMult);
+
+  const rows = [];
+  rows.push(row(`Base — ${destino.destino}`, base));
+  rows.push(row(`Recargo vehículo — ${state.vehiculo}`, rVeh));
+  rows.push(row(`Recargo peso — ${rPeso.lbl}`, rPeso.v));
+  rows.push(row(`Recargo sacos — ${rSac.lbl}`, rSac.v));
+  rows.push(row('Descarga manual pesada', rDesc, !state.descargaPesada));
+  rows.push(row(`Ayudantes extra (${state.ayudantes} × $5)`, rAyud, state.ayudantes === 0));
+  rows.push(row(`Tiempo de espera (${state.espera} min)`, rEsp, state.espera === 0));
+  rows.push(row('Horario fuera de jornada', rFuera, !state.fueraJornada));
+  rows.push(row(`Paradas adicionales (${state.paradas} × $3)`, rParadas, state.paradas === 0));
+  rows.push(`<div class="breakdown-row subtotal"><span class="label">Subtotal</span><span class="value">$${subtotal.toFixed(2)}</span></div>`);
+  rows.push(`<div class="breakdown-row multiplier"><span class="label">× Multiplicador camino ${camino} (×${mult.toFixed(1)})</span><span class="value">$${conMult.toFixed(2)}</span></div>`);
+  if (minAplicado) {
+    rows.push(`<div class="breakdown-row zero"><span class="label">Flete mínimo aplicado</span><span class="value">$${FLETE_MINIMO.toFixed(2)}</span></div>`);
+  }
+  breakdown.innerHTML = rows.join('');
+
+  totalEl.textContent = '$' + total.toFixed(2);
+  const tempLbl = state.temporada === 'V' ? 'verano' : 'invierno';
+  totalMeta.textContent = `${destino.destino} · camino ${camino} (${tempLbl})`;
+
+  const ws = [];
+  if (base === 0) {
+    ws.push(`<div class="warning danger"><strong>⚠ Tarifa sin configurar:</strong> este destino no tiene tarifa cargada. Configure en el menú ⚙ antes de cotizar.</div>`);
+  }
+  if (!destino.municipio) {
+    ws.push(`<div class="warning"><strong>Nota:</strong> este destino no tiene municipio asignado.</div>`);
+  }
+  if (VEH_RANK[state.vehiculo] < VEH_RANK[destino.vehMin]) {
+    ws.push(`<div class="warning"><strong>⚠ Vehículo insuficiente:</strong> este destino requiere mínimo <strong>${destino.vehMin}</strong>.</div>`);
+  }
+  if (state.valorPedido > 0 && state.valorPedido < 50 && total > 8) {
+    ws.push(`<div class="warning"><strong>⚠ Pedido pequeño:</strong> $${state.valorPedido.toFixed(2)} para un flete de $${total.toFixed(2)}. Considere agrupar con otra entrega.</div>`);
+  }
+  warnings.innerHTML = ws.join('');
+}
+
+function row(label, value, isZero) {
+  const cls = isZero || value === 0 ? 'breakdown-row zero' : 'breakdown-row';
+  return `<div class="${cls}"><span class="label">${label}</span><span class="value">$${value.toFixed(2)}</span></div>`;
+}
+
+function copyBreakdown() {
+  const d = state.destinos.find(x => x.id == state.destinoId);
+  if (!d) { showToast('Seleccione un destino primero'); return; }
+  const text = document.querySelector('.total-value').textContent;
+  const lines = Array.from(document.querySelectorAll('.breakdown-row')).map(r =>
+    r.querySelector('.label').textContent + ': ' + r.querySelector('.value').textContent
+  ).join('\n');
+  const fullText = `COTIZACIÓN DE FLETE — Ferretería San José
+Destino: ${d.destino}${d.municipio ? ' (' + d.municipio + ')' : ''}
+Temporada: ${state.temporada === 'V' ? 'Verano' : 'Invierno'}
+Vehículo: ${state.vehiculo}
+
+${lines}
+
+TARIFA FINAL: ${text}`;
+  navigator.clipboard.writeText(fullText).then(() => showToast('Cotización copiada al portapapeles'));
+}
+
+function resetForm() {
+  state.peso = 0; state.sacos = 0; state.descargaPesada = false;
+  state.ayudantes = 0; state.espera = 0; state.fueraJornada = false;
+  state.paradas = 0; state.valorPedido = 0;
+  state.destinoId = ''; state.searchTerm = '';
+  document.getElementById('peso').value = 0;
+  document.getElementById('sacos').value = 0;
+  document.getElementById('descarga-pesada').checked = false;
+  document.getElementById('fuera-jornada').checked = false;
+  document.getElementById('valor-pedido').value = 0;
+  document.getElementById('ayudantes-val').textContent = '0';
+  document.getElementById('espera-val').textContent = '0 min';
+  document.getElementById('paradas-val').textContent = '0';
+  document.getElementById('destino-search').value = '';
+  document.getElementById('destino-info').textContent = 'Seleccione un destino de la lista';
+  populateDestinos();
+  recalc();
+}
+
+let editing = null;
+let filterTerm = '';
+
+function openConfig() {
+  editing = JSON.parse(JSON.stringify(state.destinos));
+  filterTerm = '';
+  document.getElementById('matriz-filter').value = '';
+  renderEditor();
+  updateStats();
+  document.getElementById('config-modal').classList.add('active');
+  document.getElementById('matriz-filter').oninput = e => {
+    filterTerm = e.target.value.trim().toLowerCase();
+    applyFilter();
+  };
+}
+function closeConfig() {
+  document.getElementById('config-modal').classList.remove('active');
+  editing = null;
+}
+
+function renderEditor() {
+  const body = document.getElementById('matriz-editor');
+  body.innerHTML = editing.map(d => rowHtml(d)).join('');
+  attachEditorListeners();
+  applyFilter();
+}
+
+function rowHtml(d) {
+  const isZero = !d.tarifa || d.tarifa === 0;
+  return `<tr data-id="${d.id}" class="${isZero ? 'warn-zero' : ''}">
+    <td class="col-id">${d.id}</td>
+    <td><input type="text" value="${escapeHtml(d.destino)}" data-field="destino"></td>
+    <td><input type="text" value="${escapeHtml(d.municipio || '')}" data-field="municipio" placeholder="(asignar)"></td>
+    <td><input type="text" value="${escapeHtml(d.maps || '')}" data-field="maps" class="maps-input" placeholder="Pega enlace de Google Maps…"></td>
+    <td><input type="number" min="0" step="0.5" value="${d.tarifa || 0}" data-field="tarifa"></td>
+    <td>${selectCamino(d.id, 'caminoV', d.caminoV)}</td>
+    <td>${selectCamino(d.id, 'caminoI', d.caminoI)}</td>
+    <td>${selectVeh(d.id, d.vehMin)}</td>
+    <td><input type="number" min="0" value="${d.tiempo || 0}" data-field="tiempo"></td>
+    <td><button class="btn-small danger" onclick="removeDestino(${d.id})" title="Eliminar">×</button></td>
+  </tr>`;
+}
+
+function selectCamino(id, field, current) {
+  return `<select data-field="${field}">${['A','B','C','D'].map(o =>
+    `<option value="${o}"${o === current ? ' selected' : ''}>${o}</option>`
+  ).join('')}</select>`;
+}
+function selectVeh(id, current) {
+  return `<select data-field="vehMin">${Object.keys(VEH_RECARGO).map(o =>
+    `<option value="${o}"${o === current ? ' selected' : ''}>${o}</option>`
+  ).join('')}</select>`;
+}
+
+function attachEditorListeners() {
+  document.querySelectorAll('#matriz-editor input, #matriz-editor select').forEach(inp => {
+    inp.addEventListener('change', e => {
+      const tr = e.target.closest('tr');
+      const id = parseInt(tr.dataset.id);
+      const field = e.target.dataset.field;
+      const item = editing.find(x => x.id === id);
+      if (!item) return;
+      let val = e.target.value;
+      if (field === 'tarifa' || field === 'tiempo') val = parseFloat(val) || 0;
+      item[field] = val;
+      const isZero = !item.tarifa || item.tarifa === 0;
+      tr.classList.toggle('warn-zero', isZero);
+      updateStats();
+    });
+  });
+}
+
+function applyFilter() {
+  document.querySelectorAll('#matriz-editor tr').forEach(tr => {
+    if (!filterTerm) { tr.classList.remove('hidden'); return; }
+    const id = parseInt(tr.dataset.id);
+    const item = editing.find(x => x.id === id);
+    const haystack = (item.destino + ' ' + (item.municipio || '')).toLowerCase();
+    tr.classList.toggle('hidden', !haystack.includes(filterTerm));
+  });
+}
+
+function updateStats() {
+  const total = editing.length;
+  const sinTarifa = editing.filter(d => !d.tarifa || d.tarifa === 0).length;
+  const sinMuni = editing.filter(d => !d.municipio).length;
+  document.getElementById('config-stats').textContent =
+    `${total} destinos · ${sinTarifa} sin tarifa · ${sinMuni} sin municipio`;
+}
+
+function addDestino() {
+  const maxId = editing.reduce((m, d) => Math.max(m, d.id), 0);
+  const nuevo = { id: maxId + 1, destino: '', municipio: '', maps: '', tarifa: 0, caminoV: 'B', caminoI: 'C', vehMin: 'P1', tiempo: 30 };
+  editing.push(nuevo);
+  renderEditor();
+  updateStats();
+  showToast('Nuevo destino agregado al final');
+  setTimeout(() => {
+    const trs = document.querySelectorAll('#matriz-editor tr');
+    if (trs.length) trs[trs.length - 1].scrollIntoView({ behavior: 'smooth' });
+  }, 50);
+}
+
+function removeDestino(id) {
+  if (!confirm('¿Eliminar este destino?')) return;
+  editing = editing.filter(d => d.id !== id);
+  renderEditor();
+  updateStats();
+}
+
+function saveConfig() {
+  state.destinos = editing;
+  saveDestinos();
+  closeConfig();
+  showToast('Cambios guardados');
+  populateDestinos();
+}
+
+function resetDestinos() {
+  if (!confirm('Esto restaurará la lista original y borrará todos los cambios. ¿Continuar?')) return;
+  editing = JSON.parse(JSON.stringify(DEFAULT_DESTINOS));
+  renderEditor();
+  updateStats();
+}
+
+function exportConfig() {
+  const blob = new Blob([JSON.stringify(editing, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const today = new Date().toISOString().split('T')[0];
+  a.href = url;
+  a.download = `destinos-fletes-${today}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Archivo descargado');
+}
+
+function importConfig(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) throw new Error('Formato inválido');
+      editing = data;
+      renderEditor();
+      updateStats();
+      showToast('Archivo cargado — recuerde guardar');
+    } catch (err) {
+      alert('Error al leer el archivo: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+/* El candado (elegir empleado + clave) lo maneja acceso.js */
+
+init();
+</script>
+
+</body>
+</html>

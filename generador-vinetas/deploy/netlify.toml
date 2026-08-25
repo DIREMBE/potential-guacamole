@@ -1,0 +1,63 @@
+# Configuración de Netlify — Ferretería San José
+
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+# Las fotos de producto se guardan en Netlify Blobs (ver netlify/functions/fotos.mjs)
+# y se sirven en /api/fotos — así se ven en todos los dispositivos sin volver a
+# subir archivos al sitio.
+
+# Los manuales (LEEME-DEPLOY.md, COMO-INSTALAR.md) van en esta misma carpeta
+# porque son para ti, pero traen las claves de los empleados. Sin esto,
+# cualquiera podría leerlos escribiendo la dirección del archivo. Con esto el
+# sitio responde "no existe" y siguen sirviéndote a ti en tu computadora.
+[[redirects]]
+  from = "/*.md"
+  to = "/index.html"
+  status = 404
+  force = true
+
+# Lo mismo con los archivos de configuración que no tiene por qué ver nadie.
+[[redirects]]
+  from = "/package.json"
+  to = "/index.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package-lock.json"
+  to = "/index.html"
+  status = 404
+  force = true
+
+# Las páginas internas no deben quedar en Google ni en cachés públicas.
+[[headers]]
+  for = "/interno.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
+  for = "/inventario-admin.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
+  for = "/analisis-inventario.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
+  for = "/vinetas-precios.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
+  for = "/calculadora-fletes.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
+  for = "/usuarios.js"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"

@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Análisis de inventario · interno — Ferretería San José</title>
+<link rel="icon" type="image/png" href="assets/emblem.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#F06030; --orange-2:#d6481c; --blue:#0070C0; --blue-2:#0a5c99;
+  --s50:#f6f5f3; --s100:#e9e6e1; --s200:#d3cec5; --s300:#b3ab9d; --s400:#8b8175;
+  --s500:#6b6255; --s600:#544c42; --s700:#3f3931; --s900:#171512;
+  --ok:#2e7d43; --ok-bg:#e7f3ea; --warn:#c98a12; --warn-bg:#fbf1de;
+  --dang:#c22e26; --dang-bg:#fbe9e7; --r:6px; --rl:10px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--s50);color:var(--s900);font-family:'Barlow',system-ui,sans-serif;font-size:15px;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.04em;margin:0;line-height:1.05}
+a{color:var(--blue-2)}
+img{display:block;max-width:100%}
+button,input,select{font-family:inherit}
+
+/* El candado (pantalla de acceso) vive en acceso.js */
+
+header.bar{background:var(--s900);color:#fff;border-bottom:3px solid var(--orange)}
+.bar-in{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:12px clamp(16px,4vw,40px)}
+.bar-in img{height:40px}
+.bt{display:flex;flex-direction:column;line-height:1.15}
+.bt .n{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:19px}
+.bt .s{font-size:12px;color:var(--s300);text-transform:uppercase;letter-spacing:.08em}
+.bar-in .right{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:13.5px;color:var(--s300)}
+.bar-in .right a{color:var(--s300);text-decoration:none}
+.bar-in .right a:hover{color:var(--orange)}
+
+.wrap{max-width:1240px;margin:0 auto;padding:22px clamp(16px,4vw,40px) 70px}
+.card{background:#fff;border:1px solid var(--s200);border-radius:var(--rl);box-shadow:0 1px 2px rgba(23,21,18,.08);margin-bottom:18px}
+.card-h{padding:14px 18px;border-bottom:1px solid var(--s100);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.card-h h2{font-size:17px}
+.card-h .hint{font-size:12.5px;color:var(--s500);font-family:'Barlow',sans-serif;text-transform:none;letter-spacing:0}
+.card-b{padding:16px 18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:600;font-size:14px;padding:9px 15px;border-radius:var(--r);border:1px solid transparent;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.b-pri{background:var(--orange);color:#fff}.b-pri:not(:disabled):hover{background:var(--orange-2)}
+.b-sec{background:var(--blue);color:#fff}.b-sec:not(:disabled):hover{background:var(--blue-2)}
+.b-gh{background:#fff;color:var(--s700);border-color:var(--s300)}.b-gh:not(:disabled):hover{background:var(--s50)}
+.b-sm{padding:6px 11px;font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* Tarjetas de métricas */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.kpi{border:1px solid var(--s200);border-radius:var(--rl);padding:14px 16px;background:#fff}
+.kpi .v{font-family:'Anton',sans-serif;font-size:27px;line-height:1;color:var(--s900)}
+.kpi .l{font-size:12px;color:var(--s500);text-transform:uppercase;letter-spacing:.04em;margin-top:4px}
+.kpi .x{font-size:12px;color:var(--s400);margin-top:3px}
+.kpi.ok{border-color:var(--ok);background:var(--ok-bg)} .kpi.ok .v{color:var(--ok)}
+.kpi.w{border-color:var(--warn);background:var(--warn-bg)} .kpi.w .v{color:#8a5d05}
+.kpi.d{border-color:var(--dang);background:var(--dang-bg)} .kpi.d .v{color:var(--dang)}
+.kpi.b{border-color:var(--blue);background:#e8f2fa} .kpi.b .v{color:var(--blue-2)}
+
+/* Anomalías */
+.an{border:1px solid var(--s200);border-radius:var(--rl);margin-bottom:10px;overflow:hidden}
+.an-h{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;background:#fff}
+.an-h:hover{background:var(--s50)}
+.an-h .n{font-family:'Anton',sans-serif;font-size:20px;min-width:56px}
+.an-h .t{flex:1;min-width:0}
+.an-h .t b{font-size:14.5px}
+.an-h .t span{display:block;font-size:12.5px;color:var(--s500);margin-top:2px}
+.an-h .ch{color:var(--s400);font-size:13px}
+.an.grave .n{color:var(--dang)} .an.grave{border-left:4px solid var(--dang)}
+.an.medio .n{color:var(--warn)} .an.medio{border-left:4px solid var(--warn)}
+.an.leve  .n{color:var(--s500)} .an.leve{border-left:4px solid var(--s300)}
+.an-b{display:none;border-top:1px solid var(--s100);padding:0}
+.an.on .an-b{display:block}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;font-size:12px;letter-spacing:.03em;color:var(--s600);padding:7px 10px;border-bottom:2px solid var(--s200);white-space:nowrap;background:var(--s50)}
+td{padding:7px 10px;border-bottom:1px solid var(--s100)}
+tr:hover td{background:var(--s50)}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:12.5px}
+.scroll{max-height:340px;overflow:auto}
+.mas{padding:8px 12px;font-size:12.5px;color:var(--s500);background:var(--s50)}
+.empty{color:var(--s400);font-style:italic;padding:26px;text-align:center}
+.note{font-size:13px;color:var(--s500);background:var(--s50);border:1px solid var(--s100);border-radius:var(--r);padding:10px 12px;margin-top:12px}
+.note b{color:var(--s700)}
+.bar-cat{height:8px;background:var(--s100);border-radius:99px;overflow:hidden;min-width:60px}
+.bar-cat i{display:block;height:100%;background:var(--orange)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(16px);opacity:0;background:var(--s900);color:#fff;padding:11px 18px;border-radius:var(--r);font-size:14px;z-index:200;transition:.2s;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.toast.err{background:var(--dang)}
+</style>
+<script src="usuarios.js"></script>
+<script>window.FSJ_ACCESO = { sub: 'Análisis de inventario · solo personal' };</script>
+<script src="acceso.js"></script>
+</head>
+<body>
+
+
+<header class="bar">
+  <div class="bar-in">
+    <img src="assets/emblem.png" alt="Ferretería San José" onerror="this.style.display='none'">
+    <div class="bt"><span class="n">Ferretería San José</span><span class="s">Análisis de inventario · interno</span></div>
+    <div class="right"><span id="quien">—</span><a href="interno.html">← Panel</a></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <div class="card-h">
+      <h2>Analizar reporte de inventario</h2>
+      <span class="hint">Lee el reporte de FelTec tal como sale, aunque traiga errores</span>
+    </div>
+    <div class="card-b">
+      <div class="row">
+        <label class="btn b-sec" for="file">📊 Elegir reporte (.xlsx)</label>
+        <input id="file" type="file" accept=".xlsx,.xls,.csv" style="display:none">
+        <span id="fname" style="font-size:13.5px;color:var(--s500)"></span>
+      </div>
+      <div class="note">
+        No cambia nada de tu inventario: solo lee el archivo y te muestra
+        <b>métricas</b> y <b>posibles errores</b>. Todo ocurre en este navegador.
+      </div>
+    </div>
+  </div>
+
+  <div id="res" style="display:none">
+    <div class="card" id="card-comp" style="display:none">
+      <div class="card-h"><h2>Comparación con el informe anterior</h2>
+        <span class="hint" id="comp-sub"></span></div>
+      <div class="card-b">
+        <div class="kpis" id="comp-kpis"></div>
+        <div id="comp-errores" style="margin-top:16px"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Resumen</h2><span class="hint" id="res-sub"></span>
+        <button class="btn b-gh b-sm" id="csv" style="margin-left:auto">Descargar informe (CSV)</button></div>
+      <div class="card-b"><div class="kpis" id="kpis"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Posibles errores</h2><span class="hint">Pulsa cada uno para ver el detalle</span></div>
+      <div class="card-b"><div id="anomalias"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Dinero e inventario</h2></div>
+      <div class="card-b"><div class="kpis" id="kpis2"></div>
+        <div class="note" id="nota-valor"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Por categoría</h2><span class="hint">Las 15 con más valor en existencia</span></div>
+      <div class="card-b"><div class="scroll"><table>
+        <thead><tr><th>Categoría</th><th>Productos</th><th>Con stock</th><th>Valor a costo</th><th>Valor a venta</th><th></th></tr></thead>
+        <tbody id="cats"></tbody></table></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Movimiento del periodo</h2><span class="hint">Según SALIDA y C.T. VENTA del reporte</span></div>
+      <div class="card-b">
+        <div class="kpis" id="kpis3" style="margin-bottom:16px"></div>
+        <h3 style="font-size:14px;margin-bottom:8px">Los 15 que más salieron</h3>
+        <div class="scroll"><table>
+          <thead><tr><th>ITEM</th><th>Producto</th><th>Salidas</th><th>Existencia</th><th>Precio</th></tr></thead>
+          <tbody id="top-mov"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="card-hist" style="display:none">
+    <div class="card-h">
+      <h2>Informes anteriores</h2>
+      <span class="hint" id="hist-sub"></span>
+      <span style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn b-gh b-sm" id="hist-csv">Descargar historial (CSV)</button>
+        <button class="btn b-dg b-sm" id="hist-borrar">Borrar historial</button>
+      </span>
+    </div>
+    <div class="card-b">
+      <div class="note" style="margin-top:0">
+        Cada informe que analizas se guarda <b>en este equipo</b> (solo los números,
+        no el archivo). Sirve para ver si el inventario mejora y para separar los
+        errores <b>crónicos</b> —los que se repiten informe tras informe— de los que
+        fueron cosa de un día.
+      </div>
+      <div class="scroll" style="margin-top:12px"><table>
+        <thead><tr><th>Fecha</th><th>Archivo</th><th>Productos</th><th>Sin precio</th><th>Valor a costo</th><th>Errores</th><th></th></tr></thead>
+        <tbody id="hist-body"></tbody></table></div>
+
+      <h3 style="font-size:14px;margin:20px 0 4px">Errores crónicos</h3>
+      <div class="note" style="margin-top:4px">
+        Productos con el <b>mismo error</b> en al menos <b>3</b> informes. Son los
+        que conviene arreglar primero: no son un descuido puntual.
+      </div>
+      <div id="cronicos" style="margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.mini.min.js"></script>
+<script>
+(function(){
+  'use strict';
+  var $=function(id){return document.getElementById(id);};
+  var nf=function(n){return Number(n||0).toLocaleString('es-SV');};
+  var money=function(n){return 'US$'+(Number(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var money0=function(n){return 'US$'+(Number(n)||0).toLocaleString('en-US',{maximumFractionDigits:0});};
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});};
+  var tt; function toast(m,e){var t=$('toast');t.textContent=m;t.className='toast on'+(e?' err':'');clearTimeout(tt);tt=setTimeout(function(){t.className='toast'+(e?' err':'');},2800);}
+
+  /* ---------------- Umbrales de detección (ajustables) ---------------- */
+  var STOCK_CENTINELA = 9000;    // existencias así de altas suelen ser un error/"sin control"
+  var MARGEN_ALTO     = 300;     // % de margen que hace sospechar de un error de precio
+  var num=function(v){ var n=parseFloat(String(v==null?'':v).replace(/,/g,'').replace(/\s/g,'')); return isFinite(n)?n:0; };
+
+  var datos=null, anomalias=[];
+
+  /* ------------------------- Lectura del archivo ---------------------- */
+  function columnas(cab){
+    var H=cab.map(function(h){return String(h==null?'':h).trim().toUpperCase();});
+    function buscar(){ for(var i=0;i<arguments.length;i++){var k=H.indexOf(arguments[i]); if(k>=0) return k;} return -1; }
+    return {
+      item:buscar('ITEM','CODIGO','ID'), nombre:buscar('PRODUCTO','DESCRIPCION','NOMBRE'),
+      cat:buscar('CATEGORIA','CATEGORÍA'), uni:buscar('UNIDAD MEDIDA','UNIDAD'),
+      saldo:buscar('SALDO ANTERIOR','SALDO'), ent:buscar('ENTRADA','ENTRADAS'),
+      sal:buscar('SALIDA','SALIDAS'), exist:buscar('EXISTENCIA','STOCK'),
+      venta:buscar('C. VENTA','PRECIO VENTA','PRECIO'), tventa:buscar('C. T. VENTA'),
+      compra:buscar('C. COMPRA','COSTO','COSTO UNITARIO'), costot:buscar('COSTO TOTAL')
+    };
+  }
+  function esProducto(v){
+    var s=String(v==null?'':v).trim();
+    if(!s) return false;
+    if(/^totales?\s*:?$/i.test(s)) return false;
+    return /\d/.test(s);
+  }
+
+  function analizar(filas, col){
+    var d=[], descartadas=0;
+    for(var i=1;i<filas.length;i++){
+      var f=filas[i];
+      if(!f || !f.length){ continue; }
+      if(!esProducto(f[col.item])){ descartadas++; continue; }
+      d.push({
+        item:String(f[col.item]).trim(),
+        nombre:String(f[col.nombre]==null?'':f[col.nombre]).trim(),
+        cat:col.cat>=0?String(f[col.cat]||'').trim():'',
+        uni:col.uni>=0?String(f[col.uni]||'').trim():'',
+        saldo:num(f[col.saldo]), ent:num(f[col.ent]), sal:num(f[col.sal]),
+        exist:num(f[col.exist]), venta:num(f[col.venta]), tventa:num(f[col.tventa]),
+        compra:num(f[col.compra]), costot:num(f[col.costot])
+      });
+    }
+    return {filas:d, descartadas:descartadas};
+  }
+
+  /* --------------------------- Detección de errores -------------------- */
+  function detectar(D){
+    var A=[];
+    var vistos={}, dups=[];
+    D.forEach(function(p){ if(vistos[p.item]) dups.push(p); else vistos[p.item]=1; });
+
+    var centinela = D.filter(function(p){ return p.exist >= STOCK_CENTINELA; });
+    var negativos = D.filter(function(p){ return p.exist < 0; });
+    var stockSinPrecio = D.filter(function(p){ return p.exist > 0 && p.venta <= 0; });
+    var bajoCosto = D.filter(function(p){ return p.venta > 0 && p.compra > 0 && p.venta < p.compra; });
+    var margenRaro = D.filter(function(p){ return p.venta>0 && p.compra>0 && ((p.venta-p.compra)/p.compra*100) > MARGEN_ALTO; });
+    var sinCosto = D.filter(function(p){ return p.compra <= 0 && p.exist > 0; });
+    var sinNombre = D.filter(function(p){ return !p.nombre; });
+    var sinCat = D.filter(function(p){ return !p.cat; });
+    var descuadre = D.filter(function(p){ return Math.abs((p.saldo + p.ent - p.sal) - p.exist) > 0.009; });
+    var salioSinStock = D.filter(function(p){ return p.sal > 0 && p.exist <= 0; });
+
+    function reg(clave,nivel,titulo,desc,lista,cols){ if(lista.length) A.push({clave:clave,nivel:nivel,titulo:titulo,desc:desc,lista:lista,cols:cols}); }
+
+    var C_STOCK=[['item','ITEM'],['nombre','Producto'],['exist','Existencia'],['uni','Unidad'],['venta','Precio']];
+    var C_PRECIO=[['item','ITEM'],['nombre','Producto'],['compra','Costo'],['venta','Venta'],['exist','Existencia']];
+
+    reg('centinela','grave','Existencias imposibles',
+        'Cantidades enormes (≥ '+nf(STOCK_CENTINELA)+'). Suelen ser un error de digitación o un producto "sin control de stock". Inflan el valor del inventario.',
+        centinela, C_STOCK);
+    reg('negativos','grave','Existencias negativas',
+        'Se vendió más de lo que había registrado. Indica faltantes de ingreso o errores de conteo.',
+        negativos, C_STOCK);
+    reg('bajocosto','grave','Se venden por debajo del costo',
+        'El precio de venta es menor que el costo de compra: cada venta genera pérdida.',
+        bajoCosto, C_PRECIO);
+    reg('sinprecio','medio','Con existencia pero sin precio de venta',
+        'Hay producto en bodega que no se puede cotizar ni aparece en el catálogo.',
+        stockSinPrecio, C_STOCK);
+    reg('margen','medio','Margen sospechosamente alto',
+        'Margen mayor a '+MARGEN_ALTO+'%. Puede ser correcto, pero conviene revisar si falta un decimal.',
+        margenRaro, C_PRECIO);
+    reg('sincosto','medio','Con existencia pero sin costo de compra',
+        'Sin costo no se puede calcular la ganancia ni valorar el inventario correctamente.',
+        sinCosto, C_PRECIO);
+    reg('descuadre','medio','No cuadra el movimiento',
+        'Saldo anterior + entradas − salidas no coincide con la existencia.',
+        descuadre, [['item','ITEM'],['nombre','Producto'],['saldo','Saldo ant.'],['ent','Entradas'],['sal','Salidas'],['exist','Existencia']]);
+    reg('saliosinstock','leve','Salidas sin existencia',
+        'Tuvo salidas en el periodo y quedó en cero o menos. Revisa si falta reponer.',
+        salioSinStock, C_STOCK);
+    reg('dups','leve','ITEM repetido', 'El mismo código aparece más de una vez.', dups, C_STOCK);
+    reg('sinnombre','leve','Sin nombre de producto','Filas sin descripción.', sinNombre, C_STOCK);
+    reg('sincat','leve','Sin categoría','No se podrán filtrar en el catálogo.', sinCat, C_STOCK);
+    return A;
+  }
+
+  /* ------------------------------ Métricas ---------------------------- */
+  function metricas(D){
+    var normales = D.filter(function(p){ return p.exist < STOCK_CENTINELA; });
+    function val(l,campo){ return l.reduce(function(a,p){ return a + (p.exist>0 ? p.exist*p[campo] : 0); },0); }
+    var margenes = D.filter(function(p){return p.venta>0&&p.compra>0;})
+                    .map(function(p){return (p.venta-p.compra)/p.compra*100;}).sort(function(a,b){return a-b;});
+    var vendido = D.reduce(function(a,p){ return a + (p.exist<STOCK_CENTINELA ? p.tventa : 0); },0);
+    return {
+      total:D.length,
+      conStock:D.filter(function(p){return p.exist>0;}).length,
+      sinStock:D.filter(function(p){return p.exist<=0;}).length,
+      conPrecio:D.filter(function(p){return p.venta>0;}).length,
+      sinPrecio:D.filter(function(p){return p.venta<=0;}).length,
+      categorias:Object.keys(D.reduce(function(m,p){ if(p.cat) m[p.cat]=1; return m; },{})).length,
+      valorCosto:val(normales,'compra'),
+      valorVenta:val(normales,'venta'),
+      margenMediano: margenes.length ? margenes[Math.floor(margenes.length/2)] : 0,
+      conMovimiento:D.filter(function(p){return p.sal>0;}).length,
+      sinMovimiento:D.filter(function(p){return p.sal<=0 && p.exist>0;}).length,
+      vendido:vendido,
+      excluidos:D.length-normales.length
+    };
+  }
+
+  function porCategoria(D){
+    var m={};
+    D.forEach(function(p){
+      if(p.exist>=STOCK_CENTINELA) return;
+      var c=p.cat||'(sin categoría)';
+      if(!m[c]) m[c]={cat:c,n:0,stock:0,costo:0,venta:0};
+      m[c].n++;
+      if(p.exist>0){ m[c].stock++; m[c].costo+=p.exist*p.compra; m[c].venta+=p.exist*p.venta; }
+    });
+    return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.costo-a.costo;});
+  }
+
+  /* ------------------------------ Pintado ------------------------------ */
+  function kpi(v,l,x,cls){ return '<div class="kpi '+(cls||'')+'"><div class="v">'+v+'</div><div class="l">'+l+'</div>'+(x?'<div class="x">'+x+'</div>':'')+'</div>'; }
+
+  function pintar(){
+    var D=datos.filas, M=metricas(D);
+    $('res').style.display='block';
+    $('res-sub').textContent = nf(M.total)+' productos analizados'+(datos.descartadas?' · '+datos.descartadas+' fila(s) descartada(s) (totales/encabezados)':'');
+
+    $('kpis').innerHTML =
+      kpi(nf(M.total),'Productos') +
+      kpi(nf(M.conStock),'Con existencia', nf(M.sinStock)+' en cero','ok') +
+      kpi(nf(M.sinPrecio),'Sin precio de venta', 'no se pueden cotizar', M.sinPrecio? 'w':'') +
+      kpi(nf(M.categorias),'Categorías') +
+      kpi(nf(anomalias.reduce(function(a,x){return a+x.lista.length;},0)),'Posibles errores','detectados', 'd');
+
+    $('kpis2').innerHTML =
+      kpi(money0(M.valorCosto),'Valor a costo','lo que costó la mercadería','b') +
+      kpi(money0(M.valorVenta),'Valor a precio de venta','si se vendiera todo','ok') +
+      kpi(money0(M.valorVenta-M.valorCosto),'Ganancia potencial','') +
+      kpi(M.margenMediano.toFixed(1)+'%','Margen mediano','la mitad gana más que esto');
+
+    $('nota-valor').innerHTML = M.excluidos
+      ? '<b>Nota:</b> se excluyeron <b>'+nf(M.excluidos)+'</b> producto(s) con existencias imposibles (≥ '+nf(STOCK_CENTINELA)+') porque distorsionan el total. Míralos en “Existencias imposibles”.'
+      : '<b>Nota:</b> el valor se calcula como existencia × precio de cada producto.';
+
+    $('kpis3').innerHTML =
+      kpi(nf(M.conMovimiento),'Con salidas','se movieron en el periodo','ok') +
+      kpi(nf(M.sinMovimiento),'Con stock, sin salidas','dinero detenido','w') +
+      kpi(money0(M.vendido),'Vendido en el periodo','según C.T. VENTA');
+
+    // categorías
+    var cats=porCategoria(D).slice(0,15);
+    var maxc = cats.length ? cats[0].costo : 1;
+    $('cats').innerHTML = cats.map(function(c){
+      return '<tr><td><b>'+esc(c.cat)+'</b></td><td>'+nf(c.n)+'</td><td>'+nf(c.stock)+'</td>'+
+        '<td class="mono">'+money0(c.costo)+'</td><td class="mono">'+money0(c.venta)+'</td>'+
+        '<td style="width:120px"><span class="bar-cat"><i style="width:'+Math.max(2,Math.round(c.costo/maxc*100))+'%"></i></span></td></tr>';
+    }).join('');
+
+    // top movimiento
+    var top=D.filter(function(p){return p.sal>0 && p.exist<STOCK_CENTINELA;}).sort(function(a,b){return b.sal-a.sal;}).slice(0,15);
+    $('top-mov').innerHTML = top.length ? top.map(function(p){
+      return '<tr><td class="mono">'+esc(p.item)+'</td><td>'+esc(p.nombre)+'</td>'+
+        '<td><b>'+nf(p.sal)+'</b></td><td>'+nf(p.exist)+'</td><td class="mono">'+money(p.venta)+'</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="empty">Sin salidas registradas en el periodo.</td></tr>';
+
+    // anomalías
+    $('anomalias').innerHTML = anomalias.length ? anomalias.map(function(a,i){
+      var filas = a.lista.slice(0,50);
+      return '<div class="an '+a.nivel+'" data-i="'+i+'">'+
+        '<div class="an-h"><span class="n">'+nf(a.lista.length)+'</span>'+
+          '<span class="t"><b>'+esc(a.titulo)+'</b><span>'+esc(a.desc)+'</span></span>'+
+          '<span class="ch">ver ▾</span></div>'+
+        '<div class="an-b"><div class="scroll"><table><thead><tr>'+
+          a.cols.map(function(c){return '<th>'+esc(c[1])+'</th>';}).join('')+
+        '</tr></thead><tbody>'+
+          filas.map(function(p){
+            return '<tr>'+a.cols.map(function(c){
+              var v=p[c[0]];
+              if(c[0]==='venta'||c[0]==='compra') return '<td class="mono">'+money(v)+'</td>';
+              if(typeof v==='number') return '<td class="mono">'+nf(v)+'</td>';
+              return '<td'+(c[0]==='item'?' class="mono"':'')+'>'+esc(v)+'</td>';
+            }).join('')+'</tr>';
+          }).join('')+
+        '</tbody></table></div>'+
+        (a.lista.length>50 ? '<div class="mas">Se muestran 50 de '+nf(a.lista.length)+'. Descarga el informe para verlos todos.</div>':'')+
+        '</div></div>';
+    }).join('') : '<div class="empty">No se encontraron errores en este reporte.</div>';
+  }
+
+  $('anomalias').addEventListener('click', function(e){
+    var h=e.target.closest('.an-h'); if(!h) return;
+    var an=h.closest('.an'); an.classList.toggle('on');
+    h.querySelector('.ch').textContent = an.classList.contains('on') ? 'ocultar ▴' : 'ver ▾';
+  });
+
+  /* ------------------------------ Informe CSV --------------------------- */
+  function csvCell(v){ var s=String(v==null?'':v); return /[",\n;]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+  function bajarCSV(nombre, texto){
+    // el \ufeff del inicio es para que Excel abra bien los acentos
+    var blob=new Blob(['﻿'+texto],{type:'text/csv;charset=utf-8'});
+    var url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url; a.download=nombre; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url);},1000);
+  }
+  $('csv').addEventListener('click', function(){
+    if(!datos) return;
+    var M=metricas(datos.filas), L=[];
+    L.push('INFORME DE INVENTARIO - Ferreteria San Jose');
+    L.push('Generado,'+new Date().toLocaleString('es-SV'));
+    L.push('');
+    L.push('METRICA,VALOR');
+    L.push('Productos,'+M.total);
+    L.push('Con existencia,'+M.conStock);
+    L.push('Sin precio de venta,'+M.sinPrecio);
+    L.push('Categorias,'+M.categorias);
+    L.push('Valor a costo,'+M.valorCosto.toFixed(2));
+    L.push('Valor a precio de venta,'+M.valorVenta.toFixed(2));
+    L.push('Ganancia potencial,'+(M.valorVenta-M.valorCosto).toFixed(2));
+    L.push('Margen mediano %,'+M.margenMediano.toFixed(1));
+    L.push('Con salidas,'+M.conMovimiento);
+    L.push('Con stock sin salidas,'+M.sinMovimiento);
+    L.push('');
+    L.push('POSIBLES ERRORES');
+    L.push('TIPO,NIVEL,CANTIDAD');
+    anomalias.forEach(function(a){ L.push(csvCell(a.titulo)+','+a.nivel+','+a.lista.length); });
+    L.push('');
+    L.push('DETALLE');
+    L.push('TIPO,ITEM,PRODUCTO,EXISTENCIA,COSTO,VENTA');
+    anomalias.forEach(function(a){
+      a.lista.forEach(function(p){
+        L.push([csvCell(a.titulo),csvCell(p.item),csvCell(p.nombre),p.exist,p.compra.toFixed(2),p.venta.toFixed(2)].join(','));
+      });
+    });
+    bajarCSV('informe-inventario.csv', L.join('\r\n'));
+    toast('Informe descargado.');
+  });
+
+  /* ------------------------------- Carga -------------------------------- */
+  $('file').addEventListener('change', function(e){
+    var f=e.target.files && e.target.files[0]; if(!f) return;
+    $('fname').textContent=f.name+' — leyendo…';
+    f.arrayBuffer().then(function(buf){
+      var wb=XLSX.read(new Uint8Array(buf),{type:'array'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var filas=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,blankrows:false});
+      if(!filas.length) throw new Error('El archivo está vacío.');
+      var col=columnas(filas[0]);
+      if(col.item<0 || col.nombre<0) throw new Error('No se encontraron las columnas ITEM y PRODUCTO.');
+      datos=analizar(filas,col);
+      if(!datos.filas.length) throw new Error('No se encontraron productos en el archivo.');
+      anomalias=detectar(datos.filas);
+      pintar();
+      $('fname').textContent=f.name;
+      toast('Analizados '+nf(datos.filas.length)+' productos.');
+
+      /* Se guarda el informe y se compara con el anterior. El "anterior" se
+         toma ANTES de guardar este, para no compararlo consigo mismo. */
+      var previo = historial[0] || null;
+      var reg = armarRegistro(f.name, metricas(datos.filas), anomalias);
+      pintarComparacion(reg, previo);
+      guardarInforme(reg).then(function(ok){
+        pintarHistorial();
+        if(!ok) toast('El informe no se pudo guardar en el historial.', true);
+      });
+    }).catch(function(err){
+      $('fname').textContent='';
+      toast(err.message||'No se pudo leer el archivo.', true);
+    });
+    e.target.value='';
+  });
+
+
+  /* ====================================================================
+     HISTORIAL DE INFORMES
+     Cada análisis se guarda en este navegador (IndexedDB): solo los números
+     y los ITEM con error, nunca el archivo. Con eso se puede:
+       · comparar cada informe con el anterior,
+       · ver si el inventario mejora o empeora,
+       · y separar los errores CRÓNICOS (se repiten) de los de un solo día.
+     ==================================================================== */
+  var HIST_DB='fsj-analisis', HIST_VER=1, HIST_ST='informes';
+  var MAX_INFORMES=24;            // se conservan los 24 más recientes
+  var MAX_ITEMS_POR_ERROR=4000;   // tope por tipo de error, para no crecer sin control
+  var CRONICO_MIN=3;              // aparecer en 3 informes ya lo hace crónico
+  var historial=[];
+
+  function hdb(){
+    return new Promise(function(res,rej){
+      var r=indexedDB.open(HIST_DB,HIST_VER);
+      r.onupgradeneeded=function(){
+        var d=r.result;
+        if(!d.objectStoreNames.contains(HIST_ST)) d.createObjectStore(HIST_ST,{keyPath:'id'});
+      };
+      r.onsuccess=function(){res(r.result);};
+      r.onerror=function(){rej(r.error);};
+    });
+  }
+  function hTx(modo){
+    return hdb().then(function(d){ return d.transaction(HIST_ST,modo).objectStore(HIST_ST); });
+  }
+  function hPeticion(req){
+    return new Promise(function(res,rej){ req.onsuccess=function(){res(req.result);}; req.onerror=function(){rej(req.error);}; });
+  }
+  function cargarHistorial(){
+    if(!window.indexedDB) return Promise.resolve([]);
+    return hTx('readonly').then(function(st){ return hPeticion(st.getAll()); })
+      .then(function(l){
+        historial=(l||[]).sort(function(a,b){ return b.fecha-a.fecha; });
+        return historial;
+      }).catch(function(){ historial=[]; return historial; });
+  }
+  function podar(){
+    return hTx('readonly').then(function(st){ return hPeticion(st.getAll()); }).then(function(l){
+      l=(l||[]).sort(function(a,b){ return b.fecha-a.fecha; });
+      var sobran=l.slice(MAX_INFORMES);
+      if(!sobran.length) return true;
+      return hTx('readwrite').then(function(st){
+        sobran.forEach(function(x){ st.delete(x.id); });
+        return true;
+      });
+    });
+  }
+  function guardarInforme(reg){
+    if(!window.indexedDB) return Promise.resolve(false);
+    return hTx('readwrite').then(function(st){ return hPeticion(st.put(reg)); })
+      .then(function(){ return podar(); })
+      .then(function(){ return cargarHistorial(); })
+      .then(function(){ return true; })
+      .catch(function(){ return false; });
+  }
+  function borrarInforme(id){
+    return hTx('readwrite').then(function(st){ return hPeticion(st.delete(id)); })
+      .then(cargarHistorial);
+  }
+  function borrarTodo(){
+    return hTx('readwrite').then(function(st){ return hPeticion(st.clear()); })
+      .then(cargarHistorial);
+  }
+
+  /* Resumen compacto del análisis actual, listo para guardar. */
+  function armarRegistro(nombreArchivo, M, A){
+    var errores={}, items={};
+    A.forEach(function(a){
+      errores[a.clave]={ titulo:a.titulo, nivel:a.nivel, n:a.lista.length };
+      items[a.clave]=a.lista.slice(0,MAX_ITEMS_POR_ERROR).map(function(p){ return String(p.item); });
+    });
+    var u = window.FSJAuth && FSJAuth.usuario();
+    return {
+      id: 'inf-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
+      fecha: Date.now(),
+      archivo: String(nombreArchivo||'(sin nombre)'),
+      empleado: (u && u.nombre) || '',
+      metricas: M,
+      errores: errores,
+      items: items,
+      totalErrores: A.reduce(function(a,x){ return a+x.lista.length; },0)
+    };
+  }
+
+  /* --------------------- Comparación con el anterior ------------------- */
+  function pintarComparacion(actual, previo){
+    if(!previo){ $('card-comp').style.display='none'; return; }
+    $('card-comp').style.display='block';
+    var f=new Date(previo.fecha);
+    $('comp-sub').textContent = 'Contra el informe del '+
+      f.toLocaleDateString('es-SV',{day:'2-digit',month:'short',year:'numeric'})+' ('+previo.archivo+')';
+
+    /* mejorSube: si subir es bueno (true), malo (false) o da igual (sin poner) */
+    function delta(v, ant, opts){
+      var d=v-ant, fmt=opts.money?money0:nf, cls='';
+      if(d!==0 && opts.mejorSube!==undefined) cls=((d>0)===opts.mejorSube)?'ok':'d';
+      var txt = d===0 ? 'igual que antes' : (d>0?'+':'-')+fmt(Math.abs(d))+' vs. el anterior';
+      return kpi(fmt(v), opts.l, txt, cls);
+    }
+
+    var Ma=actual.metricas, Mp=previo.metricas;
+    $('comp-kpis').innerHTML =
+      delta(Ma.total, Mp.total, {l:'Productos'}) +
+      delta(Ma.sinPrecio, Mp.sinPrecio, {l:'Sin precio de venta', mejorSube:false}) +
+      delta(Ma.valorCosto, Mp.valorCosto, {l:'Valor a costo', money:true}) +
+      delta(actual.totalErrores, previo.totalErrores, {l:'Posibles errores', mejorSube:false});
+
+    // por tipo de error: cuántos se corrigieron y cuántos aparecieron
+    var claves={};
+    Object.keys(actual.errores).forEach(function(k){ claves[k]=1; });
+    Object.keys(previo.errores||{}).forEach(function(k){ claves[k]=1; });
+    var filas=Object.keys(claves).map(function(k){
+      var a=actual.errores[k]||{n:0,titulo:((previo.errores||{})[k]||{}).titulo||k};
+      var pv=(previo.errores||{})[k]||{n:0};
+      var ia=(actual.items[k]||[]), ip=((previo.items||{})[k]||[]);
+      var setP={}; ip.forEach(function(x){ setP[x]=1; });
+      var setA={}; ia.forEach(function(x){ setA[x]=1; });
+      return {
+        titulo:a.titulo, ahora:a.n, antes:pv.n,
+        nuevos: ia.filter(function(x){ return !setP[x]; }).length,
+        corregidos: ip.filter(function(x){ return !setA[x]; }).length
+      };
+    }).sort(function(a,b){ return (b.nuevos+b.corregidos)-(a.nuevos+a.corregidos); });
+
+    $('comp-errores').innerHTML =
+      '<div class="scroll"><table><thead><tr><th>Error</th><th>Antes</th><th>Ahora</th>'+
+      '<th>Corregidos</th><th>Nuevos</th></tr></thead><tbody>'+
+      filas.map(function(f){
+        var dif=f.ahora-f.antes;
+        var flecha = dif===0 ? '' : (dif<0
+          ? '<span class="down">&#9660; '+nf(Math.abs(dif))+'</span>'
+          : '<span class="up">&#9650; '+nf(dif)+'</span>');
+        return '<tr><td><b>'+esc(f.titulo)+'</b></td>'+
+          '<td class="mono">'+nf(f.antes)+'</td>'+
+          '<td class="mono">'+nf(f.ahora)+' '+flecha+'</td>'+
+          '<td class="down">'+(f.corregidos?nf(f.corregidos):'&mdash;')+'</td>'+
+          '<td class="up">'+(f.nuevos?nf(f.nuevos):'&mdash;')+'</td></tr>';
+      }).join('')+'</tbody></table></div>';
+  }
+
+  /* ------------------------- Errores crónicos -------------------------- */
+  function calcularCronicos(){
+    var cuenta={}, titulos={};
+    historial.forEach(function(inf){
+      Object.keys(inf.items||{}).forEach(function(k){
+        titulos[k]=(inf.errores[k]||{}).titulo||k;
+        var vistos={};
+        (inf.items[k]||[]).forEach(function(it){
+          if(vistos[it]) return; vistos[it]=1;
+          var id=k+'|'+it;
+          cuenta[id]=(cuenta[id]||0)+1;
+        });
+      });
+    });
+    var porError={};
+    Object.keys(cuenta).forEach(function(id){
+      if(cuenta[id] < CRONICO_MIN) return;
+      var pt=id.split('|'), k=pt[0], it=pt[1];
+      if(!porError[k]) porError[k]={ clave:k, titulo:titulos[k]||k, items:[] };
+      porError[k].items.push({ item:it, veces:cuenta[id] });
+    });
+    return Object.keys(porError).map(function(k){
+      porError[k].items.sort(function(a,b){ return b.veces-a.veces; });
+      return porError[k];
+    }).sort(function(a,b){ return b.items.length-a.items.length; });
+  }
+
+  function nombreDe(item){
+    if(!datos) return '';
+    for(var i=0;i<datos.filas.length;i++){ if(datos.filas[i].item===item) return datos.filas[i].nombre; }
+    return '';
+  }
+
+  function pintarCronicos(){
+    if(historial.length < CRONICO_MIN){
+      $('cronicos').innerHTML = '<div class="empty">Hacen falta al menos '+CRONICO_MIN+
+        ' informes para saber qu&eacute; errores se repiten. Llevas '+historial.length+'.</div>';
+      return;
+    }
+    var cr=calcularCronicos();
+    if(!cr.length){
+      $('cronicos').innerHTML='<div class="empty">Ning&uacute;n error se repite en '+CRONICO_MIN+' informes o m&aacute;s. Buena se&ntilde;al.</div>';
+      return;
+    }
+    $('cronicos').innerHTML = cr.map(function(g){
+      var muestra=g.items.slice(0,25);
+      return '<div class="an leve"><div class="an-h"><span class="n">'+nf(g.items.length)+'</span>'+
+        '<span class="t"><b>'+esc(g.titulo)+'</b><span>productos con este error en '+CRONICO_MIN+' informes o m&aacute;s</span></span>'+
+        '<span class="ch">ver &#9662;</span></div>'+
+        '<div class="an-b"><div class="scroll"><table><thead><tr><th>ITEM</th><th>Producto</th><th>Informes</th></tr></thead><tbody>'+
+        muestra.map(function(x){
+          return '<tr><td class="mono">'+esc(x.item)+'</td><td>'+esc(nombreDe(x.item)||'—')+'</td>'+
+            '<td class="mono"><b>'+x.veces+'</b> de '+historial.length+'</td></tr>';
+        }).join('')+'</tbody></table></div>'+
+        (g.items.length>25?'<div class="mas">Se muestran 25 de '+nf(g.items.length)+'.</div>':'')+
+        '</div></div>';
+    }).join('');
+  }
+
+  /* --------------------------- Tabla de informes ----------------------- */
+  function pintarHistorial(){
+    $('card-hist').style.display='block';
+    $('hist-sub').textContent = historial.length
+      ? historial.length+' informe(s) guardado(s) en este equipo'
+      : 'todavía no hay informes guardados';
+    $('hist-body').innerHTML = historial.length ? historial.map(function(inf){
+      var f=new Date(inf.fecha), M=inf.metricas||{};
+      return '<tr><td class="mono" style="white-space:nowrap">'+
+          esc(f.toLocaleString('es-SV',{day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'}))+'</td>'+
+        '<td>'+esc(inf.archivo)+(inf.empleado?'<div style="color:var(--s400);font-size:11.5px">'+esc(inf.empleado)+'</div>':'')+'</td>'+
+        '<td class="mono">'+nf(M.total||0)+'</td>'+
+        '<td class="mono">'+nf(M.sinPrecio||0)+'</td>'+
+        '<td class="mono">'+money0(M.valorCosto||0)+'</td>'+
+        '<td class="mono">'+nf(inf.totalErrores||0)+'</td>'+
+        '<td><button class="btn b-gh b-sm" data-borrar="'+esc(inf.id)+'">quitar</button></td></tr>';
+    }).join('') : '<tr><td colspan="7" class="empty">Analiza un reporte y quedar&aacute; guardado aqu&iacute;.</td></tr>';
+    pintarCronicos();
+  }
+
+  $('hist-body').addEventListener('click', function(e){
+    var b=e.target.closest('[data-borrar]'); if(!b) return;
+    if(!confirm('¿Quitar este informe del historial?')) return;
+    borrarInforme(b.getAttribute('data-borrar')).then(function(){ pintarHistorial(); toast('Informe quitado.'); });
+  });
+  $('hist-borrar').addEventListener('click', function(){
+    if(!historial.length){ toast('No hay nada que borrar.'); return; }
+    if(!confirm('¿Borrar los '+historial.length+' informes guardados? No se puede deshacer.')) return;
+    borrarTodo().then(function(){ pintarHistorial(); toast('Historial borrado.'); });
+  });
+  $('cronicos').addEventListener('click', function(e){
+    var h=e.target.closest('.an-h'); if(!h) return;
+    var an=h.closest('.an'); an.classList.toggle('on');
+    h.querySelector('.ch').innerHTML = an.classList.contains('on') ? 'ocultar &#9652;' : 'ver &#9662;';
+  });
+  $('hist-csv').addEventListener('click', function(){
+    if(!historial.length){ toast('No hay informes guardados.', true); return; }
+    var claves={};
+    historial.forEach(function(i){ Object.keys(i.errores||{}).forEach(function(k){ claves[k]=(i.errores[k]||{}).titulo||k; }); });
+    var ks=Object.keys(claves), L=[];
+    L.push('HISTORIAL DE INFORMES - Ferreteria San Jose');
+    L.push('');
+    L.push(['Fecha','Archivo','Empleado','Productos','Con existencia','Sin precio','Valor a costo','Valor a venta','Margen mediano %','Errores totales']
+      .concat(ks.map(function(k){ return claves[k]; })).map(csvCell).join(','));
+    historial.slice().sort(function(a,b){ return a.fecha-b.fecha; }).forEach(function(i){
+      var M=i.metricas||{};
+      L.push([new Date(i.fecha).toLocaleString('es-SV'), i.archivo, i.empleado, M.total, M.conStock, M.sinPrecio,
+              Math.round(M.valorCosto||0), Math.round(M.valorVenta||0), (M.margenMediano||0).toFixed(1), i.totalErrores]
+        .concat(ks.map(function(k){ return (i.errores[k]||{}).n || 0; })).map(csvCell).join(','));
+    });
+    bajarCSV('historial-inventario.csv', L.join('\n'));
+    toast('historial-inventario.csv descargado.');
+  });
+
+  /* El candado (elegir empleado + clave) lo maneja acceso.js */
+  window.__fsjTrasLogin = function(u){
+    u = u || (window.FSJAuth && FSJAuth.usuario());
+    if(u && $('quien')) $('quien').textContent = u.nombre;
+  };
+  window.__fsjTrasLogin();
+
+  /* Al abrir: se muestra lo que ya hay guardado, aunque todavía no se
+     analice ningún archivo nuevo. */
+  cargarHistorial().then(function(){ if(historial.length) pintarHistorial(); });
+})();
+</script>
+</body>
+</html>

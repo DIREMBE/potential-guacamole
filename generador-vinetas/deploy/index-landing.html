@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:#0C2036;color:#EAF2F9;font-family:'Barlow Condensed',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+    img{display:block;max-width:100%}
+    a{color:inherit}
+    input{font-family:inherit}
+    ::placeholder{color:#7893AC;opacity:1}
+    ::selection{background:#F15930;color:#fff}
+    .fsj-embed{width:100%;height:472px;border:0;display:block;overflow:hidden}
+@media(max-width:1024px){.fsj-embed{height:462px}}
+@media(max-width:700px){.fsj-embed{height:392px}}
+    @keyframes scRise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+    @keyframes fsjDraw{0%{stroke-dashoffset:2400}22%{stroke-dashoffset:0}100%{stroke-dashoffset:0}}
+    @keyframes fsjInk{0%{opacity:0}7%{opacity:1}86%{opacity:1}97%{opacity:0}100%{opacity:0}}
+    @keyframes fsjBreathe{0%,100%{opacity:.4}50%{opacity:1}}
+    @keyframes fsjLabel{0%,13%{opacity:0}24%{opacity:1}86%{opacity:1}97%{opacity:0}100%{opacity:0}}
+    @media(prefers-reduced-motion:reduce){.fsj-plan g,.fsj-plan text,.fsj-plan circle,.fsj-plan path{animation:none!important;stroke-dashoffset:0!important;opacity:1!important}}
+    @keyframes scFab{0%,100%{box-shadow:0 8px 24px rgba(0,0,0,.35),0 0 0 0 rgba(37,211,102,.55)}50%{box-shadow:0 8px 24px rgba(0,0,0,.35),0 0 0 16px rgba(37,211,102,0)}}
+  .mk{display:flex;align-items:center;justify-content:center;height:104px;padding:16px 20px;background:#fff;border-radius:9px;border:0;text-decoration:none;box-shadow:inset 0 0 0 1px rgba(12,32,54,.26),inset 0 0 34px 14px rgba(12,32,54,.28);transition:transform .16s ease,box-shadow .16s ease}
+.mk img{max-width:100%;max-height:48px;width:auto;height:auto;object-fit:contain;display:block}
+.mk.sq img{max-height:64px}
+.mk:hover{transform:translateY(-2px);box-shadow:inset 0 0 0 1px rgba(12,32,54,.18),inset 0 0 26px 10px rgba(12,32,54,.16),0 8px 20px rgba(0,0,0,.3)}
+</style>
+</helmet>
+<div id="top" style="position:relative;overflow-x:hidden;background:#0C2036;background-image:linear-gradient(rgba(140,200,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(140,200,255,.05) 1px,transparent 1px),linear-gradient(rgba(140,200,255,.026) 1px,transparent 1px),linear-gradient(90deg,rgba(140,200,255,.026) 1px,transparent 1px);background-size:124px 124px,124px 124px,24.8px 24.8px,24.8px 24.8px;background-position:center top">
+  <div aria-hidden="true" style="position:absolute;top:0;left:0;right:0;bottom:0;overflow:hidden;pointer-events:none;z-index:0">
+    <svg class="fsj-plan" viewBox="0 0 1440 780" preserveAspectRatio="xMinYMid slice" fill="none" stroke="#8CC8FF" strokeWidth="1.35" strokeLinecap="square" vectorEffect="non-scaling-stroke" style="position:absolute;top:0;left:0;width:100%;height:780px;display:block">
+        <g strokeOpacity=".4" strokeDasharray="2400" style="opacity:0;animation:fsjDraw 20s linear infinite,fsjInk 20s ease-in-out infinite">
+          <path d="M96 200 H 468 V 452 H 96 Z"></path>
+          <path d="M300 200 V 340 H 468"></path>
+          <path d="M96 340 H 214 V 452"></path>
+          <path d="M214 446 V 400"></path>
+          <path d="M214 400 A 46 46 0 0 1 260 446"></path>
+          <path d="M330 194 H 400"></path>
+          <path d="M330 206 H 400"></path>
+        </g>
+        <g strokeOpacity=".26" strokeDasharray="2400" strokeWidth="1" style="opacity:0;animation:fsjDraw 20s linear infinite,fsjInk 20s ease-in-out infinite;animation-delay:1.8s">
+          <path d="M96 496 H 468"></path>
+          <path d="M88 504 L 104 488"></path>
+          <path d="M460 504 L 476 488"></path>
+          <path d="M500 200 V 452"></path>
+          <path d="M492 208 L 508 192"></path>
+          <path d="M492 460 L 508 444"></path>
+        </g>
+        <text x="282" y="488" textAnchor="middle" fill="#8CC8FF" fillOpacity=".4" stroke="none" fontFamily="'Barlow Condensed',sans-serif" fontSize="20" letterSpacing="3" style="opacity:0;animation:fsjLabel 20s ease-in-out infinite;animation-delay:1.8s">8.40 M</text>
+        <text x="524" y="332" fill="#8CC8FF" fillOpacity=".4" stroke="none" fontFamily="'Barlow Condensed',sans-serif" fontSize="20" letterSpacing="3" transform="rotate(-90 524 332)" textAnchor="middle" style="opacity:0;animation:fsjLabel 20s ease-in-out infinite;animation-delay:2.3s">5.60 M</text>
+        <g strokeOpacity=".34" strokeDasharray="2400" style="opacity:0;animation:fsjDraw 20s linear infinite,fsjInk 20s ease-in-out infinite;animation-delay:3.6s">
+          <circle cx="1190" cy="212" r="78"></circle>
+          <circle cx="1190" cy="212" r="44"></circle>
+          <path d="M1190 118 L 1271 165 L 1271 259 L 1190 306 L 1109 259 L 1109 165 Z"></path>
+          <path d="M1190 92 V 332" strokeWidth=".8"></path>
+          <path d="M1070 212 H 1310" strokeWidth=".8"></path>
+          <path d="M1262 156 L 1318 108 H 1372" strokeWidth=".9"></path>
+        </g>
+        <text x="1330" y="98" fill="#8CC8FF" fillOpacity=".42" stroke="none" fontFamily="'Barlow Condensed',sans-serif" fontSize="21" letterSpacing="2" style="opacity:0;animation:fsjLabel 20s ease-in-out infinite;animation-delay:3.6s">Ø 1/2"</text>
+        <g strokeOpacity=".3" strokeDasharray="2400" style="opacity:0;animation:fsjDraw 20s linear infinite,fsjInk 20s ease-in-out infinite;animation-delay:5.4s">
+          <path d="M900 566 H 1290 V 686 H 900 Z"></path>
+          <path d="M918 582 H 1272 V 670 H 918 Z" strokeWidth=".9"></path>
+          <path d="M918 654 L 990 582" strokeWidth=".7"></path>
+          <path d="M990 670 L 1078 582" strokeWidth=".7"></path>
+          <path d="M1078 670 L 1166 582" strokeWidth=".7"></path>
+          <path d="M1166 670 L 1254 582" strokeWidth=".7"></path>
+          <circle cx="936" cy="600" r="7"></circle>
+          <circle cx="1254" cy="600" r="7"></circle>
+          <circle cx="936" cy="652" r="7"></circle>
+          <circle cx="1254" cy="652" r="7"></circle>
+          <path d="M900 712 H 1290" strokeWidth=".9"></path>
+          <path d="M892 720 L 908 704" strokeWidth=".9"></path>
+          <path d="M1282 720 L 1298 704" strokeWidth=".9"></path>
+        </g>
+        <text x="1095" y="742" textAnchor="middle" fill="#8CC8FF" fillOpacity=".38" stroke="none" fontFamily="'Barlow Condensed',sans-serif" fontSize="20" letterSpacing="3" style="opacity:0;animation:fsjLabel 20s ease-in-out infinite;animation-delay:5.4s">VIGA 20 × 40</text>
+        <g strokeOpacity=".22" strokeDasharray="2400" strokeWidth="1" style="opacity:0;animation:fsjDraw 20s linear infinite,fsjInk 20s ease-in-out infinite;animation-delay:7.2s">
+          <path d="M40 96 V 40 H 96"></path>
+          <path d="M1344 40 H 1400 V 96"></path>
+          <path d="M1400 684 V 740 H 1344"></path>
+          <path d="M96 740 H 40 V 684"></path>
+          <path d="M40 400 H 148"></path>
+          <path d="M1400 400 H 1292"></path>
+        </g>
+    </svg>
+    <svg class="fsj-plan" viewBox="0 0 1440 820" preserveAspectRatio="xMidYMid meet" fill="none" stroke="#8CC8FF" strokeWidth="1.35" strokeLinecap="square" vectorEffect="non-scaling-stroke" style="position:absolute;top:19%;left:0;width:100%;height:820px;display:block">
+      <g data-plan="b2" data-len="2600" strokeOpacity=".3" strokeDasharray="2600" style="opacity:0">
+        <path d="M96 200 H 552 V 440 H 96 Z"></path>
+        <path d="M96 280 H 552"></path>
+        <path d="M96 360 H 552"></path>
+        <path d="M172 200 V 280"></path>
+        <path d="M324 200 V 280"></path>
+        <path d="M476 200 V 280"></path>
+        <path d="M134 280 V 360"></path>
+        <path d="M286 280 V 360"></path>
+        <path d="M438 280 V 360"></path>
+        <path d="M172 360 V 440"></path>
+        <path d="M324 360 V 440"></path>
+        <path d="M476 360 V 440"></path>
+      </g>
+      <g data-plan="b2b" data-len="900" strokeOpacity=".24" strokeDasharray="900" strokeWidth="1" style="opacity:0">
+        <path d="M96 476 H 552"></path>
+        <path d="M88 484 L 104 468" style="animation:fsjBreathe 6s ease-in-out infinite"></path>
+        <path d="M544 484 L 560 468" style="animation:fsjBreathe 6s ease-in-out infinite;animation-delay:.8s"></path>
+        <path d="M588 200 V 440"></path>
+      </g>
+      <text x="324" y="512" textAnchor="middle" fill="#8CC8FF" fillOpacity=".3" stroke="none" fontFamily="'Barlow Condensed',sans-serif" fontSize="20" letterSpacing="3.5" data-plan="b2t" data-len="0" style="opacity:0">BLOCK 15 × 20 × 40</text>
+    </svg>
+    <svg class="fsj-plan" viewBox="0 0 1440 820" preserveAspectRatio="xMidYMid meet" fill="none" stroke="#8CC8FF" strokeWidth="1.35" strokeLinecap="square" vectorEffect="non-scaling-stroke" style="position:absolute;top:38%;left:0;width:100%;height:820px;display:block">
+      <g data-plan="b3" data-len="1800" strokeOpacity=".32" strokeDasharray="1800" style="opacity:0">
+        <circle cx="1140" cy="300" r="96"></circle>
+        <circle cx="1140" cy="300" r="62" style="animation:fsjBreathe 7s ease-in-out infinite"></circle>
+        <path d="M1140 176 V 424" strokeWidth=".8"></path>
+        <path d="M1016 300 H 1264" strokeWidth=".8"></path>
+        <path d="M1180 470 H 1290 A 56 56 0 0 0 1346 414 V 340"></path>
+        <path d="M1180 500 H 1300 A 86 86 0 0 0 1376 414 V 340" strokeWidth=".9"></path>
+      </g>
+      <text x="1016" y="500" fill="#8CC8FF" fillOpacity=".32" stroke="none" fontFamily="'Barlow Condensed',sans-serif" fontSize="21" letterSpacing="2.5" data-plan="b3t" data-len="0" style="opacity:0">PVC Ø 4"</text>
+    </svg>
+    <svg class="fsj-plan" viewBox="0 0 1440 820" preserveAspectRatio="xMidYMid meet" fill="none" stroke="#8CC8FF" strokeWidth="1.35" strokeLinecap="square" vectorEffect="non-scaling-stroke" style="position:absolute;top:57%;left:0;width:100%;height:820px;display:block">
+      <g data-plan="b4" data-len="2000" strokeOpacity=".28" strokeDasharray="2000" style="opacity:0">
+        <path d="M140 480 V 432 H 224 V 384 H 308 V 336 H 392 V 288 H 476 V 240 H 560"></path>
+        <path d="M104 504 H 640"></path>
+        <path d="M600 240 V 480" strokeWidth=".9"></path>
+        <path d="M592 248 L 608 232" strokeWidth=".9" style="animation:fsjBreathe 5s ease-in-out infinite"></path>
+        <path d="M592 488 L 608 472" strokeWidth=".9" style="animation:fsjBreathe 5s ease-in-out infinite;animation-delay:.6s"></path>
+      </g>
+      <text x="628" y="366" fill="#8CC8FF" fillOpacity=".3" stroke="none" fontFamily="'Barlow Condensed',sans-serif" fontSize="20" letterSpacing="3" data-plan="b4t" data-len="0" style="opacity:0">GRADAS 18 / 28</text>
+    </svg>
+    <svg class="fsj-plan" viewBox="0 0 1440 820" preserveAspectRatio="xMidYMid meet" fill="none" stroke="#8CC8FF" strokeWidth="1.35" strokeLinecap="square" vectorEffect="non-scaling-stroke" style="position:absolute;top:76%;left:0;width:100%;height:820px;display:block">
+      <g data-plan="b5" data-len="2200" strokeOpacity=".26" strokeDasharray="2200" style="opacity:0">
+        <path d="M880 480 A 260 260 0 0 1 1400 480"></path>
+        <path d="M840 480 H 1400"></path>
+        <path d="M1140 480 L 1324 296" strokeWidth=".9"></path>
+        <circle cx="1140" cy="480" r="7" style="animation:fsjBreathe 6.5s ease-in-out infinite"></circle>
+        <path d="M1140 480 V 396" strokeWidth=".8"></path>
+      </g>
+      <text x="1250" y="418" fill="#8CC8FF" fillOpacity=".3" stroke="none" fontFamily="'Barlow Condensed',sans-serif" fontSize="20" letterSpacing="3" data-plan="b5t" data-len="0" style="opacity:0">R 2.60</text>
+    </svg>
+    <svg class="fsj-plan" viewBox="0 0 1440 820" preserveAspectRatio="xMidYMid meet" fill="none" stroke="#8CC8FF" strokeWidth="1.35" strokeLinecap="square" vectorEffect="non-scaling-stroke" style="position:absolute;top:28%;left:0;width:100%;height:820px;display:block">
+      <g data-plan="c1" data-len="1700" strokeOpacity=".3" strokeDasharray="1700" style="opacity:0">
+        <path d="M150 250 H 214 V 214 H 330 V 286 H 214 V 250"></path>
+        <path d="M330 226 H 470"></path>
+        <path d="M330 274 H 470"></path>
+        <path d="M340 226 L 356 274"></path>
+        <path d="M372 226 L 388 274"></path>
+        <path d="M404 226 L 420 274"></path>
+        <path d="M436 226 L 452 274"></path>
+        <path d="M150 320 H 470" strokeWidth=".9"></path>
+        <path d="M142 328 L 158 312" strokeWidth=".9" style="animation:fsjBreathe 5s ease-in-out infinite"></path>
+        <path d="M462 328 L 478 312" strokeWidth=".9" style="animation:fsjBreathe 5s ease-in-out infinite;animation-delay:.7s"></path>
+      </g>
+      <text x="310" y="356" textAnchor="middle" fill="#8CC8FF" fillOpacity=".3" stroke="none" fontFamily="'Barlow Condensed',sans-serif" fontSize="20" letterSpacing="3" data-plan="c1t" data-len="0" style="opacity:0">TORNILLO 3/8 × 4"</text>
+    </svg>
+    <svg class="fsj-plan" viewBox="0 0 1440 820" preserveAspectRatio="xMidYMid meet" fill="none" stroke="#8CC8FF" strokeWidth="1.35" strokeLinecap="square" vectorEffect="non-scaling-stroke" style="position:absolute;top:47%;left:0;width:100%;height:820px;display:block">
+      <g data-plan="c2" data-len="2000" strokeOpacity=".27" strokeDasharray="2000" style="opacity:0">
+        <path d="M980 200 H 1330 V 440 H 980 Z"></path>
+        <path d="M1155 200 V 440"></path>
+        <path d="M980 320 H 1330"></path>
+        <path d="M996 216 H 1139 V 304 H 996 Z" strokeWidth=".8"></path>
+        <path d="M1171 216 H 1314 V 304 H 1171 Z" strokeWidth=".8"></path>
+        <path d="M996 336 L 1139 424" strokeWidth=".7"></path>
+        <path d="M1314 336 L 1171 424" strokeWidth=".7"></path>
+        <circle cx="1155" cy="320" r="6" style="animation:fsjBreathe 6s ease-in-out infinite"></circle>
+      </g>
+      <text x="980" y="474" fill="#8CC8FF" fillOpacity=".28" stroke="none" fontFamily="'Barlow Condensed',sans-serif" fontSize="20" letterSpacing="3" data-plan="c2t" data-len="0" style="opacity:0">VENTANA 1.20 × 0.90</text>
+    </svg>
+    <svg class="fsj-plan" viewBox="0 0 1440 820" preserveAspectRatio="xMidYMid meet" fill="none" stroke="#8CC8FF" strokeWidth="1.35" strokeLinecap="square" vectorEffect="non-scaling-stroke" style="position:absolute;top:66%;left:0;width:100%;height:820px;display:block">
+      <g data-plan="c3" data-len="1900" strokeOpacity=".26" strokeDasharray="1900" style="opacity:0">
+        <path d="M130 240 H 450 V 400 H 130 Z"></path>
+        <path d="M194 240 V 400"></path>
+        <path d="M258 240 V 400"></path>
+        <path d="M322 240 V 400"></path>
+        <path d="M386 240 V 400"></path>
+        <path d="M130 293 H 450"></path>
+        <path d="M130 346 H 450"></path>
+        <path d="M450 320 H 560"></path>
+        <path d="M544 312 L 560 320 L 544 328" style="animation:fsjBreathe 6.5s ease-in-out infinite"></path>
+      </g>
+      <text x="574" y="326" fill="#8CC8FF" fillOpacity=".28" stroke="none" fontFamily="'Barlow Condensed',sans-serif" fontSize="20" letterSpacing="3" data-plan="c3t" data-len="0" style="opacity:0">MALLA</text>
+    </svg>
+    <svg class="fsj-plan" viewBox="0 0 1440 820" preserveAspectRatio="xMidYMid meet" fill="none" stroke="#8CC8FF" strokeWidth="1.35" strokeLinecap="square" vectorEffect="non-scaling-stroke" style="position:absolute;top:85%;left:0;width:100%;height:820px;display:block">
+      <g data-plan="c4" data-len="1600" strokeOpacity=".26" strokeDasharray="1600" style="opacity:0">
+        <path d="M1000 240 H 1300 V 300 H 1000 Z"></path>
+        <path d="M1000 300 L 1120 430 H 1180 L 1300 300"></path>
+        <path d="M1150 430 V 500"></path>
+        <path d="M1120 500 H 1180"></path>
+        <path d="M1150 200 V 240" strokeWidth=".8"></path>
+        <circle cx="1150" cy="500" r="7" style="animation:fsjBreathe 7s ease-in-out infinite"></circle>
+      </g>
+      <text x="1000" y="222" fill="#8CC8FF" fillOpacity=".28" stroke="none" fontFamily="'Barlow Condensed',sans-serif" fontSize="20" letterSpacing="3" data-plan="c4t" data-len="0" style="opacity:0">TOLVA Ø 6"</text>
+    </svg>
+  </div>
+
+  <div style="position:relative;z-index:1;background:#08182A;border-bottom:1px solid rgba(255,255,255,.06)">
+    <sc-if value="{{ showNav }}" hint-placeholder-val="{{ true }}">
+    <div style="max-width:1280px;margin:0 auto;width:100%;padding:8px clamp(20px,5vw,72px);display:flex;align-items:center;justify-content:space-between;gap:18px;font-size:13px;letter-spacing:.04em;color:#89A3BA">
+      <div style="display:flex;align-items:center;gap:8px;text-transform:uppercase;font-weight:600;letter-spacing:.12em">
+        <span style="color:#F15930">●</span> Corinto, Morazán · El Salvador
+      </div>
+      <div style="display:flex;align-items:center;gap:22px">
+        <a href="tel:+50326274696" style="text-decoration:none;color:#A2B8CC;display:flex;align-items:center;gap:7px" style-hover="color:#EAF2F9">{{ icPhoneSm }} 2627-4696</a>
+        <span style="display:flex;align-items:center;gap:7px;color:#A2B8CC">{{ icClockSm }} Lun–Vie 6:30–16:30 · Dom 6:30–12:00 · Sáb cerrado</span>
+      </div>
+    </div>
+    </sc-if>
+  </div>
+
+  <header style="position:sticky;top:0;z-index:60;background:rgba(9,25,43,.93);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.08)">
+    <div style="max-width:1280px;margin:0 auto;width:100%;padding:11px clamp(18px,4vw,72px);display:flex;align-items:center;justify-content:space-between;gap:20px">
+      <a href="#top" style="display:flex;align-items:center;gap:13px;text-decoration:none;flex-shrink:0">
+        <img src="assets/emblem.png" alt="Ferretería San José" style="height:46px;width:auto">
+        <img src="assets/wordmark.png" alt="Ferretería San José" style="height:38px;width:auto">
+      </a>
+
+      <sc-if value="{{ showNav }}" hint-placeholder-val="{{ true }}">
+      <nav style="display:flex;align-items:center;gap:30px;font-family:'Barlow Condensed';text-transform:uppercase;letter-spacing:.1em;font-weight:600;font-size:15px">
+        <a href="catalogo.html" style="text-decoration:none;color:#C7D8E7;padding:6px 0;border-bottom:2px solid transparent" style-hover="color:#fff;border-bottom-color:#F15930">Catálogo</a>
+        <a href="#locales" style="text-decoration:none;color:#C7D8E7;padding:6px 0;border-bottom:2px solid transparent" style-hover="color:#fff;border-bottom-color:#F15930">Locales</a>
+        <a href="#contacto" style="text-decoration:none;color:#C7D8E7;padding:6px 0;border-bottom:2px solid transparent" style-hover="color:#fff;border-bottom-color:#F15930">Contacto</a>
+      </nav>
+      <a href="{{ waGeneric }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:9px;background:#F15930;color:#fff;font-family:'Barlow Condensed';font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:15px;padding:11px 20px;border-radius:3px;text-decoration:none;flex-shrink:0" style-hover="background:#FF6A3D">{{ icWa }} WhatsApp</a>
+      </sc-if>
+
+      <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:10px">
+        <a href="{{ waGeneric }}" target="_blank" rel="noopener" aria-label="WhatsApp" style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;background:#F15930;color:#fff;border-radius:3px;text-decoration:none">{{ icWa }}</a>
+        <button onClick="{{ toggleMenu }}" aria-label="Menú" style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;background:#123049;color:#EAF2F9;border:1px solid rgba(255,255,255,.12);border-radius:3px;cursor:pointer">{{ icMenu }}</button>
+      </div>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ showMenuPanel }}" hint-placeholder-val="{{ false }}">
+    <div style="border-top:1px solid rgba(255,255,255,.08);padding:10px clamp(18px,4vw,72px) 18px;display:flex;flex-direction:column;gap:2px;font-family:'Barlow Condensed';text-transform:uppercase;letter-spacing:.08em;font-weight:600;font-size:18px">
+      <a href="catalogo.html" onClick="{{ closeMenu }}" style="text-decoration:none;color:#D9E6F2;padding:13px 4px;border-bottom:1px solid rgba(255,255,255,.06)">Catálogo</a>
+      <a href="#locales" onClick="{{ closeMenu }}" style="text-decoration:none;color:#D9E6F2;padding:13px 4px;border-bottom:1px solid rgba(255,255,255,.06)">Locales</a>
+      <a href="#contacto" onClick="{{ closeMenu }}" style="text-decoration:none;color:#D9E6F2;padding:13px 4px">Contacto</a>
+    </div>
+    </sc-if>
+  </header>
+
+  <section style="position:relative;z-index:1;overflow:hidden;background:transparent">
+    <div style="position:absolute;top:0;left:0;right:0;height:5px;background:repeating-linear-gradient(135deg,#F15930 0 18px,#0C2036 18px 36px);opacity:.9;z-index:2"></div>
+    <div style="position:relative;z-index:1;max-width:1280px;margin:0 auto;width:100%;padding:clamp(46px,6vw,86px) clamp(20px,5vw,72px) clamp(40px,5vw,64px);display:flex;flex-wrap:wrap;gap:clamp(30px,5vw,60px);align-items:center">
+
+      <div style="flex:1 1 480px;min-width:300px">
+        <div style="display:inline-flex;align-items:center;gap:12px;background:rgba(5,16,29,.72);border:1px solid rgba(160,210,255,.58);color:#E2EDF7;padding:8px 18px 8px 13px;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.2em">
+          <span style="width:9px;height:9px;background:#F15930;display:inline-block"></span> Buen servicio y calidad siempre
+        </div>
+        <h1 style="font-family:'Anton';font-weight:400;text-transform:uppercase;font-size:clamp(40px,6.5vw,80px);line-height:1.06;letter-spacing:.005em;margin:20px 0 0;color:#EEF5FB">
+          Todo para tu <span style="color:#F15930">obra</span>,<br>en un solo lugar
+        </h1>
+        <p style="font-family:'Barlow Condensed';font-size:clamp(17px,1.7vw,20px);line-height:1.5;color:#A2B8CC;max-width:560px;margin:20px 0 0">
+          Ferretería y materiales de construcción en Corinto, Morazán. Más de 10,000 productos en <strong style="color:#D9E6F2;font-weight:600">dos locales</strong>, atendidos por gente que conoce el oficio.
+        </p>
+
+        <div style="margin:26px 0 0">
+          <form action="catalogo.html" method="get" role="search" style="display:flex;align-items:center;gap:8px;background:#0F2739;border:1.5px solid rgba(255,255,255,.13);border-radius:5px;padding:7px 7px 7px 16px;max-width:540px">
+            <span style="color:#7893AC;display:flex;flex-shrink:0" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
+            <input type="search" name="q" autocomplete="off" placeholder="Busca: cemento, martillo, tubo PVC, pintura…" aria-label="Buscar productos" style="flex:1;min-width:0;background:transparent;border:0;outline:none;color:#EAF2F9;font-family:'Barlow Condensed';font-size:17px;padding:8px 0">
+            <button type="submit" style="display:inline-flex;align-items:center;gap:8px;background:#F15930;color:#fff;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:15px;padding:11px 18px;border:0;border-radius:3px;cursor:pointer;flex-shrink:0;font-family:'Barlow Condensed',sans-serif">Buscar</button>
+          </form>
+          <div style="display:flex;flex-wrap:wrap;gap:9px;margin:14px 0 0"><span style="font-size:13px;color:#7893AC;text-transform:uppercase;letter-spacing:.1em;align-self:center;margin-right:2px">Popular:</span><a href="catalogo.html?q=cemento" style="text-decoration:none;font-size:14px;font-weight:600;letter-spacing:.03em;color:#BDD0E1;background:#12293E;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:7px 14px" style-hover="border-color:#F15930;color:#fff">Cemento</a><a href="catalogo.html?q=pintura" style="text-decoration:none;font-size:14px;font-weight:600;letter-spacing:.03em;color:#BDD0E1;background:#12293E;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:7px 14px" style-hover="border-color:#F15930;color:#fff">Pintura</a><a href="catalogo.html?q=pvc" style="text-decoration:none;font-size:14px;font-weight:600;letter-spacing:.03em;color:#BDD0E1;background:#12293E;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:7px 14px" style-hover="border-color:#F15930;color:#fff">PVC</a><a href="catalogo.html?q=herramientas" style="text-decoration:none;font-size:14px;font-weight:600;letter-spacing:.03em;color:#BDD0E1;background:#12293E;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:7px 14px" style-hover="border-color:#F15930;color:#fff">Herramientas</a><a href="catalogo.html?q=hierro" style="text-decoration:none;font-size:14px;font-weight:600;letter-spacing:.03em;color:#BDD0E1;background:#12293E;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:7px 14px" style-hover="border-color:#F15930;color:#fff">Hierro</a><a href="catalogo.html?q=eléctrico" style="text-decoration:none;font-size:14px;font-weight:600;letter-spacing:.03em;color:#BDD0E1;background:#12293E;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:7px 14px" style-hover="border-color:#F15930;color:#fff">Eléctrico</a></div>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:13px;margin:28px 0 0">
+          <a href="{{ waGeneric }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;background:#F15930;color:#fff;font-family:'Barlow Condensed';font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:17px;padding:15px 26px;border-radius:3px;text-decoration:none" style-hover="background:#FF6A3D">{{ icWaBig }} Escríbenos por WhatsApp</a>
+          <a href="#locales" style="display:inline-flex;align-items:center;gap:10px;background:transparent;color:#EAF2F9;font-family:'Barlow Condensed';font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:17px;padding:15px 24px;border-radius:3px;border:1.5px solid rgba(255,255,255,.22);text-decoration:none" style-hover="border-color:#F15930;color:#fff">{{ icPin }} Ver los 2 locales</a>
+        </div>
+      </div>
+
+      <div style="flex:1 1 360px;min-width:280px">
+        <div style="position:relative;width:100%;height:clamp(300px,42vw,476px);border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden;background:#102A42">
+          <img src="assets/fachada.jpg" alt="Fachada de Ferretería San José en Corinto, Morazán" loading="eager" style="display:block;width:100%;height:100%;object-fit:cover">
+          <div style="position:absolute;left:0;bottom:0;padding:8px 6px;pointer-events:none">
+            <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(8,24,42,.85);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:7px 12px;font-size:12.5px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:#D9E6F2;margin:10px">
+              <span style="width:6px;height:6px;border-radius:50%;background:#0475BB;display:inline-block"></span> Corinto, Morazán · El Salvador
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <sc-if value="{{ showStats }}" hint-placeholder-val="{{ true }}">
+    <div style="position:relative;z-index:1;border-top:1px solid rgba(255,255,255,.08)">
+      <div style="max-width:1280px;margin:0 auto;width:100%;padding:clamp(22px,3vw,30px) clamp(20px,5vw,72px);display:flex;flex-wrap:wrap;gap:24px">
+        <div style="flex:1 1 150px;display:flex;flex-direction:column;gap:2px">
+          <span style="font-family:'Anton';font-size:clamp(32px,4vw,50px);line-height:1;color:#F15930">+3,800</span>
+          <span style="font-size:14px;text-transform:uppercase;letter-spacing:.12em;color:#89A3BA;font-weight:600">Productos en línea</span>
+        </div>
+        <div style="flex:1 1 150px;display:flex;flex-direction:column;gap:2px">
+          <span style="font-family:'Anton';font-size:clamp(32px,4vw,50px);line-height:1;color:#EAF2F9">+11K</span>
+          <span style="font-size:14px;text-transform:uppercase;letter-spacing:.12em;color:#89A3BA;font-weight:600">En inventario</span>
+        </div>
+        <div style="flex:1 1 150px;display:flex;flex-direction:column;gap:2px">
+          <span style="font-family:'Anton';font-size:clamp(32px,4vw,50px);line-height:1;color:#0475BB">168</span>
+          <span style="font-size:14px;text-transform:uppercase;letter-spacing:.12em;color:#89A3BA;font-weight:600">Categorías</span>
+        </div>
+        <div style="flex:1 1 150px;display:flex;flex-direction:column;gap:2px">
+          <span style="font-family:'Anton';font-size:clamp(32px,4vw,50px);line-height:1;color:#EAF2F9">2</span>
+          <span style="font-size:14px;text-transform:uppercase;letter-spacing:.12em;color:#89A3BA;font-weight:600">Locales</span>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+  </section>
+
+  <sc-if value="{{ showCatalog }}" hint-placeholder-val="{{ true }}">
+  <section id="catalogo" style="position:relative;z-index:1;background:rgba(7,20,34,.52);scroll-margin-top:88px;border-top:1px solid rgba(255,255,255,.05)">
+    <div style="max-width:1280px;margin:0 auto;width:100%;padding:clamp(56px,8vw,100px) clamp(20px,5vw,72px)">
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:clamp(26px,4vw,44px)">
+        <div style="max-width:680px">
+          <div style="font-family:'Barlow Condensed';text-transform:uppercase;letter-spacing:.22em;font-size:13px;font-weight:600;color:#F15930;margin-bottom:12px">Catálogo en línea</div>
+          <h2 style="font-family:'Anton';font-weight:400;text-transform:uppercase;font-size:clamp(30px,4.4vw,58px);line-height:.98;margin:0;color:#EEF5FB">Productos y precios</h2>
+          <p style="font-family:'Barlow Condensed';font-size:clamp(16px,1.6vw,19px);line-height:1.5;color:#A2B8CC;margin:16px 0 0">Más de <strong style="color:#D9E6F2;font-weight:600">{{ totalOnline }} productos</strong> con precio y existencia, directo de nuestro inventario. ¿No encuentras algo? Escríbenos y te confirmamos al instante.</p>
+        </div>
+      </div>
+
+      <a href="catalogo.html" style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;text-decoration:none;background:linear-gradient(90deg,#F15930,#d6481c);border-radius:10px;padding:20px 24px;margin-bottom:24px" style-hover="filter:brightness(1.07)">
+        <div style="min-width:240px">
+          <div style="font-family:'Anton';text-transform:uppercase;font-size:clamp(19px,2.4vw,26px);color:#fff;line-height:1.05">Ver catálogo con fotos y armar tu pedido</div>
+          <div style="font-family:'Barlow Condensed';font-size:16px;color:#FFE6DC;margin-top:6px">Elige los productos que necesitas y te llegan por WhatsApp para confirmarte precio y existencia.</div>
+        </div>
+        <span style="flex-shrink:0;background:#fff;color:#d6481c;font-weight:700;font-size:15px;letter-spacing:.03em;text-transform:uppercase;padding:12px 22px;border-radius:8px">Abrir catálogo →</span>
+      </a>
+
+      <!-- ====== Showcase: 15 productos, 5 a la vez (los más recientes) ====== -->
+      <iframe class="fsj-embed" src="showcase-embed.html" title="Productos recientes" loading="lazy" scrolling="no"></iframe>
+
+    </div>
+  </section>
+  </sc-if>
+
+  
+
+  <section id="marcas" style="position:relative;z-index:1;background:transparent;border-top:1px solid rgba(255,255,255,.05);scroll-margin-top:72px">
+    <div style="max-width:1280px;margin:0 auto;width:100%;padding:clamp(56px,8vw,100px) clamp(20px,5vw,72px)">
+      <div style="font-family:'Barlow Condensed';text-transform:uppercase;letter-spacing:.22em;font-size:13px;font-weight:600;color:#F15930;margin-bottom:12px">Marcas</div>
+      <h2 style="font-family:'Anton';font-weight:400;text-transform:uppercase;font-size:clamp(30px,4.4vw,58px);line-height:.98;margin:0 0 14px;color:#EEF5FB">Marcas destacadas</h2>
+      <p style="font-family:'Barlow Condensed';font-size:clamp(16px,1.5vw,19px);line-height:1.35;color:#BDD0E1;max-width:56ch;margin:0 0 clamp(26px,4vw,40px)">Algunas de las marcas que encuentras en San José: herramienta, pintura, materiales y equipo de poder. Toca una marca para ver sus productos en el catálogo.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:10px">
+        <a class="mk" href="catalogo.html?q=stihl" title="Ver productos STIHL"><img src="assets/marcas/stihl.png" alt="STIHL" loading="lazy"></a>
+        <a class="mk" href="catalogo.html?q=truper" title="Ver productos TRUPER"><img src="assets/marcas/truper.png" alt="TRUPER" loading="lazy"></a>
+        <a class="mk" href="catalogo.html?q=total" title="Ver productos TOTAL"><img src="assets/marcas/total.png" alt="TOTAL" loading="lazy"></a>
+        <a class="mk" href="catalogo.html?q=ingco" title="Ver productos INGCO"><img src="assets/marcas/ingco.png" alt="INGCO" loading="lazy"></a>
+        <a class="mk" href="catalogo.html?q=emtop" title="Ver productos EMTOP"><img src="assets/marcas/emtop.png" alt="EMTOP" loading="lazy"></a>
+        <a class="mk" href="catalogo.html?q=makita" title="Ver productos MAKITA"><img src="assets/marcas/makita.png" alt="MAKITA" loading="lazy"></a>
+        <a class="mk sq" href="catalogo.html?q=dewalt" title="Ver productos DEWALT"><img src="assets/marcas/dewalt.png" alt="DEWALT" loading="lazy"></a>
+        <a class="mk" href="catalogo.html?q=stanley" title="Ver productos STANLEY"><img src="assets/marcas/stanley.png" alt="STANLEY" loading="lazy"></a>
+        <a class="mk sq" href="catalogo.html?q=imacasa" title="Ver productos IMACASA"><img src="assets/marcas/imacasa.png" alt="IMACASA" loading="lazy"></a>
+        <a class="mk" href="catalogo.html?q=pferd" title="Ver productos PFERD"><img src="assets/marcas/pferd.png" alt="PFERD" loading="lazy"></a>
+        <a class="mk sq" href="catalogo.html?q=yale" title="Ver productos YALE"><img src="assets/marcas/yale.png" alt="YALE" loading="lazy"></a>
+        <a class="mk sq" href="catalogo.html?q=sherwin" title="Ver productos SHERWIN-WILLIAMS"><img src="assets/marcas/sherwin-williams.png" alt="SHERWIN-WILLIAMS" loading="lazy"></a>
+        <a class="mk" href="catalogo.html?q=lanco" title="Ver productos LANCO"><img src="assets/marcas/lanco.png" alt="LANCO" loading="lazy"></a>
+        <a class="mk sq" href="catalogo.html?q=tecnolite" title="Ver productos TECNOLITE"><img src="assets/marcas/tecnolite.png" alt="TECNOLITE" loading="lazy"></a>
+        <a class="mk" href="catalogo.html?q=holcim" title="Ver productos HOLCIM"><img src="assets/marcas/holcim.png" alt="HOLCIM" loading="lazy"></a>
+        <a class="mk" href="catalogo.html?q=corinca" title="Ver productos CORINCA"><img src="assets/marcas/corinca.png" alt="CORINCA" loading="lazy"></a>
+        <a class="mk sq" href="catalogo.html?q=reflex" title="Ver productos REFLEX"><img src="assets/marcas/reflex.png" alt="REFLEX" loading="lazy"></a>
+        <a class="mk" href="catalogo.html?q=honda" title="Ver productos HONDA"><img src="assets/marcas/honda.png" alt="HONDA" loading="lazy"></a>
+        <a class="mk" href="catalogo.html?q=kohler" title="Ver productos KOHLER"><img src="assets/marcas/kohler.png" alt="KOHLER" loading="lazy"></a>
+        <a class="mk" href="catalogo.html?q=castrol" title="Ver productos CASTROL"><img src="assets/marcas/castrol.png" alt="CASTROL" loading="lazy"></a>
+        <a class="mk sq" href="catalogo.html?q=valvoline" title="Ver productos VALVOLINE"><img src="assets/marcas/valvoline.png" alt="VALVOLINE" loading="lazy"></a>
+        <a class="mk sq" href="catalogo.html?q=totalenergies" title="Ver productos TOTALENERGIES"><img src="assets/marcas/totalenergies.png" alt="TOTALENERGIES" loading="lazy"></a>
+      </div>
+    </div>
+  </section>
+
+  <section id="locales" style="position:relative;z-index:1;background:#B3C0CD;color:#0F1C27;scroll-margin-top:72px;box-shadow:inset 0 0 0 1px rgba(12,32,54,.16),inset 0 0 70px 22px rgba(12,32,54,.17)">
+    <div style="max-width:1280px;margin:0 auto;width:100%;padding:clamp(56px,8vw,100px) clamp(20px,5vw,72px)">
+      <div style="font-family:'Barlow Condensed';text-transform:uppercase;letter-spacing:.22em;font-size:13px;font-weight:700;color:#8A2A0A;margin-bottom:12px">Dónde encontrarnos</div>
+      <h2 style="font-family:'Anton';font-weight:400;text-transform:uppercase;font-size:clamp(30px,4.4vw,58px);line-height:.98;margin:0 0 14px;color:#0F1C27">Dos locales, todo en un viaje</h2>
+      <p style="font-family:'Barlow Condensed';font-size:clamp(16px,1.6vw,19px);line-height:1.5;color:#3A4C5E;max-width:620px;margin:0 0 clamp(28px,4vw,44px)">Uno para ferretería general y otro enfocado en materiales de construcción pesada. Mismo horario, misma gente de confianza.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px">
+
+        <div style="background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.06);display:flex;flex-direction:column">
+          <div style="position:relative;width:100%;height:clamp(170px,22vw,210px);background:#A3B2C1">
+            <img src="assets/estante.jpg" alt="Interior del local de ferretería · Ferretería San José" loading="lazy" style="display:block;width:100%;height:100%;object-fit:cover">
+            <div style="position:absolute;top:14px;left:14px;background:#0475BB;color:#fff;font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:12px;padding:6px 12px;border-radius:4px">Casa Matriz</div>
+          </div>
+          <div style="padding:24px;display:flex;flex-direction:column;gap:14px;flex:1">
+            <div>
+              <h3 style="font-family:'Anton';font-weight:400;text-transform:uppercase;font-size:clamp(22px,2.6vw,30px);line-height:1;margin:0;color:#0F1C27">Ferretería general</h3>
+              <p style="font-family:'Barlow Condensed';font-size:16.5px;line-height:1.45;color:#3A4C5E;margin:10px 0 0">Herramientas, pinturas, sistema eléctrico, fontanería, tornillería y repuestos Stihl.</p>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;color:#24394C;font-size:15.5px">
+              <span style="color:#E8521A;display:flex;margin-top:1px">{{ icPin }}</span>
+              <span>Corinto, Morazán, El Salvador</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;color:#24394C;font-size:15.5px">
+              <span style="color:#E8521A;display:flex;margin-top:1px">{{ icClock }}</span>
+              <span style="line-height:1.55">Lun–Vie 6:30 a.m.–4:30 p.m.<br>Domingo 6:30 a.m.–12:00 m.<br>Sábado cerrado hasta nuevo aviso</span>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:auto;padding-top:6px">
+              <a href="{{ waGeneric }}" target="_blank" rel="noopener" style="flex:1;min-width:130px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#F15930;color:#fff;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:14px;padding:12px 14px;border-radius:4px;text-decoration:none" style-hover="background:#FF6A3D">{{ icWa }} WhatsApp</a>
+              <a href="{{ mapsMatriz }}" target="_blank" rel="noopener" style="flex:1;min-width:130px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#fff;color:#0F1C27;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:14px;padding:12px 14px;border-radius:4px;border:1.5px solid rgba(0,0,0,.16);text-decoration:none" style-hover="border-color:#0475BB;color:#0475BB">Cómo llegar</a>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.06);display:flex;flex-direction:column">
+          <div style="position:relative;width:100%;height:clamp(170px,22vw,210px);background:#A3B2C1">
+            <img src="assets/cemento.jpg" alt="Materiales de construcción · Ferretería San José" loading="lazy" style="display:block;width:100%;height:100%;object-fit:cover">
+            <div style="position:absolute;top:14px;left:14px;background:#0475BB;color:#fff;font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:12px;padding:6px 12px;border-radius:4px">Centro Constructor</div>
+          </div>
+          <div style="padding:24px;display:flex;flex-direction:column;gap:14px;flex:1">
+            <div>
+              <h3 style="font-family:'Anton';font-weight:400;text-transform:uppercase;font-size:clamp(22px,2.6vw,30px);line-height:1;margin:0;color:#0F1C27">Construcción pesada</h3>
+              <p style="font-family:'Barlow Condensed';font-size:16.5px;line-height:1.45;color:#3A4C5E;margin:10px 0 0">Cemento, hierro, agregados, block, lámina y PVC. Todo para levantar tu obra.</p>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;color:#24394C;font-size:15.5px">
+              <span style="color:#E8521A;display:flex;margin-top:1px">{{ icPin }}</span>
+              <span>Corinto, Morazán, El Salvador</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;color:#24394C;font-size:15.5px">
+              <span style="color:#E8521A;display:flex;margin-top:1px">{{ icClock }}</span>
+              <span style="line-height:1.55">Lun–Vie 6:30 a.m.–4:30 p.m.<br>Domingo 6:30 a.m.–12:00 m.<br>Sábado cerrado hasta nuevo aviso</span>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:auto;padding-top:6px">
+              <a href="{{ waGeneric }}" target="_blank" rel="noopener" style="flex:1;min-width:130px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#F15930;color:#fff;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:14px;padding:12px 14px;border-radius:4px;text-decoration:none" style-hover="background:#FF6A3D">{{ icWa }} WhatsApp</a>
+              <a href="{{ mapsConstructor }}" target="_blank" rel="noopener" style="flex:1;min-width:130px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#fff;color:#0F1C27;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:14px;padding:12px 14px;border-radius:4px;border:1.5px solid rgba(0,0,0,.16);text-decoration:none" style-hover="border-color:#0475BB;color:#0475BB">Cómo llegar</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section style="position:relative;z-index:1;background:rgba(7,20,34,.52);border-top:1px solid rgba(255,255,255,.05)">
+    <div style="max-width:1280px;margin:0 auto;width:100%;padding:clamp(56px,8vw,96px) clamp(20px,5vw,72px)">
+      <div style="font-family:'Barlow Condensed';text-transform:uppercase;letter-spacing:.22em;font-size:13px;font-weight:600;color:#F15930;margin-bottom:12px">Por qué Ferretería San José</div>
+      <h2 style="font-family:'Anton';font-weight:400;text-transform:uppercase;font-size:clamp(28px,4vw,52px);line-height:.98;margin:0 0 clamp(28px,4vw,48px);color:#EEF5FB;max-width:760px">Gente del oficio, surtido de verdad</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px">
+        <div style="border-top:3px solid #F15930;padding:22px 4px 4px">
+          <div style="color:#F15930;margin-bottom:14px">{{ icTruck }}</div>
+          <h3 style="font-family:'Barlow Condensed';font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:19px;color:#EAF2F9;margin:0 0 8px">Dos locales, un viaje</h3>
+          <p style="font-size:16px;line-height:1.5;color:#93A9BF;margin:0">Ferretería general y construcción pesada. Lo que falte en uno, lo tienes en el otro.</p>
+        </div>
+        <div style="border-top:3px solid #F15930;padding:22px 4px 4px">
+          <div style="color:#F15930;margin-bottom:14px">{{ icBox }}</div>
+          <h3 style="font-family:'Barlow Condensed';font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:19px;color:#EAF2F9;margin:0 0 8px">+10,000 productos</h3>
+          <p style="font-size:16px;line-height:1.5;color:#93A9BF;margin:0">Herramientas, materiales, repuestos y accesorios en 226 categorías de inventario.</p>
+        </div>
+        <div style="border-top:3px solid #F15930;padding:22px 4px 4px">
+          <div style="color:#F15930;margin-bottom:14px">{{ icHard }}</div>
+          <h3 style="font-family:'Barlow Condensed';font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:19px;color:#EAF2F9;margin:0 0 8px">Te asesoramos</h3>
+          <p style="font-size:16px;line-height:1.5;color:#93A9BF;margin:0">Más de 14 colaboradores que conocen el oficio y te recomiendan lo correcto para el trabajo.</p>
+        </div>
+        <div style="border-top:3px solid #F15930;padding:22px 4px 4px">
+          <div style="color:#F15930;margin-bottom:14px">{{ icClockBig }}</div>
+          <h3 style="font-family:'Barlow Condensed';font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:19px;color:#EAF2F9;margin:0 0 8px">Abrimos temprano</h3>
+          <p style="font-size:16px;line-height:1.5;color:#93A9BF;margin:0">Desde las 6:30 a.m. Llega antes de empezar la jornada en la obra.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="position:relative;z-index:1;background:#F15930;color:#1A0E07;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:6px;background:repeating-linear-gradient(135deg,#1A0E07 0 18px,#F15930 18px 36px);opacity:.5"></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:6px;background:repeating-linear-gradient(135deg,#1A0E07 0 18px,#F15930 18px 36px);opacity:.5"></div>
+    <div style="max-width:1280px;margin:0 auto;width:100%;padding:clamp(48px,7vw,90px) clamp(20px,5vw,72px);text-align:center">
+      <div style="font-family:'Barlow Condensed';text-transform:uppercase;letter-spacing:.28em;font-size:14px;font-weight:700;color:#5A2A14;margin-bottom:16px">El compromiso de la casa</div>
+      <div style="font-family:'Anton';font-weight:400;text-transform:uppercase;font-size:clamp(38px,7vw,96px);line-height:.92;letter-spacing:.01em;color:#1A0E07">Buen servicio y<br>calidad siempre</div>
+    </div>
+  </section>
+
+  <section id="contacto" style="position:relative;z-index:1;background:transparent;scroll-margin-top:72px;border-top:1px solid rgba(255,255,255,.05)">
+    <div style="max-width:1280px;margin:0 auto;width:100%;padding:clamp(56px,8vw,100px) clamp(20px,5vw,72px);display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(30px,5vw,56px);align-items:start">
+
+      <div>
+        <div style="font-family:'Barlow Condensed';text-transform:uppercase;letter-spacing:.22em;font-size:13px;font-weight:600;color:#F15930;margin-bottom:12px">Contacto</div>
+        <h2 style="font-family:'Anton';font-weight:400;text-transform:uppercase;font-size:clamp(30px,4.4vw,56px);line-height:.98;margin:0 0 18px;color:#EEF5FB">Visítanos o escríbenos</h2>
+        <p style="font-size:17px;line-height:1.5;color:#A2B8CC;margin:0 0 26px;max-width:480px">Pídenos precios, existencia o cotizaciones por WhatsApp. Te contestamos en horario de tienda.</p>
+
+        <a href="{{ waGeneric }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:11px;background:#F15930;color:#fff;font-family:'Barlow Condensed';font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:18px;padding:16px 26px;border-radius:4px;text-decoration:none;margin-bottom:24px" style-hover="background:#FF6A3D">{{ icWaBig }} +503 7493-9560</a>
+
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <a href="tel:+50326274696" style="display:flex;align-items:center;gap:13px;text-decoration:none;color:#C7D8E7;padding:14px 0;border-top:1px solid rgba(255,255,255,.08);font-size:17px" style-hover="color:#fff">
+            <span style="color:#0475BB;display:flex">{{ icPhone }}</span> Teléfono fijo · 2627-4696
+          </a>
+          <div style="display:flex;align-items:flex-start;gap:13px;color:#C7D8E7;padding:14px 0;border-top:1px solid rgba(255,255,255,.08);font-size:17px">
+            <span style="color:#0475BB;display:flex;margin-top:1px">{{ icPin }}</span> Corinto, Morazán, El Salvador · 2 locales
+          </div>
+          <a href="mailto:admonferreteriasanjose@gmail.com" style="display:flex;align-items:center;gap:13px;text-decoration:none;color:#C7D8E7;padding:14px 0;border-top:1px solid rgba(255,255,255,.08);font-size:17px;word-break:break-all" style-hover="color:#fff">
+            <span style="color:#0475BB;display:flex">{{ icMail }}</span> admonferreteriasanjose@gmail.com
+          </a>
+          <a href="https://ferreteriasnjose.com" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:13px;text-decoration:none;color:#C7D8E7;padding:14px 0;border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);font-size:17px" style-hover="color:#fff">
+            <span style="color:#0475BB;display:flex">{{ icGrid }}</span> ferreteriasnjose.com
+          </a>
+        </div>
+
+        <div style="display:flex;gap:11px;margin-top:24px">
+          <a href="https://www.instagram.com/sanjoseferreterias" target="_blank" rel="noopener" aria-label="Instagram" style="display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border:1px solid rgba(255,255,255,.14);border-radius:6px;color:#C7D8E7;text-decoration:none" style-hover="border-color:#F15930;color:#fff;background:#12293E">{{ icIg }}</a>
+          <a href="https://www.facebook.com/search/top?q=Ferreter%C3%ADa%20San%20Jos%C3%A9" target="_blank" rel="noopener" aria-label="Facebook" style="display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border:1px solid rgba(255,255,255,.14);border-radius:6px;color:#C7D8E7;text-decoration:none" style-hover="border-color:#0475BB;color:#fff;background:#12293E">{{ icFb }}</a>
+          <a href="https://www.tiktok.com/@ferretera.san.jos" target="_blank" rel="noopener" aria-label="TikTok" style="display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border:1px solid rgba(255,255,255,.14);border-radius:6px;color:#C7D8E7;text-decoration:none" style-hover="border-color:#F15930;color:#fff;background:#12293E">{{ icTt }}</a>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div style="background:#102A42;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:24px">
+          <div style="display:flex;align-items:center;gap:10px;font-family:'Barlow Condensed';text-transform:uppercase;letter-spacing:.1em;font-weight:700;font-size:15px;color:#EAF2F9;margin-bottom:16px">
+            <span style="color:#F15930;display:flex">{{ icClock }}</span> Horario de atención
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-top:1px solid rgba(255,255,255,.07);font-size:17px">
+            <span style="color:#A2B8CC">Lunes a Viernes</span>
+            <span style="font-weight:600;color:#EAF2F9">6:30 a.m. – 4:30 p.m.</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-top:1px solid rgba(255,255,255,.07);font-size:17px">
+            <span style="color:#A2B8CC">Domingo</span>
+            <span style="font-weight:600;color:#EAF2F9">6:30 a.m. – 12:00 m.</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-top:1px solid rgba(255,255,255,.07);font-size:17px">
+            <span style="color:#A2B8CC">Sábado</span>
+            <span style="font-weight:600;color:#F6A07F">Cerrado hasta nuevo aviso</span>
+          </div>
+        </div>
+
+        <div style="position:relative;width:100%;height:clamp(220px,28vw,300px);border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden;background:#102A42">
+          <iframe src="https://www.google.com/maps?q=13.8135754,-87.9694161&z=15&output=embed" title="Ubicación de Ferretería San José en Corinto, Morazán" loading="lazy" referrerpolicy="no-referrer-when-downgrade" style="border:0;display:block;width:100%;height:100%;filter:invert(.91) hue-rotate(192deg) saturate(.72) brightness(.98) contrast(.92)"></iframe>
+          <a href="{{ mapsMatriz }}" target="_blank" rel="noopener" style="position:absolute;right:12px;bottom:12px;display:inline-flex;align-items:center;gap:8px;background:#0475BB;color:#fff;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:13px;padding:10px 15px;border-radius:4px;text-decoration:none" style-hover="background:#2B7CC4">{{ icPin }} Abrir en Maps</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="position:relative;z-index:1;background:#08182A;border-top:1px solid rgba(255,255,255,.07)">
+    <div style="max-width:1280px;margin:0 auto;width:100%;padding:clamp(40px,5vw,60px) clamp(20px,5vw,72px) 30px;display:flex;flex-wrap:wrap;gap:32px;justify-content:space-between;align-items:flex-start">
+      <div style="max-width:320px">
+        <img src="assets/logo.png" alt="Ferretería San José" style="height:96px;width:auto;margin-bottom:14px">
+        <p style="font-size:15.5px;line-height:1.5;color:#7893AC;margin:0">Ferretería y materiales de construcción. Buen servicio y calidad siempre, en Corinto, Morazán.</p>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:42px">
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <div style="font-family:'Barlow Condensed';text-transform:uppercase;letter-spacing:.12em;font-weight:700;font-size:13px;color:#5D7A95;margin-bottom:3px">Navegar</div>
+          <a href="catalogo.html" style="text-decoration:none;color:#AFC4D8;font-size:15.5px" style-hover="color:#F15930">Catálogo</a>
+          <a href="#locales" style="text-decoration:none;color:#AFC4D8;font-size:15.5px" style-hover="color:#F15930">Locales</a>
+          <a href="#contacto" style="text-decoration:none;color:#AFC4D8;font-size:15.5px" style-hover="color:#F15930">Contacto</a>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <div style="font-family:'Barlow Condensed';text-transform:uppercase;letter-spacing:.12em;font-weight:700;font-size:13px;color:#5D7A95;margin-bottom:3px">Contacto</div>
+          <a href="{{ waGeneric }}" target="_blank" rel="noopener" style="text-decoration:none;color:#AFC4D8;font-size:15.5px" style-hover="color:#F15930">WhatsApp 7493-9560</a>
+          <a href="tel:+50326274696" style="text-decoration:none;color:#AFC4D8;font-size:15.5px" style-hover="color:#F15930">Tel. 2627-4696</a>
+          <span style="color:#AFC4D8;font-size:15.5px">Corinto, Morazán</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <div style="font-family:'Barlow Condensed';text-transform:uppercase;letter-spacing:.12em;font-weight:700;font-size:13px;color:#5D7A95;margin-bottom:3px">Redes</div>
+          <a href="https://www.instagram.com/sanjoseferreterias" target="_blank" rel="noopener" style="text-decoration:none;color:#AFC4D8;font-size:15.5px" style-hover="color:#F15930">Instagram</a>
+          <a href="https://www.facebook.com/search/top?q=Ferreter%C3%ADa%20San%20Jos%C3%A9" target="_blank" rel="noopener" style="text-decoration:none;color:#AFC4D8;font-size:15.5px" style-hover="color:#F15930">Facebook</a>
+          <a href="https://www.tiktok.com/@ferretera.san.jos" target="_blank" rel="noopener" style="text-decoration:none;color:#AFC4D8;font-size:15.5px" style-hover="color:#F15930">TikTok</a>
+        </div>
+      </div>
+    </div>
+    <div style="border-top:1px solid rgba(255,255,255,.07)">
+      <div style="max-width:1280px;margin:0 auto;width:100%;padding:18px clamp(20px,5vw,72px);display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;font-size:13.5px;color:#5D7A95;letter-spacing:.03em">
+        <span>© {{ year }} Ferretería San José · Corinto, Morazán, El Salvador</span>
+        <span style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><a href="interno.html" style="text-decoration:none;color:#7893AC" style-hover="color:#F15930">Acceso interno · empleados</a><span>ferreteriasnjose.com</span></span>
+      </div>
+    </div>
+  </footer>
+
+  <sc-if value="{{ showFab }}" hint-placeholder-val="{{ true }}">
+  <a href="{{ waGeneric }}" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp" style="position:fixed;right:clamp(16px,3vw,28px);bottom:clamp(16px,3vw,28px);z-index:80;display:inline-flex;align-items:center;justify-content:center;width:60px;height:60px;background:#25D366;color:#fff;border-radius:50%;text-decoration:none;animation:scFab 2.6s ease-in-out infinite" style-hover="background:#1FBE5A">{{ icFab }}</a>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showCatalog&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Secciones&quot;},&quot;showStats&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Secciones&quot;},&quot;showFloatingWhatsApp&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Secciones&quot;}}">
+class Component extends DCLogic {
+  state = { query: '', isMobile: false, menuOpen: false, activeCat: '', limit: 24, catalog: [], categories: [], loaded: false, catalogOpen: null };
+
+  componentDidMount() {
+    this._r = () => {
+      const m = window.innerWidth < 900;
+      this.setState((s) => (m !== s.isMobile ? { isMobile: m, menuOpen: m ? s.menuOpen : false } : null));
+    };
+    this._r();
+    window.addEventListener('resize', this._r);
+    const noMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    this._plan = () => {
+      const vh = window.innerHeight || 800;
+      const parts = document.querySelectorAll('.fsj-plan [data-plan]');
+      for (let i = 0; i < parts.length; i++) {
+        const g = parts[i];
+        const L = +g.getAttribute('data-len') || 0;
+        let p = 1;
+        if (!noMotion) {
+          const r = g.getBoundingClientRect();
+          p = (vh * 0.96 - r.top) / (vh * 0.4);
+          p = p < 0 ? 0 : p > 1 ? 1 : p;
+        }
+        if (L) g.style.strokeDashoffset = (L * (1 - p)).toFixed(1);
+        g.style.opacity = (p <= 0 ? 0 : Math.min(1, p * 1.35)).toFixed(3);
+      }
+    };
+    this._planTick = () => {
+      if (this._pf) return;
+      this._pf = requestAnimationFrame(() => { this._pf = 0; this._plan(); });
+    };
+    this._plan();
+    window.addEventListener('scroll', this._planTick, { passive: true });
+    window.addEventListener('resize', this._planTick);
+    window.addEventListener('load', this._planTick);
+    import('./catalog-data.js').then((m) => {
+      this.setState({ catalog: m.CATALOG || [], categories: m.CATEGORIES || [], loaded: true });
+    }).catch(() => this.setState({ loaded: true }));
+  }
+  componentWillUnmount() {
+    if (this._r) window.removeEventListener('resize', this._r);
+    if (this._planTick) {
+      window.removeEventListener('scroll', this._planTick);
+      window.removeEventListener('resize', this._planTick);
+      window.removeEventListener('load', this._planTick);
+    }
+  }
+
+  WA = 'https://wa.me/50374939560';
+  MAPS = 'https://maps.app.goo.gl/xBFpCCNBtL2r6uZk7';
+  MAPS_MATRIZ = 'https://maps.app.goo.gl/1QAPrKMy8PCnzEaw5';
+  MAPS_CONSTRUCTOR = 'https://maps.app.goo.gl/G1cPYBmCjQwpauWJ8';
+
+  catIconKey(c) {
+    const k = (c || '').toUpperCase();
+    if (/HERRAMIENT|LLAVE|MARTILLO|ALICATE|DESARM/.test(k)) return 'wrench';
+    if (/FOCO|BOMBILL|LAMPAR/.test(k)) return 'bulb';
+    if (/ELECTRIC|CABLE/.test(k)) return 'zap';
+    if (/PINTUR|ESPRAY|BROCHA|COLORANTE|SELLADOR|IMPERME/.test(k)) return 'brush';
+    if (/PVC|TUBO|MANGUERA|VALVULA/.test(k)) return 'cylinder';
+    if (/PERNO|TORNILL|ARANDELA|TUERCA|CLAVO|REMACHE/.test(k)) return 'hexnut';
+    if (/STIHL|REPUESTO|FAJA|ACEITE|COMPRESOR|MOTOR/.test(k)) return 'cog';
+    if (/DISCO|LIJA|BROCA|LIMA/.test(k)) return 'disc';
+    if (/ESTRUCTURAL|LAMINA|METAL|BLOQUE|CEMENTO|HIERRO|VARILLA|FORJADO/.test(k)) return 'truck';
+    if (/FONTANER|INODORO|CERAMIC|GRIFO/.test(k)) return 'droplet';
+    if (/CERRADUR|CANDADO|PERILLA|CHAPA/.test(k)) return 'lock';
+    return 'box';
+  }
+
+  ICONS = {
+    wrench: [{ t: 'path', d: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z' }],
+    box: [{ t: 'path', d: 'M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z' }, { t: 'path', d: 'm3.3 7 8.7 5 8.7-5' }, { t: 'path', d: 'M12 22V12' }],
+    brush: [{ t: 'path', d: 'm9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08' }, { t: 'path', d: 'M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z' }],
+    zap: [{ t: 'path', d: 'M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z' }],
+    cog: [{ t: 'path', d: 'M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z' }, { t: 'circle', cx: 12, cy: 12, r: 3 }],
+    cylinder: [{ t: 'ellipse', cx: 12, cy: 5, rx: 9, ry: 3 }, { t: 'path', d: 'M3 5v14a9 3 0 0 0 18 0V5' }],
+    hexnut: [{ t: 'path', d: 'M12 2.5 20 7v10l-8 4.5L4 17V7z' }, { t: 'circle', cx: 12, cy: 12, r: 3.2 }],
+    droplet: [{ t: 'path', d: 'M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z' }],
+    truck: [{ t: 'path', d: 'M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2' }, { t: 'path', d: 'M15 18H9' }, { t: 'path', d: 'M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14' }, { t: 'circle', cx: 7, cy: 18, r: 2 }, { t: 'circle', cx: 17, cy: 18, r: 2 }],
+    hardhat: [{ t: 'path', d: 'M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-1a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1z' }, { t: 'path', d: 'M10 9.5V6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3.5' }, { t: 'path', d: 'M4 16v-3a8 8 0 0 1 16 0v3' }],
+    disc: [{ t: 'circle', cx: 12, cy: 12, r: 9 }, { t: 'circle', cx: 12, cy: 12, r: 3 }],
+    lock: [{ t: 'rect', x: 4, y: 11, width: 16, height: 10, rx: 2 }, { t: 'path', d: 'M8 11V7a4 4 0 0 1 8 0v4' }],
+    bulb: [{ t: 'path', d: 'M9 18h6' }, { t: 'path', d: 'M10 22h4' }, { t: 'path', d: 'M12 2a6 6 0 0 0-4 10.5c.7.7 1 1.2 1 2.5h6c0-1.3.3-1.8 1-2.5A6 6 0 0 0 12 2z' }],
+    mail: [{ t: 'rect', x: 2, y: 4, width: 20, height: 16, rx: 2 }, { t: 'path', d: 'm22 7-10 6L2 7' }],
+    search: [{ t: 'circle', cx: 11, cy: 11, r: 7 }, { t: 'path', d: 'm21 21-4.3-4.3' }],
+    phone: [{ t: 'path', d: 'M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z' }],
+    pin: [{ t: 'path', d: 'M20 10c0 4.4-8 12-8 12s-8-7.6-8-12a8 8 0 0 1 16 0z' }, { t: 'circle', cx: 12, cy: 10, r: 3 }],
+    clock: [{ t: 'circle', cx: 12, cy: 12, r: 9 }, { t: 'path', d: 'M12 7v5l3 2' }],
+    arrow: [{ t: 'path', d: 'M5 12h14' }, { t: 'path', d: 'm12 5 7 7-7 7' }],
+    menu: [{ t: 'path', d: 'M4 6h16' }, { t: 'path', d: 'M4 12h16' }, { t: 'path', d: 'M4 18h16' }],
+    close: [{ t: 'path', d: 'M18 6 6 18' }, { t: 'path', d: 'M6 6l12 12' }],
+    grid: [{ t: 'rect', x: 3, y: 3, width: 7, height: 7, rx: 1 }, { t: 'rect', x: 14, y: 3, width: 7, height: 7, rx: 1 }, { t: 'rect', x: 3, y: 14, width: 7, height: 7, rx: 1 }, { t: 'rect', x: 14, y: 14, width: 7, height: 7, rx: 1 }],
+    check: [{ t: 'path', d: 'M20 6 9 17l-5-5' }],
+    instagram: [{ t: 'rect', x: 2, y: 2, width: 20, height: 20, rx: 5 }, { t: 'path', d: 'M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z' }, { t: 'line', x1: 17.5, y1: 6.5, x2: 17.51, y2: 6.5 }],
+    facebook: { els: [{ t: 'path', d: 'M14 13.5h2.5l1-4H14v-2c0-1.03 0-2 2-2h1.5V2.14c-.33-.04-1.57-.14-2.88-.14C11.9 2 10 3.66 10 6.7v2.8H7v4h3V22h4z' }] },
+    tiktok: { els: [{ t: 'path', d: 'M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5 2.59 2.59 0 0 1-2.59-2.59 2.59 2.59 0 0 1 3.4-2.46V9.4a5.66 5.66 0 0 0-.81-.06A5.66 5.66 0 0 0 4.2 15a5.66 5.66 0 0 0 11.32 0V8.99a7.49 7.49 0 0 0 4.4 1.4V7.3a4.3 4.3 0 0 1-3.32-1.48z' }] },
+    whatsapp: { els: [{ t: 'path', d: 'M19.05 4.91A9.82 9.82 0 0 0 12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.2 4.78 1.2h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7zM12.04 20.13h-.01c-1.52 0-3-.41-4.3-1.18l-.31-.18-3.2.84.86-3.12-.2-.32a8.2 8.2 0 0 1-1.26-4.36c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.7 8.23-8.25 8.23zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.16.25-.64.81-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.51.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43-.14-.01-.31-.01-.48-.01-.17 0-.43.06-.66.31-.23.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29z' }] }
+  };
+
+  icon(key, size) {
+    const E = React.createElement;
+    let def = this.ICONS[key] || this.ICONS.box;
+    let fill = false, els;
+    if (Array.isArray(def)) { els = def; } else { els = def.els; fill = true; }
+    const kids = els.map((e, i) => {
+      const o = Object.assign({}, e); delete o.t; o.key = i; return E(e.t, o);
+    });
+    return E('svg', { width: size || 24, height: size || 24, viewBox: '0 0 24 24', fill: fill ? 'currentColor' : 'none', stroke: fill ? 'none' : 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' }, kids);
+  }
+
+  waFor(text) { return this.WA + '?text=' + encodeURIComponent(text); }
+
+  setQuery = (e) => this.setState({ query: e.target.value, activeCat: '', limit: 24, catalogOpen: true });
+  clearQuery = () => this.setState({ query: '', limit: 24 });
+  pick = (name) => () => this.setState({ query: name, activeCat: '', limit: 24, catalogOpen: true });
+  pickCat = (key) => () => this.setState({ activeCat: key, query: '', limit: 24, catalogOpen: true });
+  showMore = () => this.setState((s) => ({ limit: s.limit + 24 }));
+  clearFilters = () => this.setState({ query: '', activeCat: '', limit: 24 });
+  toggleCatalog = () => this.setState((s) => ({ catalogOpen: !(s.catalogOpen ?? !s.isMobile) }));
+  toggleMenu = () => this.setState((s) => ({ menuOpen: !s.menuOpen }));
+  closeMenu = () => this.setState({ menuOpen: false });
+
+  renderVals() {
+    const q = this.state.query.trim().toLowerCase();
+    const qRaw = this.state.query.trim();
+    const cat = this.state.activeCat;
+    let filtered = this.state.catalog;
+    if (cat) filtered = filtered.filter((p) => p.k === cat);
+    if (q) filtered = filtered.filter((p) => (p.n + ' ' + p.c).toLowerCase().includes(q));
+    const totalFiltered = filtered.length;
+    const shown = filtered.slice(0, this.state.limit);
+    const products = shown.map((p) => {
+      const low = p.e < 5;
+      return {
+        name: p.n, cat: p.c, unit: p.u === 'Unidad' ? 'c/u' : p.u,
+        priceFmt: '$' + p.p.toFixed(2),
+        stockLabel: low ? 'Pocas unidades' : 'En existencia',
+        stockBg: low ? 'rgba(241,89,48,0.13)' : 'rgba(63,166,106,0.16)',
+        stockFg: low ? '#F6A07F' : '#6FD29A',
+        stockDot: low ? '#F15930' : '#3FA66A',
+        icon: this.icon(this.catIconKey(p.k), 16),
+        icWaTiny: this.icon('whatsapp', 15),
+        wa: this.waFor('Hola, me interesa: ' + p.n + ' (' + p.c + '). ¿Precio y existencia?')
+      };
+    });
+    const topCats = this.state.categories.slice(0, 12);
+    const cats = topCats.map((c) => ({ name: c.name, count: c.count.toLocaleString('es-SV'), icon: this.icon(this.catIconKey(c.key), 30), onClick: this.pickCat(c.key) }));
+    const chipOn = { fg: '#fff', bg: '#F15930', bd: '#F15930' };
+    const chipOff = { fg: '#BDD0E1', bg: '#12293E', bd: 'rgba(255,255,255,0.1)' };
+    const catChips = [Object.assign({ name: 'Todas', onClick: this.clearFilters }, cat ? chipOff : chipOn)].concat(
+      topCats.slice(0, 10).map((c) => Object.assign({ name: c.name, onClick: this.pickCat(c.key) }, c.key === cat ? chipOn : chipOff))
+    );
+    const chips = topCats.slice(0, 6).map((c) => ({ name: c.name, onClick: this.pickCat(c.key) }));
+    const activeCatName = cat ? ((this.state.categories.find((c) => c.key === cat) || {}).name || '') : '';
+    const moreCount = Math.max(0, this.state.categories.length - topCats.length);
+    const filterLabel = cat ? (' en “' + activeCatName + '”') : (qRaw ? (' para “' + qRaw + '”') : '');
+    const catOpen = this.state.catalogOpen ?? !this.state.isMobile;
+    const showCount = catOpen && this.state.loaded;
+    const toggleLabel = catOpen ? 'Ocultar catálogo ▴' : ('Ver productos · ' + totalFiltered.toLocaleString('es-SV') + ' ▾');
+
+    return {
+      query: this.state.query,
+      qActive: q.length > 0,
+      setQuery: this.setQuery,
+      clearQuery: this.clearQuery,
+      toggleMenu: this.toggleMenu,
+      closeMenu: this.closeMenu,
+      isMobile: this.state.isMobile,
+      showNav: !this.state.isMobile,
+      showMenuPanel: this.state.isMobile && this.state.menuOpen,
+      products,
+      loaded: this.state.loaded,
+      loading: !this.state.loaded,
+      noResults: this.state.loaded && totalFiltered === 0,
+      resultCount: totalFiltered.toLocaleString('es-SV'),
+      shownCount: products.length,
+      hasMore: totalFiltered > this.state.limit,
+      showMore: this.showMore,
+      filterActive: !!cat || qRaw.length > 0,
+      filterLabel,
+      catOpen,
+      showCount,
+      toggleLabel,
+      toggleCatalog: this.toggleCatalog,
+      clearFilters: this.clearFilters,
+      cats,
+      catChips,
+      moreCatCount: moreCount,
+      totalOnline: this.state.catalog.length.toLocaleString('es-SV'),
+      chips,
+      MAPS: this.MAPS,
+      mapsMatriz: this.MAPS_MATRIZ,
+      mapsConstructor: this.MAPS_CONSTRUCTOR,
+      waGeneric: this.waFor('Hola, vengo de la página web de Ferretería San José.'),
+      waSearch: this.waFor(this.state.query ? ('Hola, busco: ' + this.state.query + '. ¿Tienen?') : 'Hola, necesito ayuda para encontrar un producto.'),
+      showCatalog: this.props.showCatalog ?? true,
+      showStats: this.props.showStats ?? true,
+      showFab: this.props.showFloatingWhatsApp ?? true,
+      icSearch: this.icon('search', 20),
+      icWa: this.icon('whatsapp', 19),
+      icWaBig: this.icon('whatsapp', 22),
+      icFab: this.icon('whatsapp', 30),
+      icPhone: this.icon('phone', 19),
+      icPhoneSm: this.icon('phone', 15),
+      icPin: this.icon('pin', 19),
+      icClock: this.icon('clock', 19),
+      icClockSm: this.icon('clock', 15),
+      icClockBig: this.icon('clock', 30),
+      icArrow: this.icon('arrow', 17),
+      icMenu: this.icon('menu', 26),
+      icX: this.icon('close', 18),
+      icIg: this.icon('instagram', 21),
+      icFb: this.icon('facebook', 21),
+      icTt: this.icon('tiktok', 21),
+      icGrid: this.icon('grid', 19),
+      icMail: this.icon('mail', 19),
+      icTruck: this.icon('truck', 32),
+      icBox: this.icon('box', 32),
+      icHard: this.icon('hardhat', 32),
+      year: new Date().getFullYear()
+    };
+  }
+}
+</script>
+
+</body>
+</html>
