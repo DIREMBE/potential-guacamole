@@ -220,6 +220,12 @@ tr:hover td{background:var(--s50)}
   /* ---------------- Umbrales de detección (ajustables) ---------------- */
   var STOCK_CENTINELA = 9000;    // existencias así de altas suelen ser un error/"sin control"
   var MARGEN_ALTO     = 300;     // % de margen que hace sospechar de un error de precio
+  var IVA             = 0.13;    // El Salvador
+  /* FelTec a veces escribe en la columna de precio de venta el costo + IVA, o
+     directamente el doble del costo. Ninguno de los dos es un precio de venta:
+     publicarlos sería vender al costo. Se detectan por la proporción exacta. */
+  var esCostoConIVA = function(p){ return p.compra>0 && p.venta>0 && Math.abs(p.venta/p.compra-(1+IVA))<0.005; };
+  var esCostoDoble  = function(p){ return p.compra>0 && p.venta>0 && Math.abs(p.venta/p.compra-2)<0.02; };
   var num=function(v){ var n=parseFloat(String(v==null?'':v).replace(/,/g,'').replace(/\s/g,'')); return isFinite(n)?n:0; };
 
   var datos=null, anomalias=[];
@@ -279,11 +285,25 @@ tr:hover td{background:var(--s50)}
     var sinCat = D.filter(function(p){ return !p.cat; });
     var descuadre = D.filter(function(p){ return Math.abs((p.saldo + p.ent - p.sal) - p.exist) > 0.009; });
     var salioSinStock = D.filter(function(p){ return p.sal > 0 && p.exist <= 0; });
+    var precioEsIVA = D.filter(esCostoConIVA);
+    var precioEsDoble = D.filter(esCostoDoble);
 
     function reg(clave,nivel,titulo,desc,lista,cols){ if(lista.length) A.push({clave:clave,nivel:nivel,titulo:titulo,desc:desc,lista:lista,cols:cols}); }
 
     var C_STOCK=[['item','ITEM'],['nombre','Producto'],['exist','Existencia'],['uni','Unidad'],['venta','Precio']];
     var C_PRECIO=[['item','ITEM'],['nombre','Producto'],['compra','Costo'],['venta','Venta'],['exist','Existencia']];
+
+    var C_IVA=[['item','ITEM'],['nombre','Producto'],['compra','Costo'],['venta','"Venta" del archivo'],['exist','Existencia']];
+    reg('precioiva','grave','El "precio de venta" es el costo + IVA',
+        'En estos, el número de la columna de venta es exactamente el costo más el 13% de IVA. ' +
+        'No es un precio de venta: si se publica, se le está vendiendo al cliente al costo. ' +
+        'El precio real está en el sistema pero NO viaja en este archivo: hay que ponerlo a mano.',
+        precioEsIVA, C_IVA);
+    reg('preciodoble','grave','El "precio de venta" es el doble del costo',
+        'Aquí la columna de venta trae exactamente el costo multiplicado por dos. Es el otro ' +
+        'error conocido de FelTec. Puede coincidir con el precio real, pero conviene revisarlo ' +
+        'uno por uno antes de publicarlo.',
+        precioEsDoble, C_IVA);
 
     reg('centinela','grave','Existencias imposibles',
         'Cantidades enormes (≥ '+nf(STOCK_CENTINELA)+'). Suelen ser un error de digitación o un producto "sin control de stock". Inflan el valor del inventario.',
@@ -319,8 +339,14 @@ tr:hover td{background:var(--s50)}
   function metricas(D){
     var normales = D.filter(function(p){ return p.exist < STOCK_CENTINELA; });
     function val(l,campo){ return l.reduce(function(a,p){ return a + (p.exist>0 ? p.exist*p[campo] : 0); },0); }
-    var margenes = D.filter(function(p){return p.venta>0&&p.compra>0;})
-                    .map(function(p){return (p.venta-p.compra)/p.compra*100;}).sort(function(a,b){return a-b;});
+    /* Para el margen solo cuentan los productos con un precio de venta de
+       verdad: los que traen costo+IVA o el doble del costo ensucian la cuenta
+       (con ellos el "margen mediano" da 13%, que es el IVA, no una ganancia). */
+    var conPrecioReal = D.filter(function(p){
+      return p.venta>0 && p.compra>0 && !esCostoConIVA(p) && !esCostoDoble(p);
+    });
+    var margenes = conPrecioReal.map(function(p){return (p.venta-p.compra)/p.compra*100;})
+                                .sort(function(a,b){return a-b;});
     var vendido = D.reduce(function(a,p){ return a + (p.exist<STOCK_CENTINELA ? p.tventa : 0); },0);
     return {
       total:D.length,
@@ -332,6 +358,8 @@ tr:hover td{background:var(--s50)}
       valorCosto:val(normales,'compra'),
       valorVenta:val(normales,'venta'),
       margenMediano: margenes.length ? margenes[Math.floor(margenes.length/2)] : 0,
+      conPrecioReal: conPrecioReal.length,
+      precioSospechoso: D.filter(function(p){ return esCostoConIVA(p) || esCostoDoble(p); }).length,
       conMovimiento:D.filter(function(p){return p.sal>0;}).length,
       sinMovimiento:D.filter(function(p){return p.sal<=0 && p.exist>0;}).length,
       vendido:vendido,
@@ -370,9 +398,19 @@ tr:hover td{background:var(--s50)}
       kpi(money0(M.valorCosto),'Valor a costo','lo que costó la mercadería','b') +
       kpi(money0(M.valorVenta),'Valor a precio de venta','si se vendiera todo','ok') +
       kpi(money0(M.valorVenta-M.valorCosto),'Ganancia potencial','') +
-      kpi(M.margenMediano.toFixed(1)+'%','Margen mediano','la mitad gana más que esto');
+      kpi(M.margenMediano.toFixed(1)+'%','Margen mediano',
+          'solo sobre los '+nf(M.conPrecioReal)+' con precio de verdad');
 
-    $('nota-valor').innerHTML = M.excluidos
+    if (M.precioSospechoso) {
+      $('nota-valor').innerHTML =
+        '<b style="color:var(--dang)">Cuidado con los precios de este archivo:</b> en <b>' +
+        nf(M.precioSospechoso) + '</b> producto(s) la columna de venta no trae un precio de venta, ' +
+        'sino el <b>costo + IVA</b> o el <b>doble del costo</b>. Míralos en “Posibles errores”. ' +
+        'El valor a precio de venta de aquí arriba se queda corto por esa razón, y publicar esos ' +
+        'números sería vender al costo.<br><br>' +
+        (M.excluidos ? '<b>Nota:</b> además se excluyeron <b>'+nf(M.excluidos)+'</b> producto(s) con ' +
+         'existencias imposibles (≥ '+nf(STOCK_CENTINELA)+').' : '');
+    } else $('nota-valor').innerHTML = M.excluidos
       ? '<b>Nota:</b> se excluyeron <b>'+nf(M.excluidos)+'</b> producto(s) con existencias imposibles (≥ '+nf(STOCK_CENTINELA)+') porque distorsionan el total. Míralos en “Existencias imposibles”.'
       : '<b>Nota:</b> el valor se calcula como existencia × precio de cada producto.';
 

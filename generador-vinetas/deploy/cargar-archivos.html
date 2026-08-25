@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cargar archivos al inventario · interno — Ferretería San José</title>
+<link rel="icon" type="image/png" href="assets/emblem.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#F06030; --orange-2:#d6481c; --blue:#0070C0; --blue-2:#0a5c99;
+  --s50:#f6f5f3; --s100:#e9e6e1; --s200:#d3cec5; --s300:#b3ab9d; --s400:#8b8175;
+  --s500:#6b6255; --s600:#544c42; --s700:#3f3931; --s900:#171512;
+  --ok:#2e7d43; --ok-bg:#e7f3ea; --warn:#c98a12; --warn-bg:#fbf1de; --dang:#c22e26; --dang-bg:#fbe9e7;
+  --r:6px; --rl:10px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--s50);color:var(--s900);font-family:'Barlow',system-ui,sans-serif;font-size:15px;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.04em;margin:0;line-height:1.05}
+a{color:var(--blue-2)}
+img{display:block;max-width:100%}
+button,input,select{font-family:inherit}
+
+header.bar{background:var(--s900);color:#fff;border-bottom:3px solid var(--orange)}
+.bar-in{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:12px clamp(16px,4vw,40px)}
+.bar-in img{height:40px}
+.bt{display:flex;flex-direction:column;line-height:1.15}
+.bt .n{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:19px}
+.bt .s{font-size:12px;color:var(--s300);text-transform:uppercase;letter-spacing:.08em}
+.bar-in .right{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:13.5px;color:var(--s300)}
+.bar-in .right a{color:var(--s300);text-decoration:none}
+.bar-in .right a:hover{color:var(--orange)}
+
+.wrap{max-width:1240px;margin:0 auto;padding:20px clamp(16px,4vw,40px) 70px}
+.card{background:#fff;border:1px solid var(--s200);border-radius:var(--rl);box-shadow:0 1px 2px rgba(23,21,18,.08);margin-bottom:18px}
+.card-h{padding:14px 18px;border-bottom:1px solid var(--s100);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.card-h h2{font-size:17px}
+.card-h .hint{font-size:12.5px;color:var(--s500);font-family:'Barlow',sans-serif;text-transform:none;letter-spacing:0}
+.card-b{padding:16px 18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:600;font-size:14px;padding:9px 15px;border-radius:var(--r);border:1px solid transparent;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.b-pri{background:var(--orange);color:#fff}.b-pri:not(:disabled):hover{background:var(--orange-2)}
+.b-sec{background:var(--blue);color:#fff}.b-sec:not(:disabled):hover{background:var(--blue-2)}
+.b-gh{background:#fff;color:var(--s700);border-color:var(--s300)}.b-gh:not(:disabled):hover{background:var(--s50)}
+.b-sm{padding:6px 11px;font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.note{background:var(--s50);border-left:3px solid var(--s300);padding:11px 13px;border-radius:0 var(--r) var(--r) 0;font-size:13.5px;color:var(--s600);line-height:1.55;margin-top:12px}
+
+.zona{border:2px dashed var(--s300);border-radius:var(--rl);padding:28px;text-align:center;background:#fff;transition:.15s}
+.zona.sobre{border-color:var(--orange);background:#fdf5f1}
+.zona .g{font-size:34px}
+.zona p{margin:8px 0 0;color:var(--s500);font-size:14px}
+
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.sbox{border:1px solid var(--s200);border-radius:var(--rl);padding:12px 14px;background:#fff}
+.sbox .v{font-family:'Anton',sans-serif;font-size:26px;line-height:1}
+.sbox .l{font-size:12px;color:var(--s500);text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+.sbox.w{border-color:var(--warn);background:var(--warn-bg)}
+.sbox.n{border-color:var(--blue);background:#e8f2fa}
+.sbox.d{border-color:var(--dang);background:var(--dang-bg)}
+.sbox.o{border-color:var(--ok);background:var(--ok-bg)}
+
+.grupo{border:1px solid var(--s200);border-radius:var(--rl);margin-bottom:14px;overflow:hidden}
+.grupo-h{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--s50);cursor:pointer}
+.grupo-h .n{font-family:'Anton',sans-serif;font-size:20px;min-width:58px}
+.grupo-h .t{flex:1}
+.grupo-h .t b{display:block;font-size:15px}
+.grupo-h .t span{font-size:12.5px;color:var(--s500)}
+.grupo-b{display:none;padding:0 14px 14px}
+.grupo.on .grupo-b{display:block}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;font-size:12.5px;letter-spacing:.03em;color:var(--s600);padding:8px;border-bottom:2px solid var(--s200);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:13px}
+.up{color:var(--dang);font-weight:600}.down{color:var(--ok);font-weight:600}
+.scroll{overflow:auto;max-height:420px}
+.empty{color:var(--s400);font-style:italic;padding:22px;text-align:center}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(16px);opacity:0;background:var(--s900);color:#fff;padding:11px 18px;border-radius:var(--r);font-size:14px;z-index:200;transition:.2s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.toast.err{background:var(--dang)}
+</style>
+<script src="usuarios.js"></script>
+<script>window.FSJ_ACCESO = { sub: 'Cargar archivos · solo personal' };</script>
+<script src="acceso.js"></script>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-in">
+    <img src="assets/emblem.png" alt="Ferretería San José" onerror="this.style.display='none'">
+    <div class="bt"><span class="n">Ferretería San José</span><span class="s">Cargar archivos · interno</span></div>
+    <div class="right">
+      <span id="quien">—</span>
+      <a href="administrar-productos.html">Administrar productos</a>
+      <a href="interno.html">← Panel</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="card">
+    <div class="card-h">
+      <h2>Cargar un archivo</h2>
+      <span class="hint">Reconoce solo si es el reporte de FelTec o la hoja de conteo</span>
+    </div>
+    <div class="card-b">
+      <div class="zona" id="zona">
+        <div class="g">📄</div>
+        <b>Arrastra aquí el archivo</b>
+        <p>o <a href="#" id="elegir">búscalo en tu computadora</a> · .xlsx</p>
+        <input id="file" type="file" accept=".xlsx,.xls" style="display:none">
+      </div>
+      <div class="row" style="margin-top:12px">
+        <span id="fname" style="font-size:13.5px;color:var(--s500)"></span>
+      </div>
+      <div class="note">
+        <b>Reporte de inventario</b> (FelTec): actualiza existencias, nombres,
+        categorías y precios.<br>
+        <b>Hoja de conteo</b>: trae los códigos de barra y los costos.<br>
+        En los dos casos <b>no se aplica nada hasta que tú lo aceptes</b>.
+      </div>
+    </div>
+  </div>
+
+  <div id="rev" style="display:none">
+    <div class="card">
+      <div class="card-h">
+        <h2 id="rev-tit">Qué cambiaría</h2>
+        <span class="hint" id="rev-sub"></span>
+        <span style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn b-gh b-sm" id="todo-si">Marcar todo</button>
+          <button class="btn b-gh b-sm" id="todo-no">Desmarcar todo</button>
+          <button class="btn b-gh b-sm" id="csv">Descargar revisión (CSV)</button>
+        </span>
+      </div>
+      <div class="card-b">
+        <div class="sum" id="sum"></div>
+        <div id="grupos"></div>
+        <div class="row" style="margin-top:18px;padding-top:16px;border-top:1px solid var(--s100)">
+          <button class="btn b-pri" id="aplicar">Aplicar lo marcado</button>
+          <button class="btn b-gh" id="cancelar">Cancelar</button>
+          <span id="resumen-sel" style="font-size:13.5px;color:var(--s500)"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.mini.min.js"></script>
+<script src="inventario.js"></script>
+<script>
+(function(){
+  'use strict';
+  var $=function(id){return document.getElementById(id);};
+  var nf=function(n){return Number(n||0).toLocaleString('es-SV');};
+  var money=function(n){return 'US$'+(Number(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});};
+  var tt; function toast(m,e){var t=$('toast');t.textContent=m;t.className='toast on'+(e?' err':'');
+    clearTimeout(tt);tt=setTimeout(function(){t.className='toast'+(e?' err':'');},3200);}
+  function csvCell(v){var s=String(v==null?'':v);return /[",\n;]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
+  function bajarCSV(nombre,texto){
+    var blob=new Blob(['﻿'+texto],{type:'text/csv;charset=utf-8'});
+    var url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=nombre;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url);},1000);
+  }
+
+  var empleado='';
+  window.__fsjTrasLogin=function(u){
+    u=u||(window.FSJAuth&&FSJAuth.usuario());
+    if(!u) return;
+    empleado=u.nombre||'';
+    $('quien').textContent=empleado;
+    if(window.Inventario&&Inventario.setClaveServidor) Inventario.setClaveServidor(u.pin||'');
+  };
+  window.__fsjTrasLogin();
+
+  /* ------------------------- elegir el archivo ------------------------- */
+  var zona=$('zona');
+  $('elegir').addEventListener('click',function(e){e.preventDefault();$('file').click();});
+  zona.addEventListener('click',function(){$('file').click();});
+  ['dragenter','dragover'].forEach(function(ev){
+    zona.addEventListener(ev,function(e){e.preventDefault();zona.classList.add('sobre');});});
+  ['dragleave','drop'].forEach(function(ev){
+    zona.addEventListener(ev,function(e){e.preventDefault();zona.classList.remove('sobre');});});
+  zona.addEventListener('drop',function(e){
+    var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
+    if(f) leer(f);
+  });
+  $('file').addEventListener('change',function(e){
+    var f=e.target.files&&e.target.files[0]; e.target.value='';
+    if(f) leer(f);
+  });
+
+  /* ------------------- reconocer el tipo y analizarlo ------------------ */
+  var analisis=null, tipo='';
+
+  function leer(f){
+    $('fname').textContent='Leyendo '+f.name+'…';
+    $('rev').style.display='none';
+    // primero se prueba como hoja de conteo (es la que tiene columna CÓDIGO);
+    // si no lo es, se trata como el reporte de FelTec.
+    Inventario.analizarConteo(f).then(function(a){
+      analisis=a; tipo='conteo'; $('fname').textContent=f.name+' — hoja de conteo';
+      pintarConteo(a);
+    }).catch(function(){
+      Inventario.analizarArchivo(f).then(function(a){
+        analisis=a; tipo='reporte'; $('fname').textContent=f.name+' — reporte de inventario';
+        pintarReporte(a);
+      }).catch(function(err){
+        $('fname').textContent='';
+        toast(err.message||'No se pudo leer el archivo.',true);
+      });
+    });
+  }
+
+  function sbox(v,l,cls){return '<div class="sbox '+(cls||'')+'"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';}
+
+  function grupo(id,n,titulo,desc,cuerpo,abierto){
+    return '<div class="grupo'+(abierto?' on':'')+'" id="g-'+id+'">'+
+      '<div class="grupo-h"><span class="n">'+n+'</span>'+
+      '<span class="t"><b>'+titulo+'</b><span>'+desc+'</span></span>'+
+      '<span style="font-size:13px;color:var(--s500)" class="ch">'+(abierto?'ocultar':'ver')+'</span></div>'+
+      '<div class="grupo-b">'+cuerpo+'</div></div>';
+  }
+
+  /* ------------------------- REPORTE DE FELTEC ------------------------- */
+  function pintarReporte(a){
+    $('rev').style.display='block';
+    $('rev-tit').textContent='Qué cambiaría con este reporte';
+    $('rev-sub').textContent=nf(a.total)+' filas leídas · nada se aplica hasta que pulses Aplicar';
+    $('sum').innerHTML=
+      sbox(nf(a.precios.length),'Cambios de precio', a.precios.length?'w':'') +
+      sbox(nf(a.nuevos.length),'Productos nuevos', a.nuevos.length?'n':'') +
+      sbox(nf(a.faltantes.length),'Ya no vienen', a.faltantes.length?'d':'') +
+      sbox(nf(a.sinCambio),'Sin cambios','o');
+
+    var h='';
+    if(a.precios.length){
+      h+=grupo('precios',nf(a.precios.length),'Cambios de precio',
+        'Marca los que quieras aplicar. Los que no marques se quedan como están.',
+        '<div class="scroll"><table><thead><tr>'+
+        '<th style="width:34px"></th><th>ITEM</th><th>Producto</th><th>Ahora</th><th>En el archivo</th><th>Variación</th>'+
+        '</tr></thead><tbody>'+
+        a.precios.map(function(r){
+          var d=(Number(r.actual)>0)?((r.nuevo-r.actual)/r.actual*100):0;
+          var cls=r.nuevo>r.actual?'up':'down';
+          var sig=r.nuevo>r.actual?'▲':'▼';
+          return '<tr><td><input type="checkbox" class="ck" data-g="precios" data-i="'+esc(r.item)+'" checked></td>'+
+            '<td class="mono">'+esc(r.item)+'</td><td>'+esc(r.nombre)+'</td>'+
+            '<td class="mono">'+money(r.actual)+'</td><td class="mono"><b>'+money(r.nuevo)+'</b></td>'+
+            '<td class="'+cls+'">'+sig+' '+(Number(r.actual)>0?Math.abs(d).toFixed(1)+'%':'—')+'</td></tr>';
+        }).join('')+'</tbody></table></div>', true);
+    }
+    if(a.nuevos.length){
+      h+=grupo('nuevos',nf(a.nuevos.length),'Productos nuevos',
+        'No estaban en el inventario. Se dan de alta solo si los marcas.',
+        '<div class="scroll"><table><thead><tr>'+
+        '<th style="width:34px"></th><th>ITEM</th><th>Producto</th><th>Categoría</th><th>Precio</th><th>Existencia</th>'+
+        '</tr></thead><tbody>'+
+        a.nuevos.map(function(r){
+          return '<tr><td><input type="checkbox" class="ck" data-g="nuevos" data-i="'+esc(r.item)+'" checked></td>'+
+            '<td class="mono">'+esc(r.item)+'</td><td>'+esc(r.nombre)+'</td>'+
+            '<td>'+esc(r.categoria||'')+'</td><td class="mono">'+money(r.precio)+'</td>'+
+            '<td class="mono">'+nf(r.existencia)+'</td></tr>';
+        }).join('')+'</tbody></table></div>', true);
+    }
+    if(a.faltantes.length){
+      h+=grupo('faltan',nf(a.faltantes.length),'Ya no vienen en el archivo',
+        'Ojo: NO se borran. Si los marcas, se dan de baja (salen del catálogo pero conservan foto e historial).',
+        '<div class="scroll"><table><thead><tr>'+
+        '<th style="width:34px"></th><th>ITEM</th><th>Producto</th><th>Precio</th><th>Existencia</th>'+
+        '</tr></thead><tbody>'+
+        a.faltantes.map(function(r){
+          return '<tr><td><input type="checkbox" class="ck" data-g="faltan" data-i="'+esc(r.item)+'"></td>'+
+            '<td class="mono">'+esc(r.item)+'</td><td>'+esc(r.nombre)+'</td>'+
+            '<td class="mono">'+money(r.precio)+'</td><td class="mono">'+nf(r.existencia)+'</td></tr>';
+        }).join('')+'</tbody></table></div>', false);
+    }
+    if(!h) h='<div class="empty">Este archivo no cambia nada: todo está igual.</div>';
+    $('grupos').innerHTML=h;
+    contar();
+  }
+
+  /* --------------------------- HOJA DE CONTEO -------------------------- */
+  function pintarConteo(a){
+    $('rev').style.display='block';
+    $('rev-tit').textContent='Qué traería esta hoja de conteo';
+    var pct=a.filas?(100*a.conCodigo.length/a.filas).toFixed(1):'0';
+    $('rev-sub').textContent=nf(a.filas)+' filas · '+pct+'% casaron con un producto';
+    $('sum').innerHTML=
+      sbox(nf(a.conCodigo.length),'Casan con un producto','o') +
+      sbox(nf(a.conCodigo.filter(function(r){return r.cambia;}).length),'Cambian de código','w') +
+      sbox(nf(a.nuevos.length),'No están en el inventario', a.nuevos.length?'n':'') +
+      sbox(nf(a.ambiguos.length),'Dudosos', a.ambiguos.length?'w':'');
+
+    var h='';
+    h+=grupo('codigos',nf(a.conCodigo.length),'Códigos de barra y costos',
+      'Se les asigna su código de barras, su costo y su marca.',
+      '<div class="scroll"><table><thead><tr><th>ITEM</th><th>Producto</th><th>Código</th><th>Costo</th></tr></thead><tbody>'+
+      a.conCodigo.slice(0,300).map(function(r){
+        return '<tr><td class="mono">'+esc(r.item)+'</td><td>'+esc(r.nombreActual||r.nombre)+'</td>'+
+          '<td class="mono">'+esc(r.codigo)+'</td><td class="mono">'+money(r.costo)+'</td></tr>';
+      }).join('')+'</tbody></table></div>'+
+      (a.conCodigo.length>300?'<div class="note">Se muestran 300 de '+nf(a.conCodigo.length)+'.</div>':''), true);
+
+    if(a.nuevos.length){
+      h+=grupo('cnuevos',nf(a.nuevos.length),'No están en el inventario',
+        'Marca los que quieras dar de alta con su código de barras.',
+        '<div class="scroll"><table><thead><tr>'+
+        '<th style="width:34px"></th><th>Código</th><th>Producto</th><th>Categoría</th><th>Costo</th><th>Stock</th>'+
+        '</tr></thead><tbody>'+
+        a.nuevos.map(function(r,i){
+          return '<tr><td><input type="checkbox" class="ck" data-g="cnuevos" data-i="'+i+'"></td>'+
+            '<td class="mono">'+esc(r.codigo)+'</td><td>'+esc(r.nombre)+'</td>'+
+            '<td>'+esc(r.categoria)+'</td><td class="mono">'+money(r.costo)+'</td>'+
+            '<td class="mono">'+nf(r.stock)+'</td></tr>';
+        }).join('')+'</tbody></table></div>', true);
+    }
+    if(a.ambiguos.length){
+      h+=grupo('cdudosos',nf(a.ambiguos.length),'Dudosos',
+        'Hay varios productos con ese mismo nombre. No se les pone código automáticamente: hazlo a mano en Administrar productos.',
+        '<div class="scroll"><table><thead><tr><th>Código</th><th>Producto de la hoja</th><th>Posibles</th></tr></thead><tbody>'+
+        a.ambiguos.map(function(r){
+          return '<tr><td class="mono">'+esc(r.codigo)+'</td><td>'+esc(r.nombre)+'</td>'+
+            '<td style="font-size:12px;color:var(--s500)">'+
+            (r.opciones||[]).map(function(o){return 'ITEM '+esc(o.item);}).join(', ')+'</td></tr>';
+        }).join('')+'</tbody></table></div>', false);
+    }
+    $('grupos').innerHTML=h;
+    contar();
+  }
+
+  /* --------------------------- interacción ----------------------------- */
+  $('grupos').addEventListener('click',function(e){
+    var h=e.target.closest('.grupo-h');
+    if(h){ var g=h.closest('.grupo'); g.classList.toggle('on');
+      h.querySelector('.ch').textContent=g.classList.contains('on')?'ocultar':'ver'; return; }
+  });
+  $('grupos').addEventListener('change',contar);
+  $('todo-si').addEventListener('click',function(){marcar(true);});
+  $('todo-no').addEventListener('click',function(){marcar(false);});
+  function marcar(v){
+    Array.prototype.forEach.call(document.querySelectorAll('.ck'),function(c){
+      // "ya no vienen" se deja en paz: dar de baja tiene que ser decisión explícita
+      if(c.dataset.g==='faltan' && v) return;
+      c.checked=v;
+    });
+    contar();
+  }
+  function sel(g){
+    return Array.prototype.filter.call(document.querySelectorAll('.ck[data-g="'+g+'"]'),function(c){return c.checked;})
+      .map(function(c){return c.dataset.i;});
+  }
+  function contar(){
+    var n=document.querySelectorAll('.ck:checked').length;
+    var t=document.querySelectorAll('.ck').length;
+    $('resumen-sel').textContent = t ? (n+' de '+t+' marcados') : '';
+  }
+
+  $('cancelar').addEventListener('click',function(){
+    analisis=null; $('rev').style.display='none'; $('fname').textContent='';
+  });
+
+  $('csv').addEventListener('click',function(){
+    if(!analisis) return;
+    var L=[];
+    if(tipo==='reporte'){
+      L.push('TIPO,ITEM,PRODUCTO,AHORA,EN EL ARCHIVO');
+      analisis.precios.forEach(function(r){L.push(['cambio de precio',r.item,r.nombre,r.actual,r.nuevo].map(csvCell).join(','));});
+      analisis.nuevos.forEach(function(r){L.push(['producto nuevo',r.item,r.nombre,'',r.precio].map(csvCell).join(','));});
+      analisis.faltantes.forEach(function(r){L.push(['ya no viene',r.item,r.nombre,r.precio,''].map(csvCell).join(','));});
+    }else{
+      L.push('TIPO,CODIGO,PRODUCTO,ITEM,COSTO');
+      analisis.conCodigo.forEach(function(r){L.push(['casa',r.codigo,r.nombre,r.item,r.costo].map(csvCell).join(','));});
+      analisis.nuevos.forEach(function(r){L.push(['no esta en el inventario',r.codigo,r.nombre,'',r.costo].map(csvCell).join(','));});
+      analisis.ambiguos.forEach(function(r){L.push(['dudoso',r.codigo,r.nombre,'',r.costo].map(csvCell).join(','));});
+    }
+    bajarCSV('revision-'+tipo+'.csv',L.join('\r\n'));
+    toast('Revisión descargada.');
+  });
+
+  /* ----------------------------- aplicar ------------------------------- */
+  $('aplicar').addEventListener('click',function(){
+    if(!analisis) return;
+    var b=$('aplicar'); b.disabled=true; b.textContent='Aplicando…';
+    var p;
+    if(tipo==='reporte'){
+      p=Inventario.aplicarAnalisis(analisis,{
+        precios: sel('precios'), nuevos: sel('nuevos'),
+        quitar: sel('faltan'), empleado: empleado,
+      }).then(function(r){
+        return 'Listo: '+nf(r.actualizados)+' precio(s), '+nf(r.agregados)+' alta(s)'+
+               (r.quitados?', '+nf(r.quitados)+' baja(s)':'')+'.';
+      });
+    }else{
+      var ok=new Set(sel('cnuevos').map(function(i){
+        var r=analisis.nuevos[Number(i)];
+        return r ? r.codigo+'|'+r.nombre : '';
+      }));
+      p=Inventario.aplicarConteo(analisis,{
+        codigos:true, altaNuevos: ok.size>0, nuevosSeleccionados: ok,
+      }).then(function(r){
+        return 'Listo: '+nf(r.codigos)+' código(s) de barra, '+nf(r.costos)+' costo(s)'+
+               (r.altas?' y '+nf(r.altas)+' alta(s)':'')+'.';
+      });
+    }
+    p.then(function(msg){
+      b.disabled=false; b.textContent='Aplicar lo marcado';
+      toast(msg);
+      analisis=null; $('rev').style.display='none'; $('fname').textContent='';
+    }).catch(function(err){
+      b.disabled=false; b.textContent='Aplicar lo marcado';
+      toast(err.message||'No se pudo aplicar.',true);
+    });
+  });
+
+  if(window.Inventario) Inventario.init();
+})();
+</script>
+</body>
+</html>

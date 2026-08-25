@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administrar productos · interno — Ferretería San José</title>
+<link rel="icon" type="image/png" href="assets/emblem.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#F06030; --orange-2:#d6481c; --blue:#0070C0; --blue-2:#0a5c99;
+  --s50:#f6f5f3; --s100:#e9e6e1; --s200:#d3cec5; --s300:#b3ab9d; --s400:#8b8175;
+  --s500:#6b6255; --s600:#544c42; --s700:#3f3931; --s900:#171512;
+  --ok:#2e7d43; --ok-bg:#e7f3ea; --warn:#c98a12; --warn-bg:#fbf1de; --dang:#c22e26; --dang-bg:#fbe9e7;
+  --r:6px; --rl:10px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--s50);color:var(--s900);font-family:'Barlow',system-ui,sans-serif;font-size:15px;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.04em;margin:0;line-height:1.05}
+a{color:var(--blue-2)}
+img{display:block;max-width:100%}
+button,input,select{font-family:inherit}
+
+header.bar{background:var(--s900);color:#fff;border-bottom:3px solid var(--orange)}
+.bar-in{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:12px clamp(16px,4vw,40px)}
+.bar-in img{height:40px}
+.bt{display:flex;flex-direction:column;line-height:1.15}
+.bt .n{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:19px}
+.bt .s{font-size:12px;color:var(--s300);text-transform:uppercase;letter-spacing:.08em}
+.bar-in .right{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:13.5px;color:var(--s300)}
+.bar-in .right a{color:var(--s300);text-decoration:none}
+.bar-in .right a:hover{color:var(--orange)}
+
+.wrap{max-width:1240px;margin:0 auto;padding:20px clamp(16px,4vw,40px) 70px}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--s200);margin-bottom:20px;overflow-x:auto}
+.tab{background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;padding:11px 16px;font-weight:600;font-size:14.5px;color:var(--s500);cursor:pointer;white-space:nowrap}
+.tab:hover{color:var(--s900)}
+.tab.on{color:var(--orange);border-bottom-color:var(--orange)}
+.panel{display:none}.panel.on{display:block}
+.card{background:#fff;border:1px solid var(--s200);border-radius:var(--rl);box-shadow:0 1px 2px rgba(23,21,18,.08);margin-bottom:18px}
+.card-h{padding:14px 18px;border-bottom:1px solid var(--s100);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.card-h h2{font-size:17px}
+.card-h .hint{font-size:12.5px;color:var(--s500);font-family:'Barlow',sans-serif;text-transform:none;letter-spacing:0}
+.card-b{padding:16px 18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:600;font-size:14px;padding:9px 15px;border-radius:var(--r);border:1px solid transparent;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.b-pri{background:var(--orange);color:#fff}.b-pri:not(:disabled):hover{background:var(--orange-2)}
+.b-sec{background:var(--blue);color:#fff}.b-sec:not(:disabled):hover{background:var(--blue-2)}
+.b-gh{background:#fff;color:var(--s700);border-color:var(--s300)}.b-gh:not(:disabled):hover{background:var(--s50)}
+.b-dg{background:#fff;color:var(--dang);border-color:var(--s300)}.b-dg:not(:disabled):hover{background:var(--dang-bg);border-color:var(--dang)}
+.b-sm{padding:6px 11px;font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.inp{width:100%;height:38px;padding:0 11px;border:1px solid var(--s300);border-radius:var(--r);font-size:14.5px;background:#fff}
+.inp:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,112,192,.18)}
+.lbl{font-size:12px;color:var(--s500);display:block;margin-bottom:3px}
+.note{background:var(--s50);border-left:3px solid var(--s300);padding:11px 13px;border-radius:0 var(--r) var(--r) 0;font-size:13.5px;color:var(--s600);line-height:1.55;margin-top:12px}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;font-size:12.5px;letter-spacing:.03em;color:var(--s600);padding:8px;border-bottom:2px solid var(--s200);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:13px}
+.scroll{overflow:auto;max-height:560px}
+.empty{color:var(--s400);font-style:italic;padding:22px;text-align:center}
+.mini{background:none;border:none;color:var(--s400);font-size:12px;cursor:pointer;text-decoration:underline;padding:0}
+.mini:hover{color:var(--dang)}
+.pin{width:88px;height:31px;padding:0 7px;border:1px solid var(--s300);border-radius:var(--r);font-family:'IBM Plex Mono',monospace;font-size:13px}
+.pin:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(240,96,48,.16)}
+.pin.saved{border-color:var(--ok);background:var(--ok-bg)}
+.pill{display:inline-block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:999px}
+.pill.of{background:#fdf1ea;color:var(--orange);border:1px solid var(--orange)}
+.pill.bj{background:var(--s100);color:var(--s600)}
+.pill.sp{background:var(--warn-bg);color:#8a5f08;border:1px solid var(--warn)}
+.tacha{text-decoration:line-through;color:var(--s400)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(16px);opacity:0;background:var(--s900);color:#fff;padding:11px 18px;border-radius:var(--r);font-size:14px;z-index:200;transition:.2s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.toast.err{background:var(--dang)}
+</style>
+<script src="usuarios.js"></script>
+<script>window.FSJ_ACCESO = { sub: 'Administrar productos · solo personal' };</script>
+<script src="acceso.js"></script>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-in">
+    <img src="assets/emblem.png" alt="Ferretería San José" onerror="this.style.display='none'">
+    <div class="bt"><span class="n">Ferretería San José</span><span class="s">Administrar productos · interno</span></div>
+    <div class="right">
+      <span id="quien">—</span>
+      <a href="cargar-archivos.html">Cargar archivos</a>
+      <a href="interno.html">← Panel</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab on" data-p="buscar">Buscar y editar</button>
+    <button class="tab" data-p="sinprecio">Sin precio</button>
+    <button class="tab" data-p="promos">Promociones</button>
+    <button class="tab" data-p="nuevo">Crear producto</button>
+    <button class="tab" data-p="bajas">Dados de baja</button>
+  </div>
+
+  <!-- ============================ BUSCAR ============================ -->
+  <section class="panel on" id="p-buscar">
+    <div class="card">
+      <div class="card-h"><h2>Buscar y editar</h2>
+        <span class="hint">Por nombre, ITEM o código de barras (puedes escanear)</span></div>
+      <div class="card-b">
+        <input class="inp" id="q" placeholder="Escribe o escanea…" autocomplete="off">
+        <div class="note">
+          El <b>precio</b> y el <b>código</b> se guardan al salir de la casilla.
+          Cambiar el precio queda en el historial con tu nombre.
+        </div>
+        <div class="scroll" style="margin-top:14px"><table>
+          <thead><tr><th>ITEM</th><th>Producto</th><th>Precio</th><th>Costo</th><th>Código de barras</th><th>Existencia</th><th></th></tr></thead>
+          <tbody id="lista"></tbody></table></div>
+        <div class="empty" id="vacio">Escribe algo para buscar.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================== SIN PRECIO ========================== -->
+  <section class="panel" id="p-sinprecio">
+    <div class="card">
+      <div class="card-h"><h2>Productos sin precio</h2>
+        <span class="hint" id="sp-n"></span>
+        <button class="btn b-gh b-sm" id="sp-csv" style="margin-left:auto">Descargar lista (CSV)</button></div>
+      <div class="card-b">
+        <div class="note" style="margin-top:0">
+          <b>Por qué hay tantos:</b> el reporte de FelTec trae el precio en 0.00 para
+          buena parte del inventario, sobre todo lo que no tiene existencia. El
+          precio existe en tu sistema, pero <b>no viaja en ese archivo</b>. Aquí los
+          pones y se quedan: al cargar el siguiente reporte, el precio que
+          escribiste <b>gana</b> sobre el 0.00 del archivo.
+          <br><br>Mientras un producto no tenga precio, en el catálogo sale como
+          <b>“Consultar precio”</b> (si tiene foto o está destacado) o no sale.
+        </div>
+        <div class="row" style="margin-top:12px">
+          <input class="inp" id="sp-q" style="max-width:320px" placeholder="Filtrar por nombre…" autocomplete="off">
+          <label class="row" style="gap:6px;font-size:13.5px;color:var(--s500)">
+            <input type="checkbox" id="sp-stock" checked> Solo los que tienen existencia
+          </label>
+        </div>
+        <div class="scroll" style="margin-top:12px"><table>
+          <thead><tr><th>ITEM</th><th>Producto</th><th>Costo</th><th>Existencia</th><th>Ponle precio</th></tr></thead>
+          <tbody id="sp-body"></tbody></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================== PROMOCIONES ========================= -->
+  <section class="panel" id="p-promos">
+    <div class="card">
+      <div class="card-h"><h2>Poner una promoción</h2>
+        <span class="hint">El precio de antes sale tachado con el % de descuento</span></div>
+      <div class="card-b">
+        <div class="row" style="align-items:flex-end;gap:12px">
+          <div style="flex:2;min-width:240px">
+            <label class="lbl">Producto (nombre, ITEM o código)</label>
+            <input class="inp" id="pr-q" placeholder="Busca el producto…" autocomplete="off">
+          </div>
+          <div style="width:120px"><label class="lbl">Precio de antes</label>
+            <input class="inp" id="pr-antes" inputmode="decimal" placeholder="0.00"></div>
+          <div style="width:120px"><label class="lbl">Precio de oferta</label>
+            <input class="inp" id="pr-oferta" inputmode="decimal" placeholder="0.00"></div>
+          <div style="width:150px"><label class="lbl">Hasta (opcional)</label>
+            <input class="inp" id="pr-hasta" type="date"></div>
+          <button class="btn b-pri" id="pr-poner" disabled>Poner oferta</button>
+        </div>
+        <div id="pr-sug" style="margin-top:10px"></div>
+        <div class="note">
+          Si dejas la fecha vacía, la oferta no vence. Si le pones fecha,
+          <b>se quita sola</b> ese día: nadie tiene que acordarse.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h2>Ofertas activas</h2><span class="hint" id="pr-n"></span></div>
+      <div class="card-b">
+        <div class="scroll"><table>
+          <thead><tr><th>ITEM</th><th>Producto</th><th>Antes</th><th>Ahora</th><th>Descuento</th><th>Hasta</th><th></th></tr></thead>
+          <tbody id="pr-body"></tbody></table></div>
+        <div id="pr-vencidas" style="margin-top:16px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================== CREAR ============================== -->
+  <section class="panel" id="p-nuevo">
+    <div class="card">
+      <div class="card-h"><h2>Crear un producto</h2>
+        <span class="hint">Para lo que no viene en ningún archivo</span></div>
+      <div class="card-b">
+        <div class="row" style="align-items:flex-end;gap:12px">
+          <div style="flex:2;min-width:240px"><label class="lbl">Nombre</label>
+            <input class="inp" id="n-nombre" placeholder="Ej. MARTILLO UÑA 16 OZ TRUPER"></div>
+          <div style="flex:1;min-width:150px"><label class="lbl">Categoría</label>
+            <input class="inp" id="n-cat" placeholder="HERRAMIENTAS" list="cats">
+            <datalist id="cats"></datalist></div>
+          <div style="width:120px"><label class="lbl">Unidad</label>
+            <input class="inp" id="n-uni" value="Unidad"></div>
+        </div>
+        <div class="row" style="align-items:flex-end;gap:12px;margin-top:10px">
+          <div style="width:190px"><label class="lbl">Código de barras</label>
+            <input class="inp" id="n-cod" placeholder="escanéalo aquí"></div>
+          <div style="width:110px"><label class="lbl">Precio</label>
+            <input class="inp" id="n-precio" inputmode="decimal" placeholder="0.00"></div>
+          <div style="width:110px"><label class="lbl">Costo</label>
+            <input class="inp" id="n-costo" inputmode="decimal" placeholder="0.00"></div>
+          <div style="width:110px"><label class="lbl">Existencia</label>
+            <input class="inp" id="n-exist" inputmode="decimal" placeholder="0"></div>
+          <button class="btn b-pri" id="n-btn">Crear</button>
+        </div>
+        <div class="note">El ITEM se asigna solo. Si el código ya lo tiene otro producto, te aviso.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================== BAJAS =============================== -->
+  <section class="panel" id="p-bajas">
+    <div class="card">
+      <div class="card-h"><h2>Productos dados de baja</h2><span class="hint" id="bj-n"></span></div>
+      <div class="card-b">
+        <div class="note" style="margin-top:0">
+          Dar de baja <b>no borra</b>: el producto sale del catálogo y de las viñetas
+          pero conserva su foto, su código y su historial, y vuelve cuando quieras.
+        </div>
+        <div class="row" style="margin-top:12px">
+          <label class="row" style="gap:6px;font-size:13.5px;color:var(--s500)">
+            <input type="radio" name="bjm" value="manual" checked> Dados de baja a mano
+          </label>
+          <label class="row" style="gap:6px;font-size:13.5px;color:var(--s500)">
+            <input type="radio" name="bjm" value="sin-precio"> Sin precio en el archivo
+          </label>
+          <label class="row" style="gap:6px;font-size:13.5px;color:var(--s500)">
+            <input type="radio" name="bjm" value=""> Todos
+          </label>
+          <input class="inp" id="bj-q" style="max-width:260px;margin-left:auto" placeholder="Filtrar…" autocomplete="off">
+        </div>
+        <div class="note" id="bj-explica" style="display:none"></div>
+        <div class="scroll" style="margin-top:12px"><table>
+          <thead><tr><th>ITEM</th><th>Producto</th><th>Código</th><th>Precio</th><th>Existencia</th><th></th></tr></thead>
+          <tbody id="bj-body"></tbody></table></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.mini.min.js"></script>
+<script src="inventario.js"></script>
+<script>
+(function(){
+  'use strict';
+  var $=function(id){return document.getElementById(id);};
+  var nf=function(n){return Number(n||0).toLocaleString('es-SV');};
+  var money=function(n){return 'US$'+(Number(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});};
+  var tt; function toast(m,e){var t=$('toast');t.textContent=m;t.className='toast on'+(e?' err':'');
+    clearTimeout(tt);tt=setTimeout(function(){t.className='toast'+(e?' err':'');},3000);}
+  function csvCell(v){var s=String(v==null?'':v);return /[",\n;]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
+  function bajarCSV(n,t){var b=new Blob(['﻿'+t],{type:'text/csv;charset=utf-8'});
+    var u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;
+    document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},1000);}
+
+  var empleado='';
+  window.__fsjTrasLogin=function(u){
+    u=u||(window.FSJAuth&&FSJAuth.usuario()); if(!u) return;
+    empleado=u.nombre||''; $('quien').textContent=empleado;
+    if(window.Inventario&&Inventario.setClaveServidor) Inventario.setClaveServidor(u.pin||'');
+  };
+  window.__fsjTrasLogin();
+
+  /* ----------------------------- pestañas ------------------------------ */
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});
+      document.querySelectorAll('.panel').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on'); $('p-'+b.dataset.p).classList.add('on');
+      if(b.dataset.p==='bajas') renderBajas();
+      if(b.dataset.p==='promos') renderPromos();
+      if(b.dataset.p==='sinprecio') renderSinPrecio();
+    });
+  });
+
+  /* ------------------------- buscar y editar --------------------------- */
+  function fila(p){
+    var of=Inventario.enOferta(p);
+    return '<tr data-i="'+esc(p.item)+'">'+
+      '<td class="mono">'+esc(p.item)+'</td>'+
+      '<td>'+esc(p.nombre)+
+        (of?' <span class="pill of">−'+Inventario.descuento(p)+'%</span>':'')+
+        (p.activo===false?' <span class="pill bj">de baja</span>':'')+
+        (!(Number(p.precio)>0)?' <span class="pill sp">sin precio</span>':'')+
+        '<div style="font-size:11.5px;color:var(--s400)">'+esc(p.categoria||'')+
+        (p.marca?' · '+esc(p.marca):'')+'</div></td>'+
+      '<td><input class="pin" data-a="precio" inputmode="decimal" value="'+(Number(p.precio)||0).toFixed(2)+'"></td>'+
+      '<td class="mono">'+money(p.costo)+'</td>'+
+      '<td><input class="pin" data-a="codigo" style="width:150px" value="'+esc(p.codigo||'')+'" placeholder="escanear"></td>'+
+      '<td class="mono">'+nf(p.existencia)+'</td>'+
+      '<td>'+(p.activo===false
+        ? '<button class="btn b-gh b-sm" data-a="alta">reactivar</button>'
+        : '<button class="mini" data-a="baja">dar de baja</button>')+'</td></tr>';
+  }
+
+  var deb;
+  $('q').addEventListener('input',function(){clearTimeout(deb);deb=setTimeout(buscar,180);});
+  function buscar(){
+    var q=$('q').value.trim();
+    if(q.length<2){ $('lista').innerHTML=''; $('vacio').style.display='block';
+      $('vacio').textContent='Escribe algo para buscar.'; return; }
+    var l=Inventario.buscar(q,60);
+    // buscar() no incluye los de baja: se agregan para poder reactivarlos
+    var bajas=Inventario.deBaja(q,20);
+    var vistos={}; l.forEach(function(p){vistos[p.item]=1;});
+    bajas.forEach(function(p){ if(!vistos[p.item]) l.push(p); });
+    $('vacio').style.display=l.length?'none':'block';
+    if(!l.length) $('vacio').textContent='Sin coincidencias.';
+    $('lista').innerHTML=l.map(fila).join('');
+  }
+
+  $('lista').addEventListener('change',function(e){
+    var inp=e.target.closest('[data-a]'); if(!inp||inp.tagName!=='INPUT') return;
+    var item=e.target.closest('tr').dataset.i, a=inp.dataset.a;
+    if(a==='precio'){
+      Inventario.actualizarPrecio(item,inp.value,empleado,'administración').then(function(ok){
+        if(ok){ inp.classList.add('saved'); setTimeout(function(){inp.classList.remove('saved');},1500);
+          toast('Precio guardado.'); buscar(); }
+        else toast('Ese precio no es válido.',true);
+      });
+    } else if(a==='codigo'){
+      Inventario.setCodigo(item,inp.value).then(function(){
+        inp.classList.add('saved'); setTimeout(function(){inp.classList.remove('saved');},1500);
+        toast('Código guardado.');
+      }).catch(function(err){ toast(err.message||'No se pudo guardar el código.',true); buscar(); });
+    }
+  });
+  $('lista').addEventListener('click',function(e){
+    var b=e.target.closest('[data-a]'); if(!b||b.tagName!=='BUTTON') return;
+    var item=e.target.closest('tr').dataset.i;
+    if(b.dataset.a==='baja'){
+      var p=Inventario.porItem(item);
+      if(!confirm('¿Dar de baja "'+(p?p.nombre:item)+'"?\n\nSale del catálogo y de las viñetas, '+
+                  'pero NO se borra: conserva foto, código e historial.')) return;
+      Inventario.setActivo(item,false).then(function(){ buscar(); toast('Dado de baja.'); });
+    } else if(b.dataset.a==='alta'){
+      Inventario.setActivo(item,true).then(function(){ buscar(); toast('Reactivado.'); });
+    }
+  });
+
+  /* --------------------------- sin precio ------------------------------ */
+  function renderSinPrecio(){
+    var q=$('sp-q').value.trim(), soloStock=$('sp-stock').checked;
+    var l=Inventario.sinPrecio(q,400);
+    if(!soloStock){
+      // sinPrecio() ya filtra por existencia > 0; sin el filtro se busca a mano
+      l=Inventario.buscar(q||'a',400).filter(function(p){return !(Number(p.precio)>0);});
+      if(!q) l=[];
+    }
+    $('sp-n').textContent=l.length?l.length+' producto(s)':'ninguno';
+    $('sp-body').innerHTML=l.length?l.slice(0,300).map(function(p){
+      return '<tr data-i="'+esc(p.item)+'"><td class="mono">'+esc(p.item)+'</td>'+
+        '<td>'+esc(p.nombre)+'<div style="font-size:11.5px;color:var(--s400)">'+esc(p.categoria||'')+'</div></td>'+
+        '<td class="mono">'+money(p.costo)+'</td><td class="mono">'+nf(p.existencia)+'</td>'+
+        '<td><input class="pin" data-a="precio" inputmode="decimal" placeholder="0.00"></td></tr>';
+    }).join(''):'<tr><td colspan="5" class="empty">Nada por aquí.</td></tr>';
+  }
+  $('sp-q').addEventListener('input',function(){clearTimeout(deb);deb=setTimeout(renderSinPrecio,200);});
+  $('sp-stock').addEventListener('change',renderSinPrecio);
+  $('sp-body').addEventListener('change',function(e){
+    var inp=e.target.closest('[data-a="precio"]'); if(!inp) return;
+    var item=e.target.closest('tr').dataset.i;
+    Inventario.actualizarPrecio(item,inp.value,empleado,'administración').then(function(ok){
+      if(ok){ toast('Precio puesto. Ya sale en el catálogo.'); renderSinPrecio(); }
+      else toast('Ese precio no es válido.',true);
+    });
+  });
+  $('sp-csv').addEventListener('click',function(){
+    var l=Inventario.sinPrecio($('sp-q').value.trim(),4000);
+    if(!l.length){ toast('No hay productos sin precio con existencia.'); return; }
+    var L=['ITEM,PRODUCTO,CATEGORIA,COSTO,EXISTENCIA'];
+    l.forEach(function(p){L.push([p.item,p.nombre,p.categoria,p.costo,p.existencia].map(csvCell).join(','));});
+    bajarCSV('productos-sin-precio.csv',L.join('\r\n'));
+    toast(l.length+' producto(s) en el CSV.');
+  });
+
+  /* --------------------------- promociones ----------------------------- */
+  var prSel=null;
+  $('pr-q').addEventListener('input',function(){
+    var q=$('pr-q').value.trim();
+    prSel=null; $('pr-poner').disabled=true;
+    if(q.length<2){ $('pr-sug').innerHTML=''; return; }
+    var l=Inventario.buscar(q,6);
+    $('pr-sug').innerHTML=l.map(function(p){
+      return '<button class="btn b-gh b-sm" data-i="'+esc(p.item)+'" style="margin:3px 4px 0 0">'+
+        esc(p.nombre.slice(0,46))+' · '+money(p.precio)+'</button>';
+    }).join('');
+  });
+  $('pr-sug').addEventListener('click',function(e){
+    var b=e.target.closest('[data-i]'); if(!b) return;
+    prSel=Inventario.porItem(b.dataset.i);
+    if(!prSel) return;
+    $('pr-q').value=prSel.nombre;
+    $('pr-antes').value=(Number(prSel.precio)||0).toFixed(2);
+    $('pr-oferta').value='';
+    $('pr-sug').innerHTML='<span style="font-size:13px;color:var(--s500)">Elegido: <b>'+
+      esc(prSel.nombre)+'</b> (ITEM '+esc(prSel.item)+')</span>';
+    $('pr-poner').disabled=false;
+    $('pr-oferta').focus();
+  });
+  $('pr-poner').addEventListener('click',function(){
+    if(!prSel) return;
+    Inventario.setPromo(prSel.item,$('pr-oferta').value,$('pr-antes').value,$('pr-hasta').value,empleado)
+      .then(function(){
+        toast('Oferta puesta. Ya sale en el catálogo y en las viñetas.');
+        $('pr-q').value=''; $('pr-antes').value=''; $('pr-oferta').value=''; $('pr-hasta').value='';
+        $('pr-sug').innerHTML=''; prSel=null; $('pr-poner').disabled=true;
+        renderPromos();
+      }).catch(function(err){ toast(err.message||'No se pudo poner la oferta.',true); });
+  });
+
+  function renderPromos(){
+    var l=Inventario.promociones();
+    $('pr-n').textContent=l.length?l.length+' oferta(s) activa(s)':'ninguna activa';
+    $('pr-body').innerHTML=l.length?l.map(function(p){
+      return '<tr data-i="'+esc(p.item)+'"><td class="mono">'+esc(p.item)+'</td><td>'+esc(p.nombre)+'</td>'+
+        '<td class="mono tacha">'+money(p.promoAntes)+'</td>'+
+        '<td class="mono"><b>'+money(p.precio)+'</b></td>'+
+        '<td><span class="pill of">−'+Inventario.descuento(p)+'%</span></td>'+
+        '<td class="mono">'+(p.promoHasta?esc(p.promoHasta):'sin fecha')+'</td>'+
+        '<td><button class="btn b-gh b-sm" data-quitar="'+esc(p.item)+'">quitar</button></td></tr>';
+    }).join(''):'<tr><td colspan="7" class="empty">No hay ofertas activas.</td></tr>';
+
+    var v=Inventario.promociones({vencidas:true});
+    $('pr-vencidas').innerHTML=v.length
+      ? '<div class="note"><b>'+v.length+' oferta(s) ya vencida(s)</b> — dejaron de mostrarse solas. '+
+        'Puedes limpiarlas: <button class="btn b-gh b-sm" id="pr-limpiar" style="margin-left:6px">Limpiar vencidas</button></div>'
+      : '';
+    var lb=$('pr-limpiar');
+    if(lb) lb.addEventListener('click',function(){
+      Promise.all(v.map(function(p){return Inventario.quitarPromo(p.item,true,empleado);}))
+        .then(function(){ toast(v.length+' oferta(s) vencida(s) quitada(s); el precio volvió al de antes.'); renderPromos(); });
+    });
+  }
+  $('pr-body').addEventListener('click',function(e){
+    var b=e.target.closest('[data-quitar]'); if(!b) return;
+    var volver=confirm('¿Quitar la oferta?\n\nAceptar = devuelve el precio al de antes.\n'+
+                       'Cancelar = deja el precio de oferta como precio normal.');
+    Inventario.quitarPromo(b.dataset.quitar,volver,empleado).then(function(){
+      renderPromos(); toast('Oferta quitada.');
+    });
+  });
+
+  /* ------------------------------ crear -------------------------------- */
+  $('n-btn').addEventListener('click',function(){
+    Inventario.altaProducto({
+      nombre:$('n-nombre').value.trim(), categoria:$('n-cat').value.trim(),
+      unidad:$('n-uni').value.trim()||'Unidad', codigo:$('n-cod').value.trim(),
+      precio:$('n-precio').value, costo:$('n-costo').value, existencia:$('n-exist').value,
+    }).then(function(p){
+      toast('Creado: '+p.nombre+' (ITEM '+p.item+').');
+      ['n-nombre','n-cod','n-precio','n-costo','n-exist'].forEach(function(id){$(id).value='';});
+    }).catch(function(err){ toast(err.message||'No se pudo crear.',true); });
+  });
+
+  /* ------------------------------ bajas -------------------------------- */
+  function renderBajas(){
+    var m=(document.querySelector('input[name="bjm"]:checked')||{}).value;
+    if(m===undefined) m='manual';
+    var l=Inventario.deBaja(($('bj-q')||{}).value||'',300,m||undefined);
+    var todos=Inventario.deBaja('',99999,m||undefined).length;
+    $('bj-n').textContent=todos?todos+' producto(s)':'ninguno';
+    var ex=$('bj-explica');
+    if(m==='sin-precio'){
+      ex.style.display='block';
+      ex.innerHTML='Estos los bajó el sistema porque <b>el archivo trae su precio en 0.00</b>, '+
+        'no porque alguien lo decidiera. <b>En cuanto les pongas precio vuelven solos</b> al '+
+        'catálogo — puedes hacerlo en la pestaña <b>Sin precio</b>. Si quieres que uno se vea '+
+        'aunque no tenga precio (con foto y "Consultar precio"), reactívalo aquí: al reactivarlo '+
+        'a mano ya no se vuelve a bajar solo.';
+    } else { ex.style.display='none'; }
+    $('bj-body').innerHTML=l.length?l.map(function(p){
+      return '<tr><td class="mono">'+esc(p.item)+'</td><td>'+esc(p.nombre)+'</td>'+
+        '<td class="mono">'+esc(p.codigo||'—')+'</td><td class="mono">'+money(p.precio)+'</td>'+
+        '<td class="mono">'+nf(p.existencia)+'</td>'+
+        '<td><button class="btn b-gh b-sm" data-alta="'+esc(p.item)+'">reactivar</button></td></tr>';
+    }).join(''):'<tr><td colspan="6" class="empty">No hay productos dados de baja.</td></tr>';
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="bjm"]'),function(r){
+    r.addEventListener('change',renderBajas);
+  });
+  $('bj-q').addEventListener('input',function(){clearTimeout(deb);deb=setTimeout(renderBajas,200);});
+  $('bj-body').addEventListener('click',function(e){
+    var b=e.target.closest('[data-alta]'); if(!b) return;
+    Inventario.setActivo(b.dataset.alta,true).then(function(){
+      renderBajas(); toast('Reactivado: ya vuelve a salir en el catálogo.');
+    });
+  });
+
+  /* ------------------------------- init -------------------------------- */
+  if(window.Inventario){
+    Inventario.init().then(function(){
+      var cats=Inventario.categorias?Inventario.categorias():[];
+      $('cats').innerHTML=cats.map(function(c){
+        return '<option value="'+esc(c.categoria||c.nombre||c)+'">';
+      }).join('');
+      renderBajas();
+    });
+  }
+})();
+</script>
+</body>
+</html>

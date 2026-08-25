@@ -408,6 +408,56 @@ costos o datos de clientes dentro del sitio— hay dos caminos, y ambos cuestan:
 Mientras el área interna solo tenga herramientas de precios y fletes, mi
 recomendación es **quedarte como estás y hacer los 3 puntos de arriba**.
 
+## Dos ventanas nuevas en el área de empleados
+
+### 1. Cargar archivos
+
+Una sola pantalla para los dos archivos. Reconoce sola cuál es y **no aplica
+nada hasta que tú lo aceptes**:
+
+- **Reporte de FelTec** → te enseña los cambios de precio, los productos nuevos
+  y los que ya no vienen. Marcas lo que quieras aplicar, casilla por casilla.
+- **Hoja de conteo** → códigos de barra y costos, con los que no casaron aparte.
+- Botón para bajar la revisión en **CSV** antes de decidir.
+- *"Ya no vienen en el archivo"* nunca se marca solo: dar de baja tiene que ser
+  una decisión tuya.
+
+### 2. Administrar productos
+
+- **Buscar y editar**: por nombre, ITEM o **escaneando el código**. Cambias
+  precio y código ahí mismo.
+- **Sin precio**: la lista de los que vienen en cero, para írselos poniendo.
+- **Promociones**: precio de antes tachado, % de descuento y fecha de fin
+  opcional. Si le pones fecha, **la oferta se quita sola** ese día.
+- **Crear producto** y **Dados de baja** (con el motivo separado).
+
+---
+
+## ⚠️ Los precios del reporte de FelTec no son precios de venta
+
+Esto salió al cruzar los números y **conviene tenerlo muy claro**:
+
+| Qué trae la columna "C. VENTA" | Cuántos |
+|---|---|
+| El **costo + 13% de IVA** (no es un precio de venta) | **973 · 71%** |
+| El **doble del costo** | 101 · 7% |
+| Un margen de verdad | 206 · 15% |
+| Vendido bajo el costo | 3 |
+
+Por eso el "margen mediano" daba exactamente 13%: no era ganancia, **era el
+IVA**. Y por eso productos como `CEMENTO USO GENERAL CEMEX` salen en 0.00
+aunque en FelTec tengan su precio: **ese dato no viaja en el archivo**.
+
+**Qué significa en la práctica:** si se publican esos números tal cual, se le
+está ofreciendo al cliente el producto **al costo**. El *Análisis de inventario*
+ahora los detecta y los lista aparte, y el margen mediano se calcula solo con
+los productos que tienen un precio de verdad.
+
+**Regla nueva:** si el archivo trae el precio en cero, el producto queda
+**dado de baja** automáticamente (no se ve en el catálogo ni en las viñetas).
+En cuanto alguien le pone precio, **vuelve solo**. Son 4,951 productos hoy: se
+van poniendo desde *Administrar productos → Sin precio*.
+
 ---
 
 ## Deploy en Netlify

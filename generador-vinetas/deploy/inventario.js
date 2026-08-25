@@ -162,7 +162,7 @@ window.Inventario = (function () {
 
     const st = store(COLS.productos, 'readwrite');
     st.clear();
-    let count = 0, sinPrecio = 0;
+    let count = 0, sinPrecio = 0, bajasSinPrecio = 0;
     for (let r = 1; r < rows.length; r++) {
       const row = rows[r];
       if (!row || !esFilaDeProducto(row[col.item])) continue;
@@ -177,6 +177,10 @@ window.Inventario = (function () {
         conservados++;
       }
       if (precio <= 0) sinPrecio++;
+      /* Sin precio de venta no se puede vender: queda de baja hasta que alguien
+         le ponga precio. Si una persona lo reactivó a mano, se respeta. */
+      const bajaPorPrecio = precio <= 0 && !(ant && ant.activoManual);
+      if (bajaPorPrecio) bajasSinPrecio++;
       st.put({
         item,
         nombre: String(row[col.nombre] == null ? '' : row[col.nombre]).trim(),
@@ -185,10 +189,14 @@ window.Inventario = (function () {
         existencia: numOf(row[col.existencia]),
         precio,
         codigo,
+        bajaMotivo: bajaPorPrecio ? 'sin-precio' : (ant ? (ant.bajaMotivo || '') : ''),
+        activoManual: ant ? !!ant.activoManual : false,
         costo: col.costo >= 0 ? numOf(row[col.costo]) : (ant ? numOf(ant.costo) : 0),
         marca: ant ? String(ant.marca || '') : '',
+        promoAntes: ant ? numOf(ant.promoAntes) : 0,
+        promoHasta: ant ? String(ant.promoHasta || '') : '',
         destacado: prevDest.has(item),
-        activo: ant ? ant.activo !== false : true,
+        activo: bajaPorPrecio ? false : (ant ? ant.activo !== false : true),
         tocadoEn: prevToc.get(item) || 0,
       });
       count++;
@@ -200,7 +208,7 @@ window.Inventario = (function () {
     await saveMeta();
     await loadAll();
     emitir('import');
-    return { count, sinPrecio, preciosConservados: conservados };
+    return { count, sinPrecio, preciosConservados: conservados, bajasSinPrecio };
   }
 
   /* ======================================================================
@@ -266,12 +274,22 @@ window.Inventario = (function () {
     const st = store(COLS.productos, 'readwrite');
     const nuevosCambios = [];
     let actualizados = 0, agregados = 0, quitados = 0;
+    // ITEM que el empleado marcó para dar de baja (se calcula una sola vez)
+    const marcadosBaja = sel.quitar ? new Set(sel.quitar.map(String)) : null;
 
     for (const p of productos) {
       const item = String(p.item);
       const f = enArchivo.get(item);
       if (!f) {
-        if (sel.quitarFaltantes) { st.delete(item); quitados++; }
+        /* Los que ya no vienen en el archivo NO se borran: se dan de baja.
+           Así conservan foto, código de barras e historial de precios, y se
+           pueden reactivar. `quitar` trae los ITEM que el empleado marcó. */
+        if (sel.quitarFaltantes || (marcadosBaja && marcadosBaja.has(item))) {
+          if (p.activo !== false) {
+            p.activo = false; p.tocadoEn = Date.now();
+            st.put(p); quitados++;
+          }
+        }
         continue;
       }
       // Datos que no son precio se actualizan siempre (nombre, categoría, stock)
@@ -364,7 +382,14 @@ window.Inventario = (function () {
         // el código de barras del archivo manda; si no trae, se conserva el de aquí
         codigo: p.codigo ? String(p.codigo).trim() : (ant && ant.codigo ? ant.codigo : ''),
         destacado: p.destacado !== undefined ? !!p.destacado : !!(ant && ant.destacado),
-        activo: p.activo !== undefined ? !!p.activo : (ant ? ant.activo !== false : true),
+        activo: p.activo !== undefined ? !!p.activo
+                : (numOf(precio) <= 0 && !(ant && ant.activoManual) ? false
+                   : (ant ? ant.activo !== false : true)),
+        bajaMotivo: p.bajaMotivo !== undefined ? String(p.bajaMotivo || '')
+                    : (numOf(precio) <= 0 ? 'sin-precio' : (ant ? String(ant.bajaMotivo || '') : '')),
+        activoManual: p.activoManual !== undefined ? !!p.activoManual : !!(ant && ant.activoManual),
+        promoAntes: p.promoAntes !== undefined ? numOf(p.promoAntes) : (ant ? numOf(ant.promoAntes) : 0),
+        promoHasta: p.promoHasta !== undefined ? String(p.promoHasta || '') : (ant ? String(ant.promoHasta || '') : ''),
         tocadoEn: Number(p.tocadoEn) || (ant ? Number(ant.tocadoEn) || 0 : 0),
       });
       count++;
@@ -443,6 +468,7 @@ window.Inventario = (function () {
     await reqP(store(COLS.cambios, 'readwrite').add(entry));
     cambios.push(entry);
     emitir('precio', { item: p.item, nuevo });
+    await _revisarBajaPorPrecio(p.item);   // con precio, vuelve al catálogo
     return true;
   }
 
@@ -712,10 +738,29 @@ window.Inventario = (function () {
   /* ---------------------- Dar de baja / de alta -------------------------
      Nunca se borra un producto: se marca de baja. Así conserva su foto, su
      historial de precios y su código, y se puede volver a activar. */
+  /* Poner un precio devuelve al producto al catálogo si estaba de baja solo
+     por no tenerlo. Es lo que espera quien acaba de escribirlo. */
+  async function _revisarBajaPorPrecio(item) {
+    const p = byItem.get(String(item));
+    if (!p) return false;
+    if (numOf(p.precio) > 0 && p.activo === false && p.bajaMotivo === 'sin-precio') {
+      p.activo = true;
+      p.bajaMotivo = '';
+      await reqP(store(COLS.productos, 'readwrite').put(p));
+      emitir('activo', { item: p.item, activo: true });
+      return true;
+    }
+    return false;
+  }
+
   async function setActivo(item, activo) {
     const p = byItem.get(String(item));
     if (!p) return false;
     p.activo = !!activo;
+    /* Si una persona lo reactiva, se respeta aunque no tenga precio: no se
+       vuelve a bajar solo en la siguiente carga de archivo. */
+    p.activoManual = !!activo;
+    p.bajaMotivo = activo ? '' : '';
     p.tocadoEn = Date.now();
     await reqP(store(COLS.productos, 'readwrite').put(p));
     meta.cambioSinPublicar = Date.now();
@@ -724,10 +769,16 @@ window.Inventario = (function () {
     return true;
   }
   function esActivo(p) { return !p || p.activo !== false; }
-  function deBaja(q, limite) {
+  /* deBaja(q, limite, motivo)
+       motivo 'sin-precio' -> las que puso el sistema por venir en cero
+       motivo 'manual'     -> las que decidió una persona
+       sin motivo          -> todas */
+  function deBaja(q, limite, motivo) {
     const ql = String(q || '').trim().toLowerCase();
     return productos.filter(function (p) {
       if (p.activo !== false) return false;
+      if (motivo === 'sin-precio' && p.bajaMotivo !== 'sin-precio') return false;
+      if (motivo === 'manual' && p.bajaMotivo === 'sin-precio') return false;
       if (!ql) return true;
       return p.nombre.toLowerCase().indexOf(ql) >= 0 || String(p.item) === ql ||
              String(p.codigo || '').toLowerCase() === ql;
@@ -787,6 +838,90 @@ window.Inventario = (function () {
     await loadAll();
     emitir('codigo', { item: p.item, codigo: c });
     return true;
+  }
+
+
+  /* =============================== PROMOCIONES ==========================
+     Una promoción es: el precio de antes (tachado) y hasta cuándo dura.
+     El precio que se cobra sigue siendo `precio`; `promoAntes` solo sirve para
+     enseñar el descuento. Si la fecha ya pasó, la promoción deja de mostrarse
+     sola, sin que nadie tenga que acordarse de quitarla.
+     ===================================================================== */
+  function hoyISO() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') +
+           '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function enOferta(p) {
+    if (!p) return false;
+    const antes = numOf(p.promoAntes);
+    if (!(antes > 0) || !(numOf(p.precio) > 0) || antes <= numOf(p.precio)) return false;
+    if (p.promoHasta && String(p.promoHasta) < hoyISO()) return false;   // ya venció
+    return true;
+  }
+
+  function descuento(p) {
+    if (!enOferta(p)) return 0;
+    const antes = numOf(p.promoAntes);
+    return Math.round((antes - numOf(p.precio)) / antes * 100);
+  }
+
+  /* Pone la promoción. Si no se pasa `antes`, se toma el precio actual como
+     precio de antes y el nuevo pasa a ser el de oferta. */
+  async function setPromo(item, precioOferta, antes, hasta, empleado) {
+    const p = byItem.get(String(item));
+    if (!p) return false;
+    const oferta = numOf(precioOferta);
+    const previo = numOf(antes) > 0 ? numOf(antes) : numOf(p.precio);
+    if (!(oferta > 0)) throw new Error('El precio de oferta tiene que ser mayor que cero.');
+    if (!(previo > oferta)) throw new Error('El precio de antes tiene que ser MAYOR que el de oferta.');
+
+    if (numOf(p.precio) !== oferta) {
+      await actualizarPrecio(item, oferta, empleado || '', 'promoción');
+    }
+    const q = byItem.get(String(item));
+    q.promoAntes = previo;
+    q.promoHasta = String(hasta || '').trim();
+    q.tocadoEn = Date.now();
+    await reqP(store(COLS.productos, 'readwrite').put(q));
+    meta.cambioSinPublicar = Date.now();
+    await saveMeta();
+    await loadAll();
+    emitir('promo', { item: q.item });
+    return true;
+  }
+
+  /* Quita la promoción. Si se pide, devuelve el precio al de antes. */
+  async function quitarPromo(item, restaurarPrecio, empleado) {
+    const p = byItem.get(String(item));
+    if (!p) return false;
+    const antes = numOf(p.promoAntes);
+    if (restaurarPrecio && antes > 0) {
+      await actualizarPrecio(item, antes, empleado || '', 'fin de promoción');
+    }
+    const q = byItem.get(String(item));
+    q.promoAntes = 0;
+    q.promoHasta = '';
+    q.tocadoEn = Date.now();
+    await reqP(store(COLS.productos, 'readwrite').put(q));
+    meta.cambioSinPublicar = Date.now();
+    await saveMeta();
+    await loadAll();
+    emitir('promo', { item: q.item });
+    return true;
+  }
+
+  /* Las promociones puestas. `vencidas:true` incluye las que ya pasaron de
+     fecha, para poder limpiarlas. */
+  function promociones(opts) {
+    opts = opts || {};
+    return productos.filter(function (p) {
+      const tiene = numOf(p.promoAntes) > 0;
+      if (!tiene) return false;
+      if (opts.vencidas) return !enOferta(p);
+      return enOferta(p);
+    }).sort(function (a, b) { return descuento(b) - descuento(a); });
   }
 
   /* ------------------ ¿Qué falta por publicar al sitio? ------------------
@@ -1013,6 +1148,8 @@ window.Inventario = (function () {
         item: p.item, nombre: p.nombre, categoria: p.categoria,
         unidad: p.unidad, existencia: p.existencia, precio: p.precio, codigo: p.codigo || '',
         costo: p.costo || 0, marca: p.marca || '',
+        promoAntes: p.promoAntes || 0, promoHasta: p.promoHasta || '',
+        bajaMotivo: p.bajaMotivo || '', activoManual: !!p.activoManual,
         destacado: !!p.destacado, activo: p.activo !== false, tocadoEn: p.tocadoEn || 0,
       })),
     };
@@ -1231,6 +1368,7 @@ window.Inventario = (function () {
     setClaveFotos, getClaveFotos, tieneClaveFotos, ultimoErrorServidor,
     setDestacado, historial, catalogo, categorias, sinPrecio, recientes, tocar, marcarVisto,
     analizarConteo, aplicarConteo, setActivo, deBaja, altaProducto, setCodigo,
+    setPromo, quitarPromo, promociones, enOferta, descuento,
     publicar, publicarImagenes, publicarShowcase, exportarCambios, limpiarCambios,
     marcarPublicado, pendientes,
     stats, disponible, onCambio,
