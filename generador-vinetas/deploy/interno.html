@@ -42,7 +42,13 @@
   .tool .go{align-self:flex-start;background:#F15930;color:#fff;font-weight:700;font-size:14px;padding:9px 16px;border-radius:8px}
   .tool:hover .go{background:#d6481c}
   footer{text-align:center;color:#5D7A95;font-size:12.5px;padding:28px 20px}
-</style>
+/* El logo y el nombre llevan al inicio. Se hereda el color y se quita el
+   subrayado para que se vea igual que antes, pero se pueda pulsar. */
+.brand-link{display:flex;align-items:center;gap:14px;text-decoration:none;
+  color:inherit;border-radius:8px}
+.brand-link:hover{opacity:.85}
+.brand-link:focus-visible{outline:2px solid #F15930;outline-offset:3px}
+  </style>
 <script src="usuarios.js"></script>
 <script>window.FSJ_ACCESO = { sub: 'Panel de empleados · solo personal' };</script>
 <script src="acceso.js"></script>
@@ -51,11 +57,13 @@
 
 <!-- Panel -->
 <header class="bar">
-  <img src="assets/emblem.png" alt="Ferretería San José" onerror="this.style.display='none'">
-  <div class="titles">
-    <span class="n">Ferretería San José</span>
-    <span class="s">Panel interno · empleados</span>
-  </div>
+  <a class="brand-link" href="index.html" title="Ir al inicio">
+    <img src="assets/emblem.png" alt="Ferretería San José" onerror="this.style.display='none'">
+    <div class="titles">
+      <span class="n">Ferretería San José</span>
+      <span class="s">Panel interno · empleados</span>
+    </div>
+  </a>
   <span class="sesion">Sesión de <b id="quien">—</b> · <button type="button" id="salir">Salir</button></span>
   <a href="index.html" class="back">← Volver al sitio</a>
 </header>

@@ -176,17 +176,25 @@ footer.ft{border-top:1px solid var(--line);text-align:center;color:var(--tx-3);f
   .price{font-size:22px}
   .brand .s{display:none}
 }
+/* El logo y el nombre llevan al inicio. Se hereda el color y se quita el
+   subrayado para que se vea igual que antes, pero se pueda pulsar. */
+.brand-link{display:flex;align-items:center;gap:14px;text-decoration:none;
+  color:inherit;border-radius:8px}
+.brand-link:hover{opacity:.85}
+.brand-link:focus-visible{outline:2px solid #F15930;outline-offset:3px}
 </style>
 </head>
 <body>
 
 <header class="top">
   <div class="top-in">
-    <img class="logo" src="assets/emblem.png" alt="Ferretería San José" onerror="this.style.display='none'">
-    <div class="brand">
-      <span class="n">Ferretería San José</span>
-      <span class="s">Buen servicio y calidad siempre</span>
-    </div>
+    <a class="brand-link" href="index.html" title="Ir al inicio">
+      <img class="logo" src="assets/emblem.png" alt="Ferretería San José" onerror="this.style.display='none'">
+      <div class="brand">
+        <span class="n">Ferretería San José</span>
+        <span class="s">Buen servicio y calidad siempre</span>
+      </div>
+    </a>
     <div class="top-actions">
       <a class="lnk" href="index.html">← Inicio</a>
       <button class="cart-btn" id="btn-cart">

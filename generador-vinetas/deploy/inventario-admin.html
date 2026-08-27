@@ -115,6 +115,12 @@ input[type=checkbox]{accent-color:var(--orange);width:16px;height:16px;cursor:po
 .toast.err{background:var(--dang)}
 .note{font-size:13px;color:var(--s500);background:var(--s50);border:1px solid var(--s100);border-radius:var(--r);padding:10px 12px;margin-top:12px}
 .note b{color:var(--s700)}
+/* El logo y el nombre llevan al inicio. Se hereda el color y se quita el
+   subrayado para que se vea igual que antes, pero se pueda pulsar. */
+.brand-link{display:flex;align-items:center;gap:14px;text-decoration:none;
+  color:inherit;border-radius:8px}
+.brand-link:hover{opacity:.85}
+.brand-link:focus-visible{outline:2px solid #F15930;outline-offset:3px}
 </style>
 <script src="usuarios.js"></script>
 <script>window.FSJ_ACCESO = { sub: 'Inventario y catálogo · solo personal' };</script>
@@ -124,8 +130,10 @@ input[type=checkbox]{accent-color:var(--orange);width:16px;height:16px;cursor:po
 
 <header class="bar">
   <div class="bar-in">
-    <img src="assets/emblem.png" alt="Ferretería San José" onerror="this.style.display='none'">
-    <div class="bt"><span class="n">Ferretería San José</span><span class="s">Inventario y catálogo · interno</span></div>
+    <a class="brand-link" href="index.html" title="Ir al inicio">
+      <img src="assets/emblem.png" alt="Ferretería San José" onerror="this.style.display='none'">
+      <div class="bt"><span class="n">Ferretería San José</span><span class="s">Inventario y catálogo · interno</span></div>
+    </a>
     <div class="right">
       <span class="emp">Empleado: <b id="empleado-nom" style="color:#fff">—</b>
         <button id="salir" title="Cerrar sesión" style="background:none;border:1px solid rgba(255,255,255,.2);color:#A79E8F;border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer">Salir</button></span>

@@ -77,6 +77,12 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(16px);opacity:0;background:var(--s900);color:#fff;padding:11px 18px;border-radius:var(--r);font-size:14px;z-index:200;transition:.2s;pointer-events:none;max-width:90vw;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%)}
 .toast.err{background:var(--dang)}
+/* El logo y el nombre llevan al inicio. Se hereda el color y se quita el
+   subrayado para que se vea igual que antes, pero se pueda pulsar. */
+.brand-link{display:flex;align-items:center;gap:14px;text-decoration:none;
+  color:inherit;border-radius:8px}
+.brand-link:hover{opacity:.85}
+.brand-link:focus-visible{outline:2px solid #F15930;outline-offset:3px}
 </style>
 <script src="usuarios.js"></script>
 <script>window.FSJ_ACCESO = { sub: 'Administrar productos · solo personal' };</script>
@@ -86,8 +92,10 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
 
 <header class="bar">
   <div class="bar-in">
-    <img src="assets/emblem.png" alt="Ferretería San José" onerror="this.style.display='none'">
-    <div class="bt"><span class="n">Ferretería San José</span><span class="s">Administrar productos · interno</span></div>
+    <a class="brand-link" href="index.html" title="Ir al inicio">
+      <img src="assets/emblem.png" alt="Ferretería San José" onerror="this.style.display='none'">
+      <div class="bt"><span class="n">Ferretería San José</span><span class="s">Administrar productos · interno</span></div>
+    </a>
     <div class="right">
       <span id="quien">—</span>
       <a href="cargar-archivos.html">Cargar archivos</a>

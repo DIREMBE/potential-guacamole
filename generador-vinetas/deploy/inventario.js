@@ -1429,7 +1429,8 @@ window.Inventario = (function () {
     const resto = conPrecio.filter((p) => !p.tocadoEn).sort((a, b) => {
       // sin actividad: primero destacados y con foto, luego con existencia
       const d = (b.destacado ? 1 : 0) - (a.destacado ? 1 : 0); if (d) return d;
-      const i = (imagenes.has(String(b.item)) ? 1 : 0) - (imagenes.has(String(a.item)) ? 1 : 0); if (i) return i;
+      // igual que arriba: cuentan las fotos del sitio, no solo las de este equipo
+      const i = (tieneImagen(b.item) ? 1 : 0) - (tieneImagen(a.item) ? 1 : 0); if (i) return i;
       return numOf(b.existencia) - numOf(a.existencia);
     });
     return tocados.concat(resto).slice(0, lim);
@@ -1615,7 +1616,11 @@ window.Inventario = (function () {
         return toks.every((t) => n.includes(t)) || String(p.item) === q || (p.codigo || '').toLowerCase() === q;
       });
     }
-    if (opts.soloConImagen) list = list.filter((p) => imagenes.has(String(p.item)));
+    /* OJO: tieneImagen(), no imagenes.has(). La mayoría de las fotos están
+       en el sitio (Netlify) y este equipo solo conoce la lista, no el
+       archivo. Mirando solo lo local, «Solo con foto» no devolvía nada
+       aunque el contador de arriba dijera que hay decenas. */
+    if (opts.soloConImagen) list = list.filter((p) => tieneImagen(p.item));
     // Orden: destacados primero, luego los que tienen foto, luego por nombre
     list.sort((a, b) => {
       const d = (b.destacado ? 1 : 0) - (a.destacado ? 1 : 0);
