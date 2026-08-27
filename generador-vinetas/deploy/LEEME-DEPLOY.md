@@ -18,7 +18,10 @@ acceso.js                Pantalla de entrada: pide tu nombre y luego TU clave
 robots.txt               Evita que Google indexe el área de empleados.
 analisis-inventario.html NUEVO · Analiza el reporte de FelTec: métricas y errores.
 netlify.toml             Configuración (necesaria para las fotos automáticas).
-netlify/functions/       Funciones: entrada de empleados y fotos en línea.
+netlify/functions/       Funciones del servidor: entrada de empleados, fotos y
+                         NUEVO · cambios de inventario compartidos.
+sincronia.js             NUEVO · La línea de arriba de las pantallas internas
+                         que dice si los cambios se están compartiendo.
 inventario-admin.html    NUEVO · Precios, fotos, historial y actualización con
                          revisión de discrepancias. (Interno)
 cargar-archivos.html     NUEVO · Ventana para cargar los Excel y revisar uno por
@@ -48,7 +51,14 @@ assets/vendor/           NUEVO · React, que antes se bajaba de un servidor
 
 ## Qué cambió en esta versión
 
-Seis cosas, de la más importante a la menos.
+**Lo primero, porque cambia el día a día: se acabó descargar archivos y volver
+a subir el sitio para cada precio.** Cuando Carlos corrige un precio en su
+teléfono, o pone una oferta, o da de baja algo, el cambio sale al momento y lo
+ven los demás equipos y el cliente en el catálogo. Sin publicar, sin subir
+nada. Solo la carga del Excel mensual completo sigue necesitando publicación.
+Está explicado en **Cómo se comparten los cambios**, más abajo.
+
+Y otras seis, de la más importante a la menos.
 
 **1. Los costos de compra ya no se publican.** El sitio es estático: *todo*
 archivo que se sube es público, aunque solo lo lea el panel. La versión anterior
@@ -358,13 +368,47 @@ al instante**, sin publicar archivos ni volver a desplegar.
 
 ---
 
-## ⚠️ Cómo se comparten los cambios (precios)
+## Cómo se comparten los cambios
+
+**Esto cambió por completo.** Antes, cualquier cosa que tocara un empleado se
+quedaba en su equipo hasta que alguien generaba los archivos y volvía a subir
+el sitio. Ahora los cambios sueltos se comparten solos.
 
 | Qué cambiaste | Quién lo ve y cuándo |
 |---|---|
-| **Foto**, con *fotos automáticas activas* | **Todos, al instante.** No hay que publicar nada. |
-| **Foto**, sin fotos automáticas | Solo ese equipo, hasta publicar y subir. |
-| **Precio** | Solo ese equipo, hasta publicar y subir. |
+| **Precio** de un producto | **Todos, al instante.** No hay que publicar nada. |
+| **Promoción** (poner o quitar) | **Todos, al instante.** |
+| **Dar de baja / regresar** un producto | **Todos, al instante.** |
+| **Producto nuevo** creado a mano | **Todos, al instante.** |
+| **Código de barras** corregido | **Todos, al instante.** |
+| **Foto** de producto | **Todos, al instante.** |
+| **Cargar el Excel mensual completo** (miles de filas) | Solo ese equipo → hay que publicar. |
+
+Arriba de cada pantalla interna hay una línea que lo dice sin adornos:
+
+- 🟢 **«Se comparte al instante»** — lo que hagas lo ven los demás y el catálogo.
+- 🟡 **«N cambios sin mandar»** — casi siempre es el internet. Se reintenta solo,
+  incluso si cierras el navegador y vuelves mañana. Nada se pierde.
+- 🟡 **«Solo en este equipo»** — no hay servidor (o el sitio corre sin Netlify).
+  Todo funciona igual, pero toca publicar para compartir.
+- 🔴 **«Tu clave no fue aceptada»** — sal y vuelve a entrar.
+
+El botón **Actualizar** de esa misma línea trae lo que hayan hecho los demás sin
+tener que recargar.
+
+### ¿Y entonces cuándo hay que publicar?
+
+Dos casos, nada más:
+
+1. **Después de cargar el Excel mensual de FelTec.** Son miles de filas: eso se
+   publica, no se sincroniza.
+2. **De vez en cuando, para dejarlo todo asentado.** Los cambios sueltos se van
+   acumulando en el servidor; al publicar entran en el archivo y el servidor se
+   vacía solo. Si nunca publicas, a los 4.000 cambios el sistema avisa y deja de
+   compartir hasta que lo hagas.
+
+Para el día a día —un precio, una oferta, dar de baja algo que ya no se vende—
+**ya no hay que hacer nada.**
 
 ### Publicar (3 pasos)
 
@@ -388,9 +432,9 @@ al instante**, sin publicar archivos ni volver a desplegar.
 Cuando termines, el aviso amarillo desaparece. Si vuelve a aparecer, es que hay
 cambios nuevos sin publicar.
 
-> El sitio es estático (sin servidor ni base de datos), por eso hace falta este
-> paso. Si algún día quieres que sea **automático**, habría que agregar un
-> pequeño servicio en el servidor; se puede, pero es otro trabajo aparte.
+> Al publicar, el sistema le avisa al servidor que esos cambios ya van dentro
+> del archivo nuevo, y los suelta. Lo que llegue mientras subes el sitio se
+> queda guardado: no se pierde nada por publicar en mal momento.
 
 ---
 

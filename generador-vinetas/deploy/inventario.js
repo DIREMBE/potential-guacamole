@@ -32,6 +32,18 @@ window.Inventario = (function () {
   const LS_CLAVE_FOTOS = 'fsj-clave-fotos';
   try { claveFotos = localStorage.getItem(LS_CLAVE_FOTOS) || ''; } catch (e) {}
   const API_FOTOS = '/api/fotos';
+
+  /* ------------------- Cambios compartidos (en línea) --------------------
+     El sitio es estático, así que los .json publicados son una foto fija del
+     día que se subieron. Esta función guarda los cambios sueltos —un precio,
+     una promoción, una baja— para que TODOS los vean sin publicar nada.
+     Si no está disponible, se sigue trabajando como siempre.               */
+  const API_INV = '/api/inventario';
+  let invActivo = false;                  // ¿hay servidor de cambios?
+  let invEstado = { actualizado: '', count: 0, tope: 0, error: '' };
+  let invComprobado = false;   // ¿ya se sabe si hay servidor? (al abrir, todavía no)
+  const INV_MAX_LOTE = 200;               // cuántos van en cada envío
+  const INV_MAX_DE_GOLPE = 500;           // más que esto: toca publicar, no sincronizar
   let meta = { lastUpload: null, count: 0, baselineAt: null };
   const listeners = [];          // avisos de cambios (para refrescar la vista)
 
@@ -336,7 +348,30 @@ window.Inventario = (function () {
     await saveMeta();
     await loadAll();
     emitir('import');
-    return { actualizados, agregados, quitados };
+
+    /* Lo que el empleado revisó y aceptó se comparte con los demás equipos.
+       Si fueran miles (el Excel mensual completo), no: ese es el momento de
+       publicar el inventario al sitio, que es más barato que mandar miles de
+       cambios sueltos. La pantalla lo dice. */
+    const paraCompartir = [];
+    for (const c of nuevosCambios) {
+      const p = byItem.get(String(c.item));
+      if (p) paraCompartir.push({ item: p.item, precio: numOf(p.precio) });
+    }
+    for (const it of okNuevo) {
+      const p = byItem.get(String(it));
+      if (p) {
+        paraCompartir.push({
+          item: p.item, alta: true, nombre: p.nombre, categoria: p.categoria,
+          unidad: p.unidad, existencia: p.existencia, precio: p.precio,
+          codigo: p.codigo || '', marca: p.marca || '', activo: true,
+        });
+      }
+    }
+    if (paraCompartir.length) _empujar(paraCompartir);
+
+    return { actualizados, agregados, quitados,
+             compartidos: paraCompartir.length <= INV_MAX_DE_GOLPE ? paraCompartir.length : 0 };
   }
 
   /* ------------------- Cargar base publicada (JSON) ---------------------- */
@@ -467,8 +502,12 @@ window.Inventario = (function () {
     };
     await reqP(store(COLS.cambios, 'readwrite').add(entry));
     cambios.push(entry);
+    _editado(p);
     emitir('precio', { item: p.item, nuevo });
     await _revisarBajaPorPrecio(p.item);   // con precio, vuelve al catálogo
+    /* Se comparte con los demás equipos. Si no se puede, queda en cola: el
+       precio ya está guardado aquí, no se pierde. */
+    if (origen !== 'archivo') _empujar([{ item: p.item, precio: nuevo }]);
     return true;
   }
 
@@ -694,6 +733,7 @@ window.Inventario = (function () {
     const nuevosOk = opciones.nuevosSeleccionados || null;   // Set de códigos
 
     let codigos = 0, costos = 0, altas = 0;
+    const nuevosCodigos = [];        // lo que vale la pena compartir
     const st = store(COLS.productos, 'readwrite');
 
     if (ponerCodigos) {
@@ -701,7 +741,10 @@ window.Inventario = (function () {
         const p = byItem.get(String(r.item));
         if (!p) continue;
         let toco = false;
-        if (r.codigo && p.codigo !== r.codigo) { p.codigo = r.codigo; codigos++; toco = true; }
+        if (r.codigo && p.codigo !== r.codigo) {
+          p.codigo = r.codigo; codigos++; toco = true;
+          nuevosCodigos.push({ item: p.item, codigo: r.codigo });
+        }
         if (r.costo > 0 && numOf(p.costo) !== r.costo) { p.costo = r.costo; costos++; toco = true; }
         if (r.marca && !p.marca) { p.marca = r.marca; toco = true; }
         if (toco) st.put(p);
@@ -732,6 +775,14 @@ window.Inventario = (function () {
     await saveMeta();
     await loadAll();
     emitir('conteo', { codigos: codigos, costos: costos, altas: altas });
+
+    /* De la hoja de conteo se comparte el código de barras, que le sirve a
+       todo el mundo para escanear. El COSTO no: es lo que pagamos nosotros y
+       esto se sirve sin clave. */
+    if (nuevosCodigos.length && nuevosCodigos.length <= INV_MAX_DE_GOLPE) {
+      _empujar(nuevosCodigos);
+    }
+
     return { codigos: codigos, costos: costos, altas: altas };
   }
 
@@ -748,6 +799,7 @@ window.Inventario = (function () {
       p.bajaMotivo = '';
       await reqP(store(COLS.productos, 'readwrite').put(p));
       emitir('activo', { item: p.item, activo: true });
+      _empujar([{ item: p.item, activo: true, bajaMotivo: '' }]);
       return true;
     }
     return false;
@@ -765,7 +817,10 @@ window.Inventario = (function () {
     await reqP(store(COLS.productos, 'readwrite').put(p));
     meta.cambioSinPublicar = Date.now();
     await saveMeta();
+    _editado(p);
     emitir('activo', { item: p.item, activo: p.activo });
+    _empujar([{ item: p.item, activo: p.activo, activoManual: p.activoManual,
+                bajaMotivo: p.bajaMotivo || '' }]);
     return true;
   }
   function esActivo(p) { return !p || p.activo !== false; }
@@ -817,6 +872,13 @@ window.Inventario = (function () {
     await saveMeta();
     await loadAll();
     emitir('alta', { item: item });
+    /* Va con `alta: true` para que los demás equipos, que no tienen este
+       producto en su archivo, lo puedan crear. El costo NO viaja. */
+    _empujar([{
+      item: p.item, alta: true, nombre: p.nombre, categoria: p.categoria,
+      unidad: p.unidad, existencia: p.existencia, precio: p.precio,
+      codigo: p.codigo, marca: p.marca, activo: true,
+    }]);
     return p;
   }
 
@@ -836,7 +898,9 @@ window.Inventario = (function () {
     meta.cambioSinPublicar = Date.now();
     await saveMeta();
     await loadAll();
+    _editado(p);
     emitir('codigo', { item: p.item, codigo: c });
+    _empujar([{ item: p.item, codigo: c }]);
     return true;
   }
 
@@ -888,7 +952,10 @@ window.Inventario = (function () {
     meta.cambioSinPublicar = Date.now();
     await saveMeta();
     await loadAll();
+    _editado(byItem.get(String(item)));
     emitir('promo', { item: q.item });
+    _empujar([{ item: q.item, precio: numOf(q.precio),
+                promoAntes: q.promoAntes, promoHasta: q.promoHasta }]);
     return true;
   }
 
@@ -908,7 +975,9 @@ window.Inventario = (function () {
     meta.cambioSinPublicar = Date.now();
     await saveMeta();
     await loadAll();
+    _editado(byItem.get(String(item)));
     emitir('promo', { item: q.item });
+    _empujar([{ item: q.item, precio: numOf(q.precio), promoAntes: 0, promoHasta: '' }]);
     return true;
   }
 
@@ -928,9 +997,29 @@ window.Inventario = (function () {
      Los cambios (fotos y precios) viven en este navegador hasta que se
      publican los archivos y se suben al sitio. Esto lo hace visible.        */
   async function marcarPublicado() {
+    /* Antes de nada, que salga lo que estaba esperando: si no, se borraría
+       del servidor un cambio que todavía no había llegado a él. */
+    await _mandarPendiente();
+    const corte = new Date().toISOString();
     meta.publicadoEn = Date.now();
     meta.cambioSinPublicar = 0;
     await saveMeta();
+
+    /* El archivo nuevo ya lleva dentro estos cambios, así que en el servidor
+       sobran. Se borran los anteriores a este momento; lo que llegue mientras
+       se sube el sitio se queda, que si no se perdería. */
+    if (invActivo && _claveEnvio()) {
+      try {
+        const r = await fetch(API_INV, {
+          method: 'DELETE',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ clave: _claveEnvio(), hasta: corte }),
+        });
+        const d = await r.json().catch(() => null);
+        if (d && d.ok) invEstado = Object.assign({}, invEstado, { count: d.total || 0, error: '' });
+      } catch (e) { /* si falla, se limpia en la siguiente publicación */ }
+    }
+
     emitir('publicado');
     return true;
   }
@@ -953,6 +1042,235 @@ window.Inventario = (function () {
       total: fotos + precios + otros,
       publicadoEn: meta.publicadoEn || null,
     };
+  }
+
+  /* ============== CAMBIOS COMPARTIDOS ENTRE TODOS LOS EQUIPOS ============
+     Antes: Carlos corregía un precio en su teléfono y ese precio existía solo
+     en su teléfono. Para que llegara al cliente había que generar el archivo
+     y volver a subir el sitio.
+
+     Ahora: el cambio se manda a /api/inventario y cualquiera que abra el
+     catálogo lo ve. Los archivos publicados siguen siendo la base (rápidos y
+     cacheados); esto es solo lo que ha cambiado ENCIMA de esa base.
+
+     Qué NO se manda: la carga del Excel mensual de FelTec, que toca miles de
+     productos. Eso es justo el momento de publicar el inventario de nuevo, y
+     al publicarlo esto se vacía solo.
+     ===================================================================== */
+
+  /* Marca que a este producto lo tocó una persona en ESTE equipo y cuándo.
+     Sirve para no dejar que un cambio viejo de otro equipo pise uno nuevo de
+     aquí. Se usa `editadoEn` y no `tocadoEn` porque `tocadoEn` también sube
+     con solo mirar el producto en el catálogo. */
+  function _editado(p) { if (p) p.editadoEn = Date.now(); return p; }
+
+  /* Aplica a un producto lo que venga del servidor. Devuelve true solo si de
+     verdad cambió algo, para no escribir en la base sin motivo. */
+  const INV_CAMPOS = ['precio', 'promoAntes', 'promoHasta', 'activo', 'activoManual',
+                      'bajaMotivo', 'codigo', 'destacado', 'existencia',
+                      'nombre', 'categoria', 'unidad', 'marca'];
+
+  async function _aplicarCambioServidor(o) {
+    if (!o || !o.item) return false;
+    const cuando = Date.parse(o.fecha || '') || 0;
+    let p = byItem.get(String(o.item));
+
+    if (!p) {
+      if (!o.alta) return false;              // no está y no es un alta: nada que hacer
+      p = {
+        item: String(o.item), nombre: String(o.nombre || ''),
+        categoria: String(o.categoria || ''), unidad: String(o.unidad || 'Unidad'),
+        existencia: numOf(o.existencia), precio: numOf(o.precio),
+        costo: 0, marca: String(o.marca || ''), codigo: String(o.codigo || ''),
+        destacado: false, activo: o.activo !== false, tocadoEn: Date.now(),
+      };
+      await reqP(store(COLS.productos, 'readwrite').put(p));
+      return true;
+    }
+
+    // un cambio de aquí más nuevo manda sobre el del servidor
+    if (cuando && cuando <= (p.editadoEn || 0)) return false;
+
+    let toco = false;
+    for (const k of INV_CAMPOS) {
+      if (o[k] === undefined) continue;
+      const nuevo = (k === 'precio' || k === 'promoAntes' || k === 'existencia')
+        ? numOf(o[k])
+        : (k === 'activo' || k === 'activoManual' || k === 'destacado') ? !!o[k] : String(o[k]);
+      const actual = (k === 'precio' || k === 'promoAntes' || k === 'existencia')
+        ? numOf(p[k])
+        : (k === 'activo' || k === 'activoManual' || k === 'destacado') ? (k === 'activo' ? p.activo !== false : !!p[k]) : String(p[k] || '');
+      if (nuevo === actual) continue;
+      p[k] = nuevo;
+      toco = true;
+    }
+    if (!toco) return false;
+    await reqP(store(COLS.productos, 'readwrite').put(p));
+    return true;
+  }
+
+  /* Se baja lo que hayan cambiado los demás y se aplica encima de la base. */
+  async function _bajarCambiosServidor() {
+    let d = null;
+    try {
+      const r = await fetch(API_INV, {
+        cache: 'no-store',
+        headers: _claveEnvio() ? { 'x-fsj-clave': _claveEnvio() } : {},
+      });
+      if (!r.ok) { invActivo = false; invComprobado = true; return 0; }
+      d = await r.json();
+    } catch (e) { invActivo = false; invComprobado = true; return 0; }
+
+    invComprobado = true;
+    if (!d || !d.ok || !d.cambios) { invActivo = false; return 0; }
+    invActivo = true;
+    invEstado = { actualizado: d.actualizado || '', count: d.count || 0,
+                  tope: d.tope || 0, error: '' };
+
+    let aplicados = 0;
+    for (const k of Object.keys(d.cambios)) {
+      try { if (await _aplicarCambioServidor(d.cambios[k])) aplicados++; }
+      catch (e) { /* uno malo no tumba el resto */ }
+    }
+    if (aplicados) { await loadAll(); emitir('sincronizado', { aplicados }); }
+    return aplicados;
+  }
+
+  /* --------------------------- Mandar los cambios ------------------------
+     Si falla (sin internet, clave vencida), el cambio se guarda en una cola
+     que sobrevive al cierre del navegador y se reintenta al volver a abrir.
+     Nunca se pierde: en el peor caso queda como antes, para publicar a mano. */
+  function _colaGuardada() { return Array.isArray(meta.colaEnvio) ? meta.colaEnvio : []; }
+
+  async function _encolar(lista) {
+    const cola = _colaGuardada();
+    for (const c of lista) {
+      const i = cola.findIndex((x) => String(x.item) === String(c.item));
+      if (i >= 0) cola[i] = Object.assign({}, cola[i], c);   // el último gana
+      else cola.push(c);
+    }
+    meta.colaEnvio = cola.slice(-1000);
+    await saveMeta();
+  }
+
+  async function _vaciarCola(items) {
+    const fuera = new Set(items.map(String));
+    meta.colaEnvio = _colaGuardada().filter((c) => !fuera.has(String(c.item)));
+    await saveMeta();
+  }
+
+  async function _enviarLote(lista) {
+    const r = await fetch(API_INV, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ clave: _claveEnvio(), cambios: lista }),
+    });
+    const d = await r.json().catch(() => null);
+    if (!r.ok) {
+      const err = (r.status === 401 || r.status === 403) ? 'clave'
+                : (r.status === 409) ? 'lleno' : 'red';
+      throw Object.assign(new Error(err), { motivo: err, detalle: d });
+    }
+    return d;
+  }
+
+  /* Los cambios no salen uno por uno: se juntan un cuarto de segundo y se
+     mandan de una. Poner una promoción, por ejemplo, toca el precio y luego
+     la oferta; si salieran por separado podrían cruzarse en el camino y
+     llegar en el orden equivocado. Juntándolos sale un solo cambio completo,
+     y de paso son menos viajes. */
+  let _porMandar = new Map();
+  let _reloj = null;
+  let _enCurso = Promise.resolve({ enviados: 0 });
+
+  function _empujar(lista) {
+    if (!Array.isArray(lista) || !lista.length) return _enCurso;
+    for (const c of lista) {
+      const k = String(c.item);
+      _porMandar.set(k, Object.assign({}, _porMandar.get(k) || {}, c));
+    }
+    clearTimeout(_reloj);
+    _enCurso = new Promise(function (listo) {
+      _reloj = setTimeout(function () {
+        const juntos = Array.from(_porMandar.values());
+        _porMandar = new Map();
+        _mandarYa(juntos).then(listo, function () { listo({ enviados: 0, motivo: 'red' }); });
+      }, 250);
+    });
+    return _enCurso;
+  }
+
+  /* Manda los cambios. No corta el trabajo de nadie: si no se puede, se
+     encola y la persona sigue con lo suyo. */
+  async function _mandarYa(lista) {
+    if (!Array.isArray(lista) || !lista.length) return { enviados: 0 };
+    if (!_claveEnvio()) { await _encolar(lista); return { enviados: 0, motivo: 'sin-clave' }; }
+    if (lista.length > INV_MAX_DE_GOLPE) return { enviados: 0, motivo: 'demasiados' };
+
+    let enviados = 0;
+    try {
+      for (let i = 0; i < lista.length; i += INV_MAX_LOTE) {
+        const trozo = lista.slice(i, i + INV_MAX_LOTE);
+        const d = await _enviarLote(trozo);
+        enviados += (d && d.guardados) || 0;
+        if (d) invEstado = { actualizado: d.actualizado || '', count: d.total || 0,
+                             tope: invEstado.tope, error: '' };
+      }
+      invActivo = true;
+      await _vaciarCola(lista.map((c) => c.item));
+      emitir('sincronizado', { enviados });
+      return { enviados };
+    } catch (e) {
+      invEstado = Object.assign({}, invEstado, { error: e.motivo || 'red' });
+      if (e.motivo !== 'lleno') invActivo = (e.motivo === 'clave');
+      await _encolar(lista);
+      return { enviados, motivo: e.motivo || 'red' };
+    }
+  }
+
+  /* Se llama al abrir: reintenta lo que quedó pendiente de la vez pasada. */
+  async function _reintentarCola() {
+    const cola = _colaGuardada();
+    if (!cola.length || !_claveEnvio()) return 0;
+    const r = await _mandarYa(cola);
+    return r.enviados || 0;
+  }
+
+  /* Suelta ya lo que esté esperando el cuarto de segundo. */
+  async function _mandarPendiente() {
+    if (_porMandar.size) {
+      clearTimeout(_reloj);
+      const juntos = Array.from(_porMandar.values());
+      _porMandar = new Map();
+      await _mandarYa(juntos).catch(function () {});
+    } else {
+      await _enCurso.catch(function () {});
+    }
+  }
+
+  /* Para las pantallas: ¿esto se está compartiendo o no? */
+  function estadoSincronizacion() {
+    return {
+      activo: invActivo,
+      /* Mientras esto sea false, la pantalla no debe decir "solo en este
+         equipo": todavía se está preguntando. Decirlo antes de tiempo hace
+         que alguien crea que tiene que publicar cuando no. */
+      comprobado: invComprobado,
+      actualizado: invEstado.actualizado,
+      enServidor: invEstado.count,
+      tope: invEstado.tope,
+      pendientes: _colaGuardada().length,
+      error: invEstado.error,
+      lleno: invEstado.error === 'lleno',
+    };
+  }
+
+  /* Recoger ahora mismo lo que hayan hecho los demás (botón "actualizar"). */
+  async function sincronizar() {
+    await _mandarPendiente();      // primero lo de uno, para no pisarlo luego
+    await _reintentarCola();
+    const n = await _bajarCambiosServidor();
+    return { recibidos: n, estado: estadoSincronizacion() };
   }
 
   /* ==================== FOTOS EN EL SERVIDOR (automático) ================
@@ -1074,7 +1392,9 @@ window.Inventario = (function () {
     await reqP(store(COLS.productos, 'readwrite').put(p));
     meta.cambioSinPublicar = Date.now();
     saveMeta();
+    _editado(p);
     emitir('destacado', { item: p.item, valor: p.destacado });
+    _empujar([{ item: p.item, destacado: p.destacado }]);
     return true;
   }
 
@@ -1371,6 +1691,14 @@ window.Inventario = (function () {
     // ¿Hay servidor de fotos? (Netlify) — si sí, las fotos son automáticas
     await _cargarIndiceServidor();
 
+    /* Lo que hayan cambiado los demás desde que se publicó el archivo. Va
+       después de la base, porque se aplica ENCIMA de ella. Si no hay servidor
+       no pasa nada: se sigue trabajando con lo que hay en el equipo. */
+    await _bajarCambiosServidor();
+    /* Y lo que quedó pendiente de mandar la última vez (sin internet, o con la
+       sesión cerrada). Sin esperar: no hay por qué retrasar la pantalla. */
+    _reintentarCola();
+
     // Fotos de producto publicadas en el sitio (no pisan las locales del equipo)
     for (const url of ['./imagenes-data.json', '../imagenes-data.json']) {
       try {
@@ -1401,6 +1729,7 @@ window.Inventario = (function () {
     asignarCodigo, actualizarPrecio,
     guardarImagen, quitarImagen, getImagen, tieneImagen, pesoImagenes,
     setClaveServidor, servidorDisponible, fotoEnServidor,
+    sincronizar, estadoSincronizacion,
     setClaveFotos, getClaveFotos, tieneClaveFotos, ultimoErrorServidor,
     setDestacado, historial, catalogo, categorias, sinPrecio, recientes, tocar, marcarVisto,
     analizarConteo, aplicarConteo, setActivo, deBaja, altaProducto, setCodigo,

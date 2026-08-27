@@ -97,6 +97,8 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
 </header>
 
 <div class="wrap">
+  <!-- ¿esto se comparte o se queda en este equipo? (sincronia.js) -->
+  <div id="sync-estado"></div>
   <div class="tabs">
     <button class="tab on" data-p="buscar">Buscar y editar</button>
     <button class="tab" data-p="sinprecio">Sin precio</button>
@@ -256,6 +258,7 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.mini.min.js"></script>
 <script src="inventario.js"></script>
+<script src="sincronia.js"></script>
 <script>
 (function(){
   'use strict';

@@ -135,6 +135,8 @@ input[type=checkbox]{accent-color:var(--orange);width:16px;height:16px;cursor:po
 </header>
 
 <div class="wrap">
+  <!-- ¿esto se comparte o se queda en este equipo? (sincronia.js) -->
+  <div id="sync-estado"></div>
   <!-- Aviso de cambios que aún no ve nadie más -->
   <div id="pend" style="display:none;border:2px solid var(--warn);background:var(--warn-bg);border-radius:var(--rl);padding:14px 16px;margin-bottom:18px">
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -440,6 +442,7 @@ input[type=checkbox]{accent-color:var(--orange);width:16px;height:16px;cursor:po
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.mini.min.js"></script>
 <script src="inventario.js"></script>
+<script src="sincronia.js"></script>
 <script>
 (function(){
   'use strict';

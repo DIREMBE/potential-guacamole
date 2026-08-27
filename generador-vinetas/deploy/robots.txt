@@ -10,5 +10,6 @@ Disallow: /calculadora-fletes.html
 Disallow: /cargar-archivos.html
 Disallow: /administrar-productos.html
 Disallow: /inventario-data.json
+Disallow: /sincronia.js
 Disallow: /usuarios.js
 Disallow: /api/
