@@ -35,7 +35,12 @@ export function leerUsuarios() {
     .split(',')
     .map((entrada) => {
       const p = entrada.split(':');
-      return { nombre: String(p[0] || '').trim(), clave: String(p[1] || '').trim(), rol: String(p[2] || 'empleado').trim() || 'empleado' };
+      const rol = String(p[2] || 'empleado').trim().toLowerCase();
+      return {
+        nombre: String(p[0] || '').trim(),
+        clave: String(p[1] || '').trim(),
+        rol: rol === 'admin' ? 'admin' : 'empleado',
+      };
     })
     .filter((u) => u.nombre && u.clave);
 }
@@ -60,22 +65,10 @@ export default async (req) => {
      entradas se leyeron y dónde está corriendo esto. */
   if (req.method === 'GET') {
     const bruto = String(process.env.FSJ_USUARIOS || '');
-    const variablesFSJ = Object.keys(process.env).filter((k) => k.indexOf('FSJ_') === 0).sort();
-    const sitio = process.env.SITE_NAME || '(desconocido)';
-    const contexto = process.env.CONTEXT || '(desconocido)';
 
     let pista;
-    if (!bruto && !variablesFSJ.length) {
-      pista = 'A la función no le llega NINGUNA variable FSJ_. Esto corre en el sitio de Netlify ' +
-              'llamado "' + sitio + '", contexto "' + contexto + '". Comprueba TRES cosas, en este orden: ' +
-              '(1) que la variable la estés poniendo en ESE mismo sitio y no en otro de tu cuenta; ' +
-              '(2) que se llame exactamente FSJ_USUARIOS y que su ámbito incluya "Functions" y el ' +
-              'contexto "' + contexto + '" (o "All"); (3) que DESPUÉS de guardarla hayas vuelto a ' +
-              'desplegar (Deploys → Trigger deploy), porque las funciones toman las variables al ' +
-              'desplegar, no al guardarlas.';
-    } else if (!bruto) {
-      pista = 'Llegan otras variables FSJ_ pero FSJ_USUARIOS está vacía o no existe. ' +
-              'Comprueba que el nombre esté escrito exactamente así: FSJ_USUARIOS.';
+    if (!bruto) {
+      pista = 'La variable FSJ_USUARIOS no está configurada en Netlify o no está disponible para Functions.';
     } else if (!usuarios.length) {
       pista = 'La variable SÍ llega (' + bruto.length + ' caracteres) pero no se pudo leer ninguna ' +
               'entrada. El formato es Nombre:clave:rol, separando personas con coma y sin espacios ' +
@@ -88,11 +81,8 @@ export default async (req) => {
       ok: true,
       configurado: usuarios.length > 0,
       diagnostico: {
-        sitio: sitio, contexto: contexto,
-        variablesFSJ: variablesFSJ,
         largoDeFSJ_USUARIOS: bruto.length,
         entradasLeidas: usuarios.length,
-        nombresLeidos: usuarios.map((u) => u.nombre),
         pista: pista,
       },
     });
@@ -103,7 +93,7 @@ export default async (req) => {
   let datos = null;
   try { datos = await req.json(); } catch (e) { datos = null; }
   const nombre = normNombre(datos && datos.nombre);
-  const clave = String((datos && datos.clave) || '');
+  const clave = String((datos && datos.clave) || '').trim();
   if (!nombre || !clave) {
     await esperar(300);
     return json({ ok: false }, 401);

@@ -11,26 +11,82 @@ index.html               Home: showcase de 15 productos (5 a la vez). El menú
 catalogo.html            NUEVO · Catálogo showcase: fotos, precios, búsqueda,
                          armado de cotización y envío por WhatsApp. (Público)
 interno.html             Panel de empleados (entrada con clave personal).
-usuarios.js              LOS 3 USUARIOS Y SUS CLAVES (aquí se editan).
+usuarios.js              Solo los NOMBRES y roles. Las claves NO están aquí:
+                         viven en Netlify (ver el final de este manual).
 acceso.js                Pantalla de entrada: pide tu nombre y luego TU clave
                          (no tocar).
 robots.txt               Evita que Google indexe el área de empleados.
 analisis-inventario.html NUEVO · Analiza el reporte de FelTec: métricas y errores.
 netlify.toml             Configuración (necesaria para las fotos automáticas).
-netlify/functions/       Función que guarda las fotos en línea.
+netlify/functions/       Funciones: entrada de empleados y fotos en línea.
 inventario-admin.html    NUEVO · Precios, fotos, historial y actualización con
                          revisión de discrepancias. (Interno)
+cargar-archivos.html     NUEVO · Ventana para cargar los Excel y revisar uno por
+                         uno los cambios antes de aceptarlos. (Interno)
+administrar-productos.html NUEVO · Crear, dar de baja y regresar productos,
+                         precios y promociones. (Interno)
 vinetas-precios.html     Generador de viñetas conectado al inventario. (Interno)
 calculadora-fletes.html  Calculadora de fletes. (Interno)
 inventario.js            Motor de datos compartido (inventario, fotos, historial).
-inventario-data.json     Listado de inventario (se carga solo, ~11.000).
+                         Lo usan TODAS las páginas internas, una sola copia.
+catalogo-data.json       NUEVO · Lo que baja el CLIENTE: solo los productos que
+                         puede ver y solo los datos que se le enseñan (1 MB).
+inventario-data.json     La base del panel: los 11.267 productos, incluidos los
+                         dados de baja. No lleva costos de compra.
 showcase-data.json       NUEVO · los 15 productos del inicio (archivo pequeño).
 showcase-embed.html      NUEVO · el carrusel del inicio (se muestra dentro del
                          home en un marco aislado; no tocar).
 imagenes-data.json       (lo generas tú) Fotos de producto publicadas.
 catalog-data.js          Catálogo anterior (lo sigue usando el home).
-support.js, assets/      Motor del sitio e imágenes (sin cambios).
+support.js, assets/      Motor del sitio e imágenes.
+assets/vendor/           NUEVO · React, que antes se bajaba de un servidor
+                         ajeno (unpkg.com). Ahora viaja dentro del sitio: si
+                         ese servidor falla, la portada ya no queda en blanco.
 ```
+
+---
+
+## Qué cambió en esta versión
+
+Seis cosas, de la más importante a la menos.
+
+**1. Los costos de compra ya no se publican.** El sitio es estático: *todo*
+archivo que se sube es público, aunque solo lo lea el panel. La versión anterior
+publicaba el costo de 11.182 productos junto al precio de venta — con esos dos
+números cualquiera saca tu margen. Ahora el costo vive solo en el navegador de
+cada equipo y entra por el Excel de conteo. **Efecto para ti:** si abres el panel
+en una computadora nueva, los costos no estarán hasta que cargues la hoja de
+conteo. El análisis de inventario los necesita, así que cárgala primero.
+
+**2. La portada ya no depende de un servidor ajeno.** Se dibujaba con React
+traído de `unpkg.com`, y mientras esperaba escondía todo. Si ese servidor iba
+lento o estaba caído, el cliente veía una **página en blanco**: ni el teléfono,
+ni el WhatsApp, ni el catálogo. Ahora React viaja dentro del sitio (son los
+mismos archivos, con la misma firma de seguridad). Y por si acaso, si aun así no
+se dibujara nada, a los 6 segundos aparece una pantalla de respaldo con el
+nombre de la ferretería y tres botones: catálogo, WhatsApp y llamar.
+
+**3. El catálogo pesa la tercera parte.** El cliente bajaba 3,2 MB para ver
+6.316 productos, porque el archivo traía también los 4.951 dados de baja y
+campos internos. Ahora baja `catalogo-data.json`: **1 MB** (0,18 MB comprimido).
+En datos móviles esa es la diferencia entre esperar y cerrar la página.
+
+**4. Las promociones ya se ven.** Estaban programadas pero no salían en ningún
+lado. Ahora, al poner una oferta desde *Administrar productos*, el catálogo
+muestra el precio de antes tachado y una etiqueta amarilla con el descuento, y
+la viñeta de precio sale ya con el precio anterior y el porcentaje puestos.
+
+**5. Las fotos del sitio pesan la cuarta parte.** De 7,59 MB a 2,04 MB, sin que
+se note en pantalla.
+
+**6. Una sola copia del motor.** La página de viñetas llevaba dentro su propia
+copia del motor de inventario, y se había quedado atrás. Como las dos copias
+usan la misma base del navegador, cargar un Excel desde las viñetas **borraba
+los precios corregidos a mano**. Ahora todas las páginas usan el mismo
+`inventario.js`.
+
+Y dos arreglos pequeños: en el teléfono el encabezado del catálogo ya no empuja
+la página a lo ancho, y la etiqueta de oferta dejó de taparse con el «EN STOCK».
 
 ---
 
@@ -316,10 +372,18 @@ al instante**, sin publicar archivos ni volver a desplegar.
    *“Tienes X cambios de precio sin publicar”*. Pulsa **Publicar precios**
    (o **Publicar todo** si las fotos aún no son automáticas). Si estás en medio
    de otra cosa, pulsa **Ahora no** y el aviso se quita hasta que recargues.
-2. Se descargan los archivos: `inventario-data.json` y `showcase-data.json`
-   (y `imagenes-data.json` solo si las fotos no son automáticas).
+2. Se descargan los archivos: `inventario-data.json`, **`catalogo-data.json`**
+   y `showcase-data.json` (y `imagenes-data.json` solo si las fotos no son
+   automáticas).
 3. Cópialos en la carpeta de tu sitio **reemplazando los anteriores** (junto a
    `index.html`) y súbela a Netlify.
+
+> **Son dos archivos, no uno.** `catalogo-data.json` es el que baja el cliente
+> en su teléfono: pesa 1 MB en vez de 3 porque solo lleva los 6.316 productos
+> que se le pueden enseñar y solo los datos que se ven en pantalla.
+> `inventario-data.json` es la base del panel y trae los 11.267, incluidos los
+> dados de baja. **Sube siempre los dos**: si subes solo uno, el catálogo y el
+> panel quedan desfasados.
 
 Cuando termines, el aviso amarillo desaparece. Si vuelve a aparecer, es que hay
 cambios nuevos sin publicar.
@@ -357,6 +421,12 @@ ni base de datos detrás. Eso tiene una consecuencia directa:
 
 ### Lo que ya quedó reforzado
 
+- **Las claves salieron del sitio.** Ya no están en `usuarios.js` (que cualquiera
+  puede abrir): viven en una variable de Netlify y quien las compara es el
+  servidor. En el sitio solo quedan los nombres y los roles.
+- **Los costos de compra ya no se publican.** Ni en la base del panel ni en el
+  archivo del catálogo. Antes salían junto al precio de venta, y con esos dos
+  números cualquiera calcula tu margen.
 - **La clave de las fotos ya no es la de entrar.** Antes, `FSJ_CLAVE` en Netlify
   tenía las mismas claves de los empleados, que están publicadas en
   `usuarios.js`: cualquiera podía subir o borrar fotos del catálogo. Ahora el

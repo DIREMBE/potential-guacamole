@@ -898,8 +898,9 @@ input[type=checkbox]{accent-color:var(--orange);width:16px;height:16px;cursor:po
     toast('Preparando los archivos…');
     // 1) datos  2) fotos (solo si hace falta)  3) showcase
     //    (con pausas para que el navegador no bloquee las descargas seguidas)
-    var archivos = 1;
+    var archivos = 2;
     Inventario.publicar();
+    setTimeout(function(){ Inventario.publicarCatalogo(); }, 400);
     setTimeout(function(){
       if(conFotos){ Inventario.publicarImagenes(); archivos++; }
       setTimeout(function(){
@@ -925,7 +926,13 @@ input[type=checkbox]{accent-color:var(--orange);width:16px;height:16px;cursor:po
   $('pend-no').addEventListener('click', function(){ pendOculto = true; renderPend(); });
 
   /* ----------------------------- Publicar -------------------------------- */
-  $('pub-datos').addEventListener('click', function(){ var n=Inventario.publicar(); toast('inventario-data.json descargado ('+nf(n)+' productos).'); });
+  $('pub-datos').addEventListener('click', function(){
+    var n=Inventario.publicar();
+    setTimeout(function(){
+      var c=Inventario.publicarCatalogo();
+      toast('Descargados: inventario-data.json ('+nf(n)+') y catalogo-data.json ('+nf(c)+' visibles).');
+    }, 500);
+  });
   $('pub-imgs').addEventListener('click', function(){
     var n = Inventario.publicarImagenes();
     toast(n ? 'imagenes-data.json descargado ('+n+' fotos).' : 'Todavía no hay fotos guardadas.', !n);

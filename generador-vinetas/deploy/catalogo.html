@@ -32,7 +32,16 @@ header.top{position:sticky;top:0;z-index:50;background:#08182A;border-bottom:3px
 .brand{display:flex;flex-direction:column;line-height:1.1}
 .brand .n{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:19px}
 .brand .s{font-size:12px;color:var(--tx-3);text-transform:uppercase;letter-spacing:.08em}
-.top-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+/* En pantallas angostas el botón de cotización se achica para que el
+   encabezado no empuje la página a lo ancho. */
+@media (max-width:430px){
+  .top-in{gap:8px;padding-left:12px;padding-right:12px}
+  .top-actions{gap:6px}
+  .cart-btn{padding:8px 10px;font-size:13px}
+  .cart-btn .txt{display:none}
+  .brand .s{display:none}
+}
 .lnk{font-size:13.5px;color:var(--tx-2)}
 .lnk:hover{color:var(--orange)}
 .cart-btn{position:relative;display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:#fff;font-weight:700;font-size:14px;padding:9px 15px;border:none;border-radius:8px;cursor:pointer;transition:background .15s}
@@ -104,6 +113,12 @@ main{max-width:1280px;margin:0 auto;padding:22px clamp(16px,4vw,40px) 80px}
 .price{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:25px;color:var(--orange);line-height:1}
 .unit{font-size:12px;color:var(--tx-3)}
 .price.consultar{font-size:17px;color:var(--tx-2);font-weight:600}
+/* Oferta: el precio de antes tachado y el descuento sobre la foto */
+.price-antes{font-family:'Barlow Condensed',sans-serif;font-size:16px;color:var(--tx-3);text-decoration:line-through}
+/* La etiqueta de oferta va donde iba la de «Destacado» (arriba a la izquierda):
+   a la derecha se cruzaba con el «EN STOCK» y quedaba tapada. */
+.tag.oferta{background:#E8B71A;color:#3A2E00}
+.card.enoferta{border-color:rgba(232,183,26,.55)}
 .add{width:100%;background:transparent;border:1.5px solid var(--orange);color:var(--orange);font-weight:700;font-size:13.5px;padding:9px;border-radius:8px;cursor:pointer;transition:all .15s}
 .add:hover{background:var(--orange);color:#fff}
 .add.in{background:var(--ok);border-color:var(--ok);color:#fff}
@@ -175,7 +190,7 @@ footer.ft{border-top:1px solid var(--line);text-align:center;color:var(--tx-3);f
     <div class="top-actions">
       <a class="lnk" href="index.html">← Inicio</a>
       <button class="cart-btn" id="btn-cart">
-        Mi cotización <span class="badge" id="cart-count">0</span>
+        <span class="txt">Mi cotización</span> <span class="badge" id="cart-count">0</span>
       </button>
     </div>
   </div>
@@ -395,17 +410,21 @@ footer.ft{border-top:1px solid var(--line);text-align:center;color:var(--tx-3);f
       var img = Inventario.getImagen(p.item);
       var enCart = !!cart[String(p.item)];
       var stock = Number(p.existencia)||0;
-      h += '<article class="card">'+
+      h += '<article class="card'+(Inventario.enOferta(p)?' enoferta':'')+'">'+
              '<div class="ph">'+
                (img ? '<img src="'+img+'" alt="'+esc(p.nombre)+'" loading="lazy">' : NOIMG)+
-               (p.destacado ? '<span class="tag">Destacado</span>' : '')+
+               (Inventario.enOferta(p)
+                 ? '<span class="tag oferta">&minus;'+Inventario.descuento(p)+'%</span>'
+                 : (p.destacado ? '<span class="tag">Destacado</span>' : ''))+
                '<span class="stock '+(stock>0?'si':'no')+'">'+(stock>0?'En stock':'Consultar')+'</span>'+
              '</div>'+
              '<div class="body">'+
                (p.categoria ? '<span class="cat-lbl">'+esc(p.categoria)+'</span>' : '')+
                '<h3 class="name">'+esc(p.nombre)+'</h3>'+
                (p.precio > 0
-                 ? '<div class="price-row"><span class="price">'+money(p.precio)+'</span>'+
+                 ? '<div class="price-row">'+
+                     (Inventario.enOferta(p) ? '<span class="price-antes">'+money(p.promoAntes)+'</span>' : '')+
+                     '<span class="price">'+money(p.precio)+'</span>'+
                      (p.unidad ? '<span class="unit">/ '+esc(p.unidad)+'</span>' : '')+'</div>'
                  : '<div class="price-row"><span class="price consultar">Consultar precio</span></div>')+
                '<button class="add'+(enCart?' in':'')+'" data-item="'+esc(p.item)+'">'+
@@ -572,7 +591,7 @@ footer.ft{border-top:1px solid var(--line);text-align:center;color:var(--tx-3);f
   if(window.Inventario){
     // Si un empleado cambia un precio o sube una foto, el catálogo se refresca solo.
     Inventario.onCambio(function(){ renderCats(); renderGrid(); renderCart(); });
-    Inventario.init().then(function(){
+    Inventario.init(['./catalogo-data.json','./inventario-data.json']).then(function(){
       renderCats(); renderGrid(); renderCart();
       // Búsqueda que viene del inicio  (catalogo.html?q=...)
       var q = params.get('q');

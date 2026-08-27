@@ -18,7 +18,12 @@ const MAX_BYTES = 400 * 1024;   // una foto ya viene reducida a ~80 KB
 function json(body, status = 200, extra = {}) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...extra },
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+      'x-content-type-options': 'nosniff',
+      ...extra,
+    },
   });
 }
 
@@ -64,6 +69,13 @@ function esImagen(buf) {
   return false;
 }
 
+function tipoImagen(buf) {
+  const b = new Uint8Array(buf);
+  if (b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return 'image/jpeg';
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) return 'image/png';
+  return 'image/webp';
+}
+
 const MAX_FOTOS = 3000;   // tope de fotos distintas guardadas
 /* true si guardar esta foto pasaría del tope (las que ya existen se pueden
    reemplazar siempre). */
@@ -97,7 +109,8 @@ export default async (req, context) => {
       return new Response(foto, {
         status: 200,
         headers: {
-          'content-type': 'image/jpeg',
+          'content-type': tipoImagen(foto),
+          'x-content-type-options': 'nosniff',
           // se puede cachear: al cambiar la foto cambia el parámetro ?v= desde el cliente
           'cache-control': 'public, max-age=86400',
         },
@@ -143,7 +156,7 @@ export default async (req, context) => {
 
     return json({ error: 'método no permitido' }, 405);
   } catch (e) {
-    return json({ error: 'error del servidor', detalle: String(e && e.message || e) }, 500);
+    return json({ error: 'error del servidor' }, 500);
   }
 };
 

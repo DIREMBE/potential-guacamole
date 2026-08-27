@@ -7,5 +7,8 @@ Disallow: /inventario-admin.html
 Disallow: /analisis-inventario.html
 Disallow: /vinetas-precios.html
 Disallow: /calculadora-fletes.html
+Disallow: /cargar-archivos.html
+Disallow: /administrar-productos.html
+Disallow: /inventario-data.json
 Disallow: /usuarios.js
 Disallow: /api/

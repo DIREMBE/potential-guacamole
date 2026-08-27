@@ -4,6 +4,14 @@
   publish = "."
   functions = "netlify/functions"
 
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    X-Frame-Options = "SAMEORIGIN"
+
 # Las fotos de producto se guardan en Netlify Blobs (ver netlify/functions/fotos.mjs)
 # y se sirven en /api/fotos — así se ven en todos los dispositivos sin volver a
 # subir archivos al sitio.
@@ -58,6 +66,32 @@
     X-Robots-Tag = "noindex, nofollow, noarchive"
 
 [[headers]]
+  for = "/cargar-archivos.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
+  for = "/administrar-productos.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
   for = "/usuarios.js"
   [headers.values]
     X-Robots-Tag = "noindex, nofollow, noarchive"
+
+# La base del panel (11,267 productos, incluidos los dados de baja) no lleva
+# costos, pero tampoco tiene por qué salir en Google: el cliente usa
+# catalogo-data.json, que es más liviano y solo trae lo que se le enseña.
+[[headers]]
+  for = "/inventario-data.json"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+# React viaja dentro del sitio con la versión en el nombre del archivo. Como el
+# nombre cambia si cambia la versión, el navegador puede guardárselo un año y no
+# volver a bajarlo nunca: la portada abre al instante en visitas siguientes.
+[[headers]]
+  for = "/assets/vendor/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

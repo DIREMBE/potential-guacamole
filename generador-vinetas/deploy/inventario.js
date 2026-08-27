@@ -1010,9 +1010,10 @@ window.Inventario = (function () {
   async function _subirFotoServidor(item, dataUri) {
     if (!servidorActivo) return false;
     try {
+      const tipo = (/^data:([^;,]+)/i.exec(String(dataUri)) || [, 'image/jpeg'])[1];
       const r = await fetch(API_FOTOS + '/' + encodeURIComponent(item), {
         method: 'POST',
-        headers: { 'content-type': 'image/jpeg', 'x-fsj-clave': _claveEnvio() },
+        headers: { 'content-type': tipo, 'x-fsj-clave': _claveEnvio() },
         body: _dataUriABlob(dataUri),
       });
       if (!r.ok) { _ultimoErrorServidor = (r.status === 401 || r.status === 403) ? 'clave' : 'red'; return false; }
@@ -1140,6 +1141,15 @@ window.Inventario = (function () {
   }
 
   // Genera inventario-data.json (para publicar en el sitio y compartir a todos).
+  /* El sitio es estático: TODO archivo que se publica es público, aunque solo
+     lo lea el panel. Por eso el COSTO DE COMPRA no se escribe en ninguno de los
+     dos: con costo y precio a la vista, cualquiera calcula el margen del
+     negocio. El costo vive en el navegador de cada equipo y entra por el Excel.
+
+     Se publican dos archivos:
+       inventario-data.json -> base del panel (todos los productos, sin costos)
+       catalogo-data.json   -> lo que baja el cliente: solo los productos que
+                               puede ver y solo los campos que se enseñan       */
   function publicar() {
     const data = {
       generatedAt: new Date().toISOString(),
@@ -1147,13 +1157,39 @@ window.Inventario = (function () {
       productos: productos.map((p) => ({
         item: p.item, nombre: p.nombre, categoria: p.categoria,
         unidad: p.unidad, existencia: p.existencia, precio: p.precio, codigo: p.codigo || '',
-        costo: p.costo || 0, marca: p.marca || '',
+        marca: p.marca || '',
         promoAntes: p.promoAntes || 0, promoHasta: p.promoHasta || '',
+        destacado: !!p.destacado, activo: p.activo !== false,
         bajaMotivo: p.bajaMotivo || '', activoManual: !!p.activoManual,
-        destacado: !!p.destacado, activo: p.activo !== false, tocadoEn: p.tocadoEn || 0,
+        tocadoEn: p.tocadoEn || 0,
       })),
     };
     _download('inventario-data.json', JSON.stringify(data), 'application/json');
+    return data.count;
+  }
+
+  /* Archivo del catálogo: solo lo que el cliente puede llegar a ver. Quita los
+     dados de baja (más de 4.000) y los campos internos. Baja de unos 3 MB a
+     poco más de 1, que en datos móviles es la diferencia entre esperar y
+     cerrar la página. */
+  function publicarCatalogo() {
+    const vis = productos.filter((p) => p.activo !== false);
+    const data = {
+      generatedAt: new Date().toISOString(),
+      count: vis.length,
+      productos: vis.map((p) => {
+        const o = {
+          item: p.item, nombre: p.nombre, categoria: p.categoria,
+          unidad: p.unidad, existencia: p.existencia, precio: p.precio,
+          codigo: p.codigo || '',
+        };
+        if (p.marca) o.marca = p.marca;
+        if (p.destacado) o.destacado = true;
+        if (numOf(p.promoAntes) > 0) { o.promoAntes = numOf(p.promoAntes); o.promoHasta = p.promoHasta || ''; }
+        return o;
+      }),
+    };
+    _download('catalogo-data.json', JSON.stringify(data), 'application/json');
     return data.count;
   }
 
@@ -1369,7 +1405,7 @@ window.Inventario = (function () {
     setDestacado, historial, catalogo, categorias, sinPrecio, recientes, tocar, marcarVisto,
     analizarConteo, aplicarConteo, setActivo, deBaja, altaProducto, setCodigo,
     setPromo, quitarPromo, promociones, enOferta, descuento,
-    publicar, publicarImagenes, publicarShowcase, exportarCambios, limpiarCambios,
+    publicar, publicarCatalogo, publicarImagenes, publicarShowcase, exportarCambios, limpiarCambios,
     marcarPublicado, pendientes,
     stats, disponible, onCambio,
     get cambios() { return cambios.slice(); },

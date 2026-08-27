@@ -802,5 +802,63 @@ class Component extends DCLogic {
 }
 </script>
 
+<!-- ===================================================================
+     RESPALDO: si el inicio no llega a dibujarse (por ejemplo porque el
+     servidor de React está caído o el internet va muy lento), en vez de una
+     página en blanco el cliente ve esto. Es HTML puro y no depende de nada
+     externo. Se esconde solo en cuanto la página real aparece.
+     =================================================================== -->
+<div id="fsj-respaldo" hidden style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+     background:#0C2036;color:#EAF2F9;min-height:100vh;margin:0;padding:34px 20px;text-align:center">
+  <img src="assets/emblem.png" alt="Ferretería San José" width="76" height="76"
+       style="display:block;margin:0 auto 16px;max-width:76px;height:auto">
+  <h1 style="font-size:27px;margin:0 0 6px;letter-spacing:.02em">FERRETERÍA SAN JOSÉ</h1>
+  <p style="margin:0 0 26px;color:#98AEC3;font-size:15px">Buen servicio y calidad siempre · Corinto, Morazán</p>
+
+  <div style="max-width:340px;margin:0 auto;display:grid;gap:11px">
+    <a href="catalogo.html" style="display:block;background:#F15930;color:#fff;text-decoration:none;
+       font-weight:700;padding:15px;border-radius:10px;font-size:16px">Ver el catálogo</a>
+    <a href="https://wa.me/50374939560" style="display:block;background:#25D366;color:#fff;
+       text-decoration:none;font-weight:700;padding:15px;border-radius:10px;font-size:16px">
+       Escribirnos por WhatsApp</a>
+    <a href="tel:+50374939560" style="display:block;border:1px solid rgba(255,255,255,.3);
+       color:#EAF2F9;text-decoration:none;font-weight:600;padding:14px;border-radius:10px;font-size:15px">
+       Llamar: 7493-9560</a>
+  </div>
+
+  <p style="margin:30px auto 0;max-width:340px;color:#5D7A95;font-size:13px;line-height:1.6">
+    La versión completa del sitio está tardando en cargar. Con los botones de
+    arriba puedes ver los precios o escribirnos de una vez.
+  </p>
+</div>
+
+<script>
+/* Enseña el respaldo solo si a los 6 segundos la página sigue sin contenido.
+   Si el inicio carga bien —lo normal— esto no hace nada. */
+(function () {
+  var LIMITE = 6000;
+  function vacia() {
+    var b = document.body;
+    if (!b) return true;
+    // ¿hay algo dibujado además del propio respaldo?
+    var hijos = Array.prototype.filter.call(b.children, function (el) {
+      return el.id !== 'fsj-respaldo' && el.tagName !== 'SCRIPT' &&
+             el.offsetHeight > 40;
+    });
+    return hijos.length === 0;
+  }
+  function revisar() {
+    if (!vacia()) return;
+    var r = document.getElementById('fsj-respaldo');
+    if (r) r.hidden = false;
+  }
+  setTimeout(revisar, LIMITE);
+  // si React llega tarde pero llega, se quita el respaldo
+  setInterval(function () {
+    var r = document.getElementById('fsj-respaldo');
+    if (r && !r.hidden && !vacia()) r.hidden = true;
+  }, 1500);
+})();
+</script>
 </body>
 </html>
