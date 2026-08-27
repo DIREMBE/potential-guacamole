@@ -22,6 +22,8 @@ netlify/functions/       Funciones del servidor: entrada de empleados, fotos y
                          NUEVO · cambios de inventario compartidos.
 sincronia.js             NUEVO · La línea de arriba de las pantallas internas
                          que dice si los cambios se están compartiendo.
+recuperar-fotos.js       TEMPORAL · Sube al sitio las fotos que se quedaron
+                         guardadas en un equipo. Ver «Fotos varadas» abajo.
 inventario-admin.html    NUEVO · Precios, fotos, historial y actualización con
                          revisión de discrepancias. (Interno)
 cargar-archivos.html     NUEVO · Ventana para cargar los Excel y revisar uno por
@@ -343,6 +345,32 @@ con el aviso, y al subirles una foto el sistema te lo recuerda.
   rápido. Si el total de fotos supera los 8 MB, la herramienta te avisa.
 - Si una foto no se guarda, **aparece en un recuadro rojo con el motivo** y no
   desaparece hasta que lo cierras, para que sepas exactamente cuáles repetir.
+
+---
+
+## Fotos varadas en un equipo (herramienta temporal)
+
+Al guardar una foto, el sistema la guarda en el equipo y enseguida la sube al
+sitio. Si la subida falla —porque en ese momento la función de fotos no estaba
+en línea, o faltaba la clave— **la foto se queda solo en ese equipo**. No se
+pierde, pero no la ve nadie más.
+
+Eso ya pasó una vez: 40 fotos llegaron al sitio y otras se quedaron atrás sin
+que nadie se enterara, porque el panel decía «Foto guardada» igual. Ese mensaje
+ya está corregido: ahora, si la foto no llega al sitio, lo dice.
+
+Para recuperar las que quedaron atrás, `recuperar-fotos.js` compara las fotos
+de ese equipo con las del sitio y ofrece subir las que faltan. Aparece solo en
+**Inventario y catálogo**, y solo si hay algo que subir. Hay que abrirlo **en
+cada equipo** donde se hayan tomado fotos.
+
+> **Es temporal.** Cuando ya no queden fotos varadas, se quita así:
+> 1. borrar el archivo `recuperar-fotos.js`;
+> 2. borrar la línea `<script src="recuperar-fotos.js"></script>` de
+>    `inventario-admin.html`.
+>
+> Nada más. No toca `inventario.js` ni ningún otro archivo — está hecho aparte
+> justamente para que quitarlo no pueda romper nada.
 
 ---
 

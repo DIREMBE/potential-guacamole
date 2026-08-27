@@ -451,6 +451,9 @@ input[type=checkbox]{accent-color:var(--orange);width:16px;height:16px;cursor:po
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.mini.min.js"></script>
 <script src="inventario.js"></script>
 <script src="sincronia.js"></script>
+<!-- TEMPORAL: recuperar fotos varadas en un equipo. Para quitarlo, borra
+     esta línea y el archivo recuperar-fotos.js. No toca nada más. -->
+<script src="recuperar-fotos.js"></script>
 <script>
 (function(){
   'use strict';
@@ -699,7 +702,20 @@ input[type=checkbox]{accent-color:var(--orange);width:16px;height:16px;cursor:po
           setTimeout(function(){ pedirClaveFotos('mala'); }, 900);
           return;
         }
-        toast(enServidor ? 'Foto publicada: ya se ve en todos los dispositivos.' : 'Foto guardada: '+nombreProd);
+        /* Si la foto NO llegó al sitio hay que decirlo, sea cual sea el motivo.
+           Antes solo se avisaba cuando el servidor rechazaba la clave; si el
+           servidor no respondía —por ejemplo porque la función de fotos no
+           estaba desplegada— salía «Foto guardada» a secas, que suena a que
+           todo fue bien. Así se quedaron fotos varadas en un equipo durante
+           días sin que nadie se enterara. */
+        if(!enServidor){
+          toast(Inventario.servidorDisponible()
+            ? 'Ojo: la foto quedó SOLO en este equipo, no llegó al sitio. Los demás no la ven todavía.'
+            : 'Foto guardada en este equipo. Este sitio no tiene fotos automáticas: hay que publicar para compartirla.',
+            true);
+          return;
+        }
+        toast('Foto publicada: ya se ve en todos los dispositivos.');
         // Aviso claro: sin precio el producto sale como "Consultar precio"
         if(prod && !(Number(prod.precio) > 0)){
           setTimeout(function(){
