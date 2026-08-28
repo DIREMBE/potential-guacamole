@@ -16,7 +16,10 @@ usuarios.js              Solo los NOMBRES y roles. Las claves NO están aquí:
 acceso.js                Pantalla de entrada: pide tu nombre y luego TU clave
                          (no tocar).
 robots.txt               Evita que Google indexe el área de empleados.
-analisis-inventario.html NUEVO · Analiza el reporte de FelTec: métricas y errores.
+analisis-inventario.html NUEVO · Analiza el reporte de FelTec: métricas, errores
+                         y el SUGERIDO DE COMPRAS por movimiento.
+conversor-marcador.html  NUEVO · Convierte la exportación del marcador
+                         biométrico en el cuadro semanal de asistencia.
 netlify.toml             Configuración (necesaria para las fotos automáticas).
 netlify/functions/       Funciones del servidor: entrada de empleados, fotos y
                          NUEVO · cambios de inventario compartidos.
@@ -238,6 +241,75 @@ reactiva cuando quieras desde la lista de esta pestaña.
   `showcase-data.json` (los 15 del inicio).
 - Súbelos a la raíz del sitio, reemplazando los anteriores, y vuelve a desplegar:
   **todos los equipos y los clientes** verán esos precios y fotos.
+
+---
+
+## Sugerido de compras (nuevo)
+
+Está dentro de **Análisis de inventario**, debajo del resumen. No usa cantidades
+mínimas: una mínima fija pide lo mismo del que vuela que del que lleva un año
+parado. Usa el **movimiento** que trae el propio reporte.
+
+La cuenta, sin misterio:
+
+```
+salida al día     = SALIDA del periodo ÷ días del periodo
+días que aguanta  = EXISTENCIA ÷ salida al día
+a pedir           = salida al día × días de cobertura − EXISTENCIA
+```
+
+Los días del periodo salen solos del nombre del archivo de FelTec (que los lleva
+pegados al final); si no, se escriben a mano. La cobertura la eliges tú: 30 días
+por defecto.
+
+El pedido se agrupa **por categoría o por marca**, y cada grupo dice cuántos
+productos, cuántas unidades y cuánto cuesta. Se descarga en CSV.
+
+> **La marca sale del nombre del producto**, porque el reporte no trae columna de
+> marca. Muchos artículos (placas, abrazaderas, clavos) no la llevan escrita y
+> caen en «(sin marca)». Para un pedido completo, agrupa por categoría.
+
+Dos avisos que la pantalla te repite, porque importan:
+
+- **SALIDA es todo lo que salió**, no solo lo vendido. Un traslado a la otra
+  sucursal o un ajuste también cuentan.
+- **Un mes no sabe de temporada.** Contrástalo con los informes anteriores antes
+  de una compra grande.
+
+### Inventario congelado y promociones
+
+Debajo, lo contrario: productos **con existencia y cero salidas** en el periodo.
+Es dinero parado. El descuento sugerido regala la **mitad del margen**, con tope
+del 40%, y **nunca baja del costo**.
+
+Cuando no hay con qué calcularlo, no se inventa un número — se dice cuál es el
+caso: falta el precio, falta el costo, o **el «precio» del archivo no es un
+precio** (FelTec escribe a veces el costo+IVA o el doble del costo; en el reporte
+de agosto eso pasa en 601 productos). Descontar sobre esos sería vender a
+pérdida.
+
+Si un solo producto se lleva más del 15% del dinero quieto, la pantalla lo señala:
+casi siempre es una existencia o un costo escritos en otra unidad, no mercadería
+de verdad.
+
+---
+
+## Conversor del marcador (nuevo)
+
+`conversor-marcador.html` — convierte la exportación del marcador biométrico
+(NGL_001.TXT) en el cuadro semanal de asistencia, listo para pegar en la planilla.
+Entra con tu nombre y clave, como las demás pantallas internas.
+
+**La lista de empleados se edita ahí mismo**, en la tarjeta de arriba: agregar,
+renombrar, mover de lugar y quitar. Se guarda en ese equipo.
+
+> **El orden importa.** El número de cada empleado es la fila que le toca en el
+> cuadro «📅 Asistencia Anual», así que moverlos en la pantalla mueve filas en la
+> planilla. Si agregas gente, la pantalla te avisa de que hay que hacerle sitio
+> al cuadro: cada semana ocupa 19 filas y los empleados empiezan en la 7.
+
+Cuando cambias el orden o quitas a alguien, el mapeo de usuarios del marcador se
+ajusta solo para que las marcas no terminen en la fila de otro.
 
 ---
 

@@ -8,6 +8,7 @@ Disallow: /analisis-inventario.html
 Disallow: /vinetas-precios.html
 Disallow: /calculadora-fletes.html
 Disallow: /cargar-archivos.html
+Disallow: /conversor-marcador.html
 Disallow: /administrar-productos.html
 Disallow: /inventario-data.json
 Disallow: /sincronia.js

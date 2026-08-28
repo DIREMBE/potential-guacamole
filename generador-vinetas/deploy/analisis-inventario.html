@@ -96,6 +96,27 @@ tr:hover td{background:var(--s50)}
   color:inherit;border-radius:8px}
 .brand-link:hover{opacity:.85}
 .brand-link:focus-visible{outline:2px solid #F15930;outline-offset:3px}
+
+/* --- Sugerido de compras y promociones --- */
+.sug-ctrl{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px}
+.sug-ctrl label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--s500)}
+.sug-ctrl input,.sug-ctrl select{border:1px solid var(--s200);border-radius:7px;padding:7px 10px;
+  font:inherit;font-size:14px;background:#fff;min-width:120px}
+.sug-ctrl input{width:90px}
+.grupo{border:1px solid var(--s200);border-radius:9px;margin-bottom:8px;overflow:hidden}
+.grupo-h{display:flex;align-items:center;gap:12px;padding:11px 14px;cursor:pointer;background:var(--s050)}
+.grupo-h:hover{background:var(--s100)}
+.grupo-h .gn{font-weight:700;font-size:14px}
+.grupo-h .gm{margin-left:auto;display:flex;gap:16px;align-items:center;font-size:13px;color:var(--s500)}
+.grupo-h .gm b{color:var(--s700)}
+.grupo-b{display:none;border-top:1px solid var(--s200)}
+.grupo.on .grupo-b{display:block}
+.urg{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;
+  text-transform:uppercase;letter-spacing:.04em}
+.urg-0{background:#FDEDE8;color:#94300F}
+.urg-1{background:#FDF6E0;color:#6E5507}
+.urg-2{background:#EAF2FA;color:#1F5285}
+.dsc{font-weight:700;color:#94300F}
 </style>
 <script src="usuarios.js"></script>
 <script>window.FSJ_ACCESO = { sub: 'Análisis de inventario · solo personal' };</script>
@@ -166,6 +187,41 @@ tr:hover td{background:var(--s50)}
       <div class="card-b"><div class="scroll"><table>
         <thead><tr><th>Categoría</th><th>Productos</th><th>Con stock</th><th>Valor a costo</th><th>Valor a venta</th><th></th></tr></thead>
         <tbody id="cats"></tbody></table></div>
+      </div>
+    </div>
+
+    <div class="card" id="card-sug">
+      <div class="card-h"><h2>Sugerido de compras</h2>
+        <span class="hint">Según lo que se movió, no según cantidades mínimas</span>
+        <button class="btn b-gh b-sm" id="sug-csv" style="margin-left:auto">Descargar pedido (CSV)</button>
+      </div>
+      <div class="card-b">
+        <div class="sug-ctrl">
+          <label>Días del periodo
+            <input type="number" id="sug-dias" min="1" max="365" step="1"></label>
+          <label>Quiero cobertura para
+            <input type="number" id="sug-obj" min="1" max="365" step="1" value="30"></label>
+          <label>Agrupar por
+            <select id="sug-por">
+              <option value="cat">Categoría</option>
+              <option value="marca">Marca</option>
+            </select></label>
+        </div>
+        <div class="kpis" id="sug-kpis" style="margin-bottom:16px"></div>
+        <div class="note" id="sug-nota"></div>
+        <div id="sug-grupos" style="margin-top:14px"></div>
+      </div>
+    </div>
+
+    <div class="card" id="card-cong">
+      <div class="card-h"><h2>Inventario congelado &middot; promociones sugeridas</h2>
+        <span class="hint">Lo que ocupa dinero y no se movió</span>
+        <button class="btn b-gh b-sm" id="cong-csv" style="margin-left:auto">Descargar promociones (CSV)</button>
+      </div>
+      <div class="card-b">
+        <div class="kpis" id="cong-kpis" style="margin-bottom:16px"></div>
+        <div class="note" id="cong-nota"></div>
+        <div id="cong-grupos" style="margin-top:14px"></div>
       </div>
     </div>
 
@@ -392,6 +448,7 @@ tr:hover td{background:var(--s50)}
 
   function pintar(){
     var D=datos.filas, M=metricas(D);
+    pintarSugerido();
     $('res').style.display='block';
     $('res-sub').textContent = nf(M.total)+' productos analizados'+(datos.descartadas?' · '+datos.descartadas+' fila(s) descartada(s) (totales/encabezados)':'');
 
@@ -473,6 +530,330 @@ tr:hover td{background:var(--s50)}
     h.querySelector('.ch').textContent = an.classList.contains('on') ? 'ocultar ▴' : 'ver ▾';
   });
 
+  /* ================= SUGERIDO DE COMPRAS Y DE PROMOCIONES =================
+
+     De dónde sale cada número:
+
+       salida al día  = SALIDA del periodo / días del periodo
+       días que aguanta = EXISTENCIA / salida al día
+       a pedir        = salida al día × días de cobertura − EXISTENCIA
+
+     Un aviso honesto: SALIDA es todo lo que salió, no solo lo vendido. Un
+     traslado a la otra sucursal o un ajuste también suman. Sirve igual para
+     decidir qué reponer, pero no es una cifra de ventas.
+
+     Y otro: un solo reporte de un mes no sabe de temporada. El aguinaldo, la
+     época de lluvia o una obra grande mueven un mes y no el siguiente. Por eso
+     conviene mirarlo junto al historial de informes, no solo éste.
+     ===================================================================== */
+
+  /* Las marcas se leen del propio nombre del producto: el reporte no trae
+     columna de marca. Esta lista salió de contar las palabras que más se
+     repiten en TUS 11.267 nombres, así que está hecha a la medida de lo que
+     vendes. Para agregar una marca nueva, basta con escribirla aquí. */
+  var MARCAS = ['TRUPER','STIHL','INGCO','TOTAL','PRETUL','DURMAN','WADFOW','LANCO',
+    'FIERO','FOSET','EMTOP','VIKINGO','VOLTECK','ABRO','HERMEX','AMANCO','CEMEX',
+    'DEWALT','MAKITA','STANLEY','YALE','KOHLER','TECNOLITE','CORINCA','HOLCIM',
+    'HONDA','REFLEX','PFERD','IMACASA','SHERWIN','VALVOLINE','CASTROL','EVEREST',
+    'PANDA','FORTALEZA','CESSA','ADIR','URREA','SURTEK','MIKELS','ROTOPLAS',
+    'IRWIN','COFLEX','BRICKELL','NOVERA','EXPERT','EAGLE','ROCA','ENERGY','PALMA'];
+
+  function marcaDe(nombre){
+    var n = ' ' + String(nombre||'').toUpperCase().replace(/[^A-ZÑ0-9]/g,' ') + ' ';
+    for(var i=0;i<MARCAS.length;i++){
+      if(n.indexOf(' '+MARCAS[i]+' ')>=0) return MARCAS[i];
+    }
+    return '(sin marca)';
+  }
+
+  /* El nombre del archivo de FelTec lleva las dos fechas pegadas:
+     Reporte_de_inventario 20260725 20260825 -> 31 días. Si no se puede leer,
+     se dejan 30 y la persona lo corrige a mano. */
+  function diasDelNombre(nombre){
+    var d = String(nombre||'').replace(/\D/g,'');
+    if(d.length < 16) return 0;
+    var a = d.slice(d.length-16, d.length-8), b = d.slice(d.length-8);
+    function fecha(t){
+      var y=+t.slice(0,4), m=+t.slice(4,6), dd=+t.slice(6,8);
+      if(y<2000||y>2100||m<1||m>12||dd<1||dd>31) return null;
+      return new Date(y, m-1, dd);
+    }
+    var f1=fecha(a), f2=fecha(b);
+    if(!f1||!f2) return 0;
+    var n = Math.round((f2-f1)/86400000);
+    return (n>0 && n<=400) ? n : 0;
+  }
+
+  /* Una existencia absurda (10 millones de cubetas de arena) no es inventario,
+     es un error de digitación. Si se cuela, el sugerido y el dinero quieto
+     salen disparatados, así que se deja fuera y se avisa aparte. */
+  function usable(p){ return p.exist < STOCK_CENTINELA; }
+
+  var sugCompras = null, sugCong = null;
+
+  function calcularCompras(D, dias, objetivo){
+    var lista = [];
+    D.forEach(function(p){
+      if(!usable(p)) return;
+      var dia = p.sal / dias;
+      if(!(dia > 0)) return;                       // sin movimiento: no se pide
+      var exist = Math.max(0, p.exist);
+      var cob = dia > 0 ? exist / dia : 0;
+      if(cob >= objetivo) return;                  // aguanta de sobra
+      var pedir = Math.ceil(dia * objetivo - exist);
+      if(pedir <= 0) return;
+      lista.push({
+        item:p.item, nombre:p.nombre, cat:p.cat||'(sin categoría)', marca:marcaDe(p.nombre),
+        sal:p.sal, exist:p.exist, dia:dia, cob:cob, pedir:pedir,
+        compra:p.compra, venta:p.venta,
+        costo: p.compra > 0 ? pedir * p.compra : 0,
+        agotado: p.exist <= 0,
+        urg: p.exist <= 0 ? 0 : (cob < 7 ? 0 : (cob < 15 ? 1 : 2))
+      });
+    });
+    lista.sort(function(a,b){ return a.cob - b.cob; });
+    return lista;
+  }
+
+  /* Promoción sugerida: nunca por debajo del costo. Se propone regalar la
+     MITAD del margen, con tope del 40%, redondeado a múltiplos de 5. Si no se
+     conoce el costo no se sugiere número: se marca para revisar a mano, que es
+     más honesto que inventar un descuento que podría vender a pérdida. */
+  function descuentoSugerido(p){
+    if(!(p.venta > 0)) return { pct:0, motivo:'sin precio de venta' };
+    /* FelTec escribe a veces el costo+IVA, o el doble del costo, en la columna
+       del precio de venta. Eso NO es un precio: descontarle un 20% sería vender
+       por debajo de lo que costó. Son 601 productos en el reporte de agosto,
+       así que no es un caso raro. Se detectan por la proporción exacta y no se
+       les sugiere nada. */
+    if(esCostoConIVA(p)) return { pct:0, motivo:'el precio del archivo es costo+IVA' };
+    if(esCostoDoble(p))  return { pct:0, motivo:'el precio del archivo es el doble del costo' };
+    if(!(p.compra > 0)) return { pct:0, motivo:'falta el costo' };
+    if(p.venta <= p.compra) return { pct:0, motivo:'ya está al costo' };
+    var margen = (p.venta - p.compra) / p.venta;          // 0..1
+    var pct = Math.floor(Math.min(0.40, margen / 2) * 100 / 5) * 5;
+    if(pct < 5) return { pct:0, motivo:'margen muy corto' };
+    return { pct:pct, motivo:'' };
+  }
+
+  function calcularCongelado(D){
+    var lista = [];
+    D.forEach(function(p){
+      if(!usable(p)) return;
+      if(!(p.exist > 0)) return;
+      if(p.sal > 0) return;                        // se movió: no está congelado
+      var d = descuentoSugerido(p);
+      lista.push({
+        item:p.item, nombre:p.nombre, cat:p.cat||'(sin categoría)', marca:marcaDe(p.nombre),
+        exist:p.exist, venta:p.venta, compra:p.compra,
+        dinero: p.compra > 0 ? p.exist * p.compra : 0,
+        pct:d.pct, motivo:d.motivo,
+        precioOferta: d.pct ? Math.round(p.venta * (1 - d.pct/100) * 100) / 100 : 0
+      });
+    });
+    lista.sort(function(a,b){ return b.dinero - a.dinero; });
+    return lista;
+  }
+
+  function agrupar(lista, por, sumar){
+    var g = {};
+    lista.forEach(function(p){
+      var k = por === 'marca' ? p.marca : p.cat;
+      if(!g[k]) g[k] = { nombre:k, items:[], total:0 };
+      g[k].items.push(p);
+      g[k].total += sumar(p);
+    });
+    return Object.keys(g).map(function(k){ return g[k]; })
+      .sort(function(a,b){ return b.total - a.total || b.items.length - a.items.length; });
+  }
+
+  function bloqueGrupos(grupos, cols, resumen){
+    if(!grupos.length) return '<div class="empty">Nada que sugerir con estos números.</div>';
+    return grupos.map(function(g, i){
+      var filas = g.items.slice(0, 60);
+      return '<div class="grupo'+(i===0?' on':'')+'">'+
+        '<div class="grupo-h"><span class="gn">'+esc(g.nombre)+'</span>'+
+          '<span class="gm">'+resumen(g)+'<span class="ch">ver ▾</span></span></div>'+
+        '<div class="grupo-b"><div class="scroll"><table><thead><tr>'+
+          cols.map(function(c){ return '<th>'+c[1]+'</th>'; }).join('')+
+        '</tr></thead><tbody>'+
+          filas.map(function(p){
+            return '<tr>'+cols.map(function(c){ return c[2](p); }).join('')+'</tr>';
+          }).join('')+
+        '</tbody></table></div>'+
+        (g.items.length>60 ? '<div class="mas">Se muestran 60 de '+nf(g.items.length)+
+          '. Descarga el CSV para verlos todos.</div>' : '')+
+        '</div></div>';
+    }).join('');
+  }
+
+  function pintarSugerido(){
+    if(!datos) return;
+    var D = datos.filas;
+    var dias = Math.max(1, parseInt($('sug-dias').value, 10) || 30);
+    var obj  = Math.max(1, parseInt($('sug-obj').value, 10) || 30);
+    var por  = $('sug-por').value;
+
+    /* ---------------------------- lo que hay que pedir ------------------ */
+    sugCompras = calcularCompras(D, dias, obj);
+    var unidades = sugCompras.reduce(function(a,p){ return a+p.pedir; }, 0);
+    var dinero   = sugCompras.reduce(function(a,p){ return a+p.costo; }, 0);
+    var agotados = sugCompras.filter(function(p){ return p.agotado; }).length;
+    var sinCosto = sugCompras.filter(function(p){ return !(p.compra>0); }).length;
+
+    $('sug-kpis').innerHTML =
+      kpi(nf(sugCompras.length),'Productos a pedir','de '+nf(D.filter(function(p){return p.sal>0;}).length)+
+          ' que tuvieron movimiento') +
+      kpi(nf(agotados),'Ya agotados','se vendieron y no hay', agotados?'d':'') +
+      kpi(nf(unidades),'Unidades en total') +
+      kpi(money0(dinero),'Costo del pedido', sinCosto? nf(sinCosto)+' sin costo, no suman':'', 'b');
+
+    $('sug-nota').innerHTML =
+      'Cada producto se pide para que aguante <b>'+obj+' días</b> al ritmo al que se está '+
+      'moviendo: <i>salida del periodo ÷ '+dias+' días × '+obj+' − existencia</i>. '+
+      'Los que ya se agotaron van primero.<br>'+
+      '<b>Ojo:</b> SALIDA es todo lo que salió del inventario, no solo lo vendido — un traslado '+
+      'o un ajuste también cuenta. Y un solo mes no sabe de temporada: contrástalo con los '+
+      'informes anteriores antes de una compra grande.'+
+      (por==='marca'
+        ? '<br><b>Sobre la marca:</b> el reporte no trae columna de marca, así que se lee del '+
+          'nombre del producto. Muchos artículos (placas, abrazaderas, clavos…) no la llevan '+
+          'escrita y caen en «(sin marca)». Para un pedido completo, agrupa por categoría.'
+        : '');
+
+    var colsC = [
+      ['item','ITEM', function(p){ return '<td class="mono">'+esc(p.item)+'</td>'; }],
+      ['nombre','Producto', function(p){ return '<td>'+esc(p.nombre)+'</td>'; }],
+      ['urg','', function(p){ return '<td><span class="urg urg-'+p.urg+'">'+
+          (p.agotado?'agotado':(p.urg===0?'urgente':(p.urg===1?'pronto':'a tiempo')))+'</span></td>'; }],
+      ['sal','Salió', function(p){ return '<td class="mono">'+nf(p.sal)+'</td>'; }],
+      ['exist','Hay', function(p){ return '<td class="mono">'+nf(p.exist)+'</td>'; }],
+      ['cob','Aguanta', function(p){ return '<td class="mono">'+
+          (p.exist<=0?'0 días':Math.round(p.cob)+' días')+'</td>'; }],
+      ['pedir','A pedir', function(p){ return '<td class="mono"><b>'+nf(p.pedir)+'</b></td>'; }],
+      ['costo','Costo', function(p){ return '<td class="mono">'+(p.costo?money(p.costo):'—')+'</td>'; }]
+    ];
+    $('sug-grupos').innerHTML = bloqueGrupos(
+      agrupar(sugCompras, por, function(p){ return p.costo; }), colsC,
+      function(g){
+        var u = g.items.reduce(function(a,p){ return a+p.pedir; }, 0);
+        return '<span><b>'+nf(g.items.length)+'</b> productos</span>'+
+               '<span><b>'+nf(u)+'</b> unidades</span>'+
+               '<span><b>'+money0(g.total)+'</b></span>';
+      });
+
+    /* ------------------------- lo que está congelado -------------------- */
+    sugCong = calcularCongelado(D);
+    var quieto = sugCong.reduce(function(a,p){ return a+p.dinero; }, 0);
+    var conOferta = sugCong.filter(function(p){ return p.pct > 0; });
+    var sinDatos = sugCong.filter(function(p){ return p.pct === 0; });
+    var revisar = sinDatos.length;
+    /* Cuánto dinero hay atrapado en los que NO se pueden calcular: si no se
+       dice, parece que el problema son 728 productos cuando en realidad hay
+       miles más esperando a que alguien les ponga precio o costo. */
+    var quietoSinDatos = sinDatos.reduce(function(a,p){
+      return a + (p.venta>0 ? p.exist*p.venta : 0); }, 0);
+
+    $('cong-kpis').innerHTML =
+      kpi(nf(sugCong.length),'Productos parados','con existencia y cero salidas', sugCong.length?'w':'') +
+      kpi(money0(quieto),'Dinero quieto','a costo, en lo que no se mueve','d') +
+      kpi(nf(conOferta.length),'Con oferta sugerida','calculada, nunca bajo costo','ok') +
+      kpi(nf(revisar),'Sin datos para calcular',
+          quietoSinDatos ? money0(quietoSinDatos)+' a precio de venta' : 'falta precio o costo', 'w');
+
+    $('cong-nota').innerHTML =
+      'Son productos con existencia que <b>no tuvieron ni una salida</b> en los '+dias+' días del '+
+      'reporte. El descuento sugerido regala la <b>mitad del margen</b>, con tope del 40%, y '+
+      '<b>nunca baja del costo</b>.<br>'+
+      'No se sugiere número cuando no hay con qué calcularlo: falta el precio, falta el costo, '+
+      'o <b>el «precio» del archivo no es un precio</b> — FelTec escribe a veces el costo+IVA o '+
+      'el doble del costo, y descontar sobre eso sería vender a pérdida. La columna '+
+      '<i>Descuento</i> dice cuál es el caso de cada uno.'+
+      (sugCong.length ? '' : '<br>En este reporte no hay nada parado con existencia.');
+
+    /* Si un solo producto se lleva buena parte del dinero quieto, casi siempre
+       es un dato mal digitado (una existencia o un costo en la unidad
+       equivocada), no mercadería de verdad. Vale más avisarlo que dejar que
+       una cifra falsa guíe una decisión. */
+    if(quieto > 0 && sugCong.length){
+      var mayor = sugCong[0];
+      var parte = mayor.dinero / quieto;
+      if(parte > 0.15){
+        $('cong-nota').innerHTML +=
+          '<br><br><b style="color:var(--dang)">Revisa este antes de creerte el total:</b> '+
+          esc(mayor.nombre)+' (ITEM '+esc(mayor.item)+') se lleva <b>'+Math.round(parte*100)+'%</b> '+
+          'del dinero quieto él solo — '+nf(mayor.exist)+' unidades a '+money(mayor.compra)+'. '+
+          'Suele ser la existencia o el costo escritos en otra unidad.';
+      }
+    }
+
+    var colsG = [
+      ['item','ITEM', function(p){ return '<td class="mono">'+esc(p.item)+'</td>'; }],
+      ['nombre','Producto', function(p){ return '<td>'+esc(p.nombre)+'</td>'; }],
+      ['exist','Hay', function(p){ return '<td class="mono">'+nf(p.exist)+'</td>'; }],
+      ['dinero','Dinero quieto', function(p){ return '<td class="mono">'+
+          (p.dinero?money(p.dinero):'—')+'</td>'; }],
+      ['venta','Precio hoy', function(p){ return '<td class="mono">'+
+          (p.venta?money(p.venta):'—')+'</td>'; }],
+      ['pct','Descuento', function(p){ return '<td class="mono">'+
+          (p.pct? '<span class="dsc">−'+p.pct+'%</span>' : '<span style="color:var(--s400)">'+esc(p.motivo)+'</span>')+'</td>'; }],
+      ['precioOferta','Quedaría en', function(p){ return '<td class="mono">'+
+          (p.precioOferta?'<b>'+money(p.precioOferta)+'</b>':'—')+'</td>'; }]
+    ];
+    $('cong-grupos').innerHTML = bloqueGrupos(
+      agrupar(sugCong, por, function(p){ return p.dinero; }), colsG,
+      function(g){
+        var n = g.items.filter(function(p){ return p.pct>0; }).length;
+        return '<span><b>'+nf(g.items.length)+'</b> parados</span>'+
+               '<span><b>'+n+'</b> con oferta</span>'+
+               '<span><b>'+money0(g.total)+'</b> quietos</span>';
+      });
+  }
+
+  /* Abrir y cerrar los grupos */
+  function engancharGrupos(id){
+    $(id).addEventListener('click', function(e){
+      var h=e.target.closest('.grupo-h'); if(!h) return;
+      var g=h.closest('.grupo'); g.classList.toggle('on');
+      var ch=h.querySelector('.ch'); if(ch) ch.textContent = g.classList.contains('on')?'ocultar ▴':'ver ▾';
+    });
+  }
+  engancharGrupos('sug-grupos');
+  engancharGrupos('cong-grupos');
+  ['sug-dias','sug-obj','sug-por'].forEach(function(id){
+    $(id).addEventListener('change', pintarSugerido);
+  });
+
+  $('sug-csv').addEventListener('click', function(){
+    if(!sugCompras || !sugCompras.length) return toast('No hay nada que pedir todavía.', true);
+    var por = $('sug-por').value;
+    var L = ['Grupo;ITEM;Producto;Categoria;Marca;Salio;Existencia;Salida por dia;Dias que aguanta;A pedir;Costo unitario;Costo total'];
+    agrupar(sugCompras, por, function(p){ return p.costo; }).forEach(function(g){
+      g.items.forEach(function(p){
+        L.push([g.nombre,p.item,p.nombre,p.cat,p.marca,p.sal,p.exist,p.dia.toFixed(2),
+          p.exist<=0?0:Math.round(p.cob),p.pedir,p.compra||'',p.costo?p.costo.toFixed(2):'']
+          .map(csvCell).join(';'));
+      });
+    });
+    bajarCSV('pedido-sugerido.csv', L.join('\n'));
+    toast('Pedido sugerido descargado ('+nf(sugCompras.length)+' productos).');
+  });
+
+  $('cong-csv').addEventListener('click', function(){
+    if(!sugCong || !sugCong.length) return toast('No hay inventario congelado.', true);
+    var por = $('sug-por').value;
+    var L = ['Grupo;ITEM;Producto;Categoria;Marca;Existencia;Costo unitario;Dinero quieto;Precio hoy;Descuento sugerido;Precio en oferta;Nota'];
+    agrupar(sugCong, por, function(p){ return p.dinero; }).forEach(function(g){
+      g.items.forEach(function(p){
+        L.push([g.nombre,p.item,p.nombre,p.cat,p.marca,p.exist,p.compra||'',
+          p.dinero?p.dinero.toFixed(2):'',p.venta||'',p.pct?p.pct+'%':'',
+          p.precioOferta||'',p.motivo].map(csvCell).join(';'));
+      });
+    });
+    bajarCSV('promociones-sugeridas.csv', L.join('\n'));
+    toast('Promociones sugeridas descargadas ('+nf(sugCong.length)+' productos).');
+  });
+
   /* ------------------------------ Informe CSV --------------------------- */
   function csvCell(v){ var s=String(v==null?'':v); return /[",\n;]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
   function bajarCSV(nombre, texto){
@@ -528,6 +909,16 @@ tr:hover td{background:var(--s50)}
       if(col.item<0 || col.nombre<0) throw new Error('No se encontraron las columnas ITEM y PRODUCTO.');
       datos=analizar(filas,col);
       if(!datos.filas.length) throw new Error('No se encontraron productos en el archivo.');
+
+      /* Los días del periodo salen del nombre del archivo de FelTec, que los
+         lleva pegados al final. Si no se pueden leer, quedan 30 y la persona
+         los corrige arriba. */
+      var d = diasDelNombre(f.name);
+      $('sug-dias').value = d || 30;
+      var haySalidas = col.sal >= 0 && datos.filas.some(function(p){ return p.sal > 0; });
+      $('card-sug').style.display = haySalidas ? '' : 'none';
+      $('card-cong').style.display = haySalidas ? '' : 'none';
+      if(!haySalidas) toast('Este archivo no trae la columna SALIDA: sin ella no se puede sugerir compras.', true);
       anomalias=detectar(datos.filas);
       pintar();
       $('fname').textContent=f.name;

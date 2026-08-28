@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conversor del marcador — Ferretería San José</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="assets/emblem.png">
+<script src="usuarios.js"></script>
+<script>window.FSJ_ACCESO = { sub: 'Conversor del marcador · solo personal' };</script>
+<script src="acceso.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+:root{
+  /* Los mismos colores que el resto del área de empleados. */
+  --orange:#F06030; --orange-2:#d6481c; --blue:#0070C0; --blue-2:#0a5c99;
+  --s50:#f6f5f3; --s100:#e9e6e1; --s200:#d3cec5; --s300:#b3ab9d; --s400:#8b8175;
+  --s500:#6b6255; --s600:#544c42; --s700:#3f3931; --s900:#171512;
+
+  /* Los nombres que ya usaba el conversor por dentro, apuntando a los de arriba
+     para no tener que reescribir cientos de reglas. */
+  --ground:var(--s50); --surface:#fff; --surface-2:var(--s50);
+  --ink:var(--s900); --muted:var(--s500); --faint:var(--s400);
+  --line:var(--s200); --line-soft:var(--s100);
+  --accent:var(--orange); --accent-deep:var(--orange-2); --accent-wash:#fdeee8;
+  --warn:#8a5f0c; --warn-wash:#fbf1de; --warn-edge:#c98a12;
+  --crit:#8f221c; --crit-wash:#fbe9e7; --crit-edge:#c22e26;
+  --ok:#2e7d43; --ok-bg:#e7f3ea;
+  --shadow:0 1px 2px rgba(23,21,18,.08);
+  --radius:6px; --r:6px; --rl:10px;
+}
+
+
+/* --------- Barra y contenedor: iguales a las demás pantallas internas ------ */
+.bar{background:var(--s900);border-bottom:3px solid var(--orange)}
+.bar-in{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:12px clamp(16px,4vw,40px)}
+.bar-in img{height:40px}
+.bt{display:flex;flex-direction:column;line-height:1.15}
+.bt .n{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:18px;color:#fff}
+.bt .s{font-size:11.5px;color:var(--s300);text-transform:uppercase;letter-spacing:.08em}
+.bar-in .right{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:13.5px;color:var(--s300)}
+.bar-in .right a{color:var(--s300);text-decoration:none}
+.bar-in .right a:hover{color:var(--orange)}
+.brand-link{display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit;border-radius:8px}
+.brand-link:hover{opacity:.85}
+.brand-link:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"Barlow", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric:tabular-nums}
+.wrap{max-width:1440px; margin:0 auto; padding:0 24px 120px}
+
+/* ---------- masthead ---------- */
+.mast{border-bottom:1px solid var(--line); background:var(--surface); position:relative}
+.mast::after{content:""; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:var(--accent)}
+.mast-in{max-width:1440px; margin:0 auto; padding:18px 24px 16px; display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap}
+.brand{display:flex; flex-direction:column; gap:2px}
+.brand .eyebrow{
+  font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; letter-spacing:.14em;
+  font-size:12px; font-weight:600; color:var(--accent);
+}
+.brand h1{
+  margin:0; font-family:"Barlow Condensed",sans-serif; font-weight:700;
+  font-size:30px; line-height:1.05; letter-spacing:.005em; text-wrap:balance;
+}
+.brand .sub{color:var(--muted); font-size:13.5px; max-width:62ch}
+.mast-side{margin-left:auto; display:flex; align-items:center; gap:8px}
+.chip{
+  font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; letter-spacing:.1em;
+  font-size:11.5px; font-weight:600; padding:5px 9px; border:1px solid var(--line);
+  border-radius:var(--radius); color:var(--muted); background:var(--surface-2); white-space:nowrap;
+}
+
+/* ---------- step rail ---------- */
+.rail{display:flex; gap:0; border:1px solid var(--line); border-radius:var(--radius);
+  background:var(--surface); overflow:hidden; margin:22px 0 20px}
+.step{flex:1; display:flex; align-items:center; gap:10px; padding:11px 14px; min-width:0;
+  border-right:1px solid var(--line-soft); color:var(--faint); transition:background .15s,color .15s}
+.step:last-child{border-right:0}
+.step .num{
+  flex:none; width:21px; height:21px; border-radius:50%; border:1px solid currentColor;
+  display:grid; place-items:center; font-size:11px; font-weight:600;
+  font-family:"IBM Plex Mono",monospace;
+}
+.step .lbl{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; letter-spacing:.1em;
+  font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.step.done{color:var(--muted)}
+.step.done .num{background:var(--muted); border-color:var(--muted); color:var(--surface)}
+.step.active{color:var(--accent); background:var(--accent-wash)}
+.step.active .num{background:var(--accent); border-color:var(--accent); color:#fff}
+
+/* ---------- drop zone ---------- */
+.drop{
+  border:1.5px dashed var(--line); border-radius:var(--radius); background:var(--surface);
+  padding:38px 24px; text-align:center; cursor:pointer; transition:border-color .15s, background .15s;
+}
+.drop:hover,.drop:focus-visible{border-color:var(--accent); background:var(--accent-wash); outline:none}
+.drop.over{border-color:var(--accent); background:var(--accent-wash); border-style:solid}
+.drop h2{margin:0 0 4px; font-family:"Barlow Condensed",sans-serif; font-size:21px; font-weight:600; letter-spacing:.01em}
+.drop p{margin:0; color:var(--muted); font-size:13.5px}
+.drop .fmt{margin-top:12px; font-size:12px; color:var(--faint)}
+/* una vez cargado el archivo se encoge a una franja */
+.drop.compact{padding:10px 16px; display:flex; align-items:center; gap:12px; text-align:left}
+.drop.compact h2{margin:0; font-size:14px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted); flex:none; font-weight:600}
+.drop.compact p{font-size:13px; color:var(--ink); font-family:"IBM Plex Mono",monospace;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.drop.compact .fmt{display:none}
+
+/* ---------- tiles ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:10px; margin:20px 0}
+.tile{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px;
+  border-left:2px solid var(--line)}
+.tile.is-accent{border-left-color:var(--accent)}
+.tile.is-warn{border-left-color:var(--warn-edge)}
+.tile.is-crit{border-left-color:var(--crit-edge)}
+.tile .k{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; letter-spacing:.11em;
+  font-size:11.5px; font-weight:600; color:var(--muted)}
+.tile .v{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+  font-size:25px; font-weight:500; line-height:1.15; margin-top:2px}
+.tile .n{font-size:12px; color:var(--faint); margin-top:1px}
+.tile.is-warn .v{color:var(--warn)}
+.tile.is-crit .v{color:var(--crit)}
+
+/* ---------- controls bar ---------- */
+.bar{display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap;
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:13px 16px; margin-bottom:16px}
+.fld{display:flex; flex-direction:column; gap:4px}
+.fld label{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; letter-spacing:.11em;
+  font-size:11.5px; font-weight:600; color:var(--muted)}
+select,input[type=number],input[type=text]{
+  font-family:"IBM Plex Mono",monospace; font-size:13.5px; color:var(--ink);
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:6px 8px; min-height:32px;
+}
+select{font-family:"Barlow",sans-serif}
+select:focus,input:focus{outline:2px solid var(--accent); outline-offset:-1px; border-color:var(--accent)}
+.hint{font-size:12.5px; color:var(--muted); margin-left:auto; max-width:34ch; text-align:right}
+
+/* ---------- buttons ---------- */
+button{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; letter-spacing:.09em;
+  font-size:13.5px; font-weight:600; padding:9px 16px; border-radius:var(--radius);
+  border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer;
+  min-height:36px; transition:background .15s, border-color .15s, color .15s}
+button:hover:not(:disabled){border-color:var(--accent); color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+button:disabled{opacity:.4; cursor:not-allowed}
+button.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+button.primary:hover:not(:disabled){background:var(--accent-deep); border-color:var(--accent-deep); color:#fff}
+button.sm{padding:5px 10px; min-height:28px; font-size:12.5px; letter-spacing:.07em}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex; gap:2px; border-bottom:1px solid var(--line); margin-bottom:0; overflow-x:auto}
+.tab{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; letter-spacing:.1em;
+  font-size:13.5px; font-weight:600; padding:9px 15px; border:1px solid transparent; border-bottom:0;
+  background:none; color:var(--muted); cursor:pointer; border-radius:var(--radius) var(--radius) 0 0;
+  margin-bottom:-1px; white-space:nowrap; min-height:auto}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected=true]{background:var(--surface); border-color:var(--line); color:var(--accent);
+  border-bottom:1px solid var(--surface)}
+.tab .badge{display:inline-block; margin-left:6px; font-family:"IBM Plex Mono",monospace;
+  font-size:11px; padding:1px 5px; border-radius:8px; background:var(--surface-2); color:var(--muted); letter-spacing:0}
+.tab .badge.warn{background:var(--warn-wash); color:var(--warn)}
+.panel{background:var(--surface); border:1px solid var(--line); border-top:0;
+  border-radius:0 0 var(--radius) var(--radius); padding:0}
+.panel[hidden]{display:none}
+.panel-pad{padding:16px}
+
+/* ---------- tables ---------- */
+.scroller{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:13.5px}
+th,td{text-align:left; padding:6px 9px; border-bottom:1px solid var(--line-soft); white-space:nowrap}
+thead th{
+  font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; letter-spacing:.09em;
+  font-size:11.5px; font-weight:600; color:var(--muted); background:var(--surface-2);
+  border-bottom:1px solid var(--line); position:sticky; top:0; z-index:2;
+}
+tbody tr:hover{background:var(--surface-2)}
+td.num,th.num{text-align:right; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+.emp{position:sticky; left:0; background:var(--surface); z-index:1; border-right:1px solid var(--line);
+  max-width:230px; overflow:hidden; text-overflow:ellipsis}
+tbody tr:hover .emp{background:var(--surface-2)}
+thead .emp{background:var(--surface-2); z-index:3}
+.rownum{color:var(--faint); font-family:"IBM Plex Mono",monospace; font-size:12px}
+
+/* grid day groups */
+.daygrp{border-left:1px solid var(--line)}
+th.day{text-align:center; border-left:1px solid var(--line)}
+th.day .dow{display:block; font-size:12.5px; color:var(--ink)}
+th.day .dt{display:block; font-family:"IBM Plex Mono",monospace; font-size:10.5px;
+  color:var(--faint); letter-spacing:0; font-weight:400}
+th.sub{text-align:center; font-size:10px; letter-spacing:.12em; padding:3px 6px; color:var(--faint)}
+.tot{background:var(--surface-2); border-left:1px solid var(--line)}
+tfoot td{font-weight:600; background:var(--surface-2); border-top:1px solid var(--line); border-bottom:0}
+
+input.t{
+  width:60px; text-align:center; padding:4px 3px; font-size:13px; min-height:28px;
+  background:transparent; border:1px solid transparent; border-radius:2px;
+  font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; color:var(--ink);
+}
+input.t::placeholder{color:var(--faint); opacity:.55}
+input.t:hover{border-color:var(--line)}
+input.t:focus{border-color:var(--accent); background:var(--surface); outline:1px solid var(--accent); outline-offset:-1px}
+input.t.filled{background:var(--accent-wash)}
+input.t.solo{background:var(--warn-wash); box-shadow:inset 2px 0 0 var(--warn-edge)}
+input.t.bad{background:var(--crit-wash); box-shadow:inset 2px 0 0 var(--crit-edge); color:var(--crit)}
+
+/* ---------- pills / status ---------- */
+.pill{display:inline-block; font-family:"Barlow Condensed",sans-serif; text-transform:uppercase;
+  letter-spacing:.09em; font-size:11px; font-weight:600; padding:2px 7px; border-radius:2px;
+  border:1px solid var(--line); color:var(--muted); background:var(--surface-2)}
+.pill.warn{color:var(--warn); background:var(--warn-wash); border-color:var(--warn-edge)}
+.pill.crit{color:var(--crit); background:var(--crit-wash); border-color:var(--crit-edge)}
+.pill.ok{color:var(--muted)}
+
+/* ---------- mapping ---------- */
+.mapgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:9px}
+.maprow{display:flex; align-items:center; gap:10px; padding:9px 11px; background:var(--surface-2);
+  border:1px solid var(--line-soft); border-radius:var(--radius); border-left:2px solid var(--line)}
+.maprow.unassigned{border-left-color:var(--crit-edge); background:var(--crit-wash)}
+.maprow .id{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted);
+  background:var(--surface); border:1px solid var(--line); padding:2px 6px; border-radius:2px; flex:none}
+.maprow .usr{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:500; flex:none; min-width:66px}
+.maprow select{flex:1; min-width:0; font-size:13px}
+
+/* ---------- sticky action bar ---------- */
+.actions{position:sticky; bottom:0; z-index:20; margin-top:18px;
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:12px 16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; box-shadow:var(--shadow)}
+.actions .target{font-size:13px; color:var(--muted); margin-right:auto}
+.actions .target b{font-family:"IBM Plex Mono",monospace; color:var(--accent); font-weight:600}
+
+/* ---------- misc ---------- */
+.empty{padding:34px 20px; text-align:center; color:var(--faint); font-size:13.5px}
+.note{font-size:12.5px; color:var(--muted); padding:11px 16px; background:var(--surface-2);
+  border-bottom:1px solid var(--line-soft)}
+.note b{color:var(--ink); font-weight:600}
+h3.sec{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; letter-spacing:.11em;
+  font-size:12.5px; font-weight:600; color:var(--muted); margin:0 0 9px}
+.toast{position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(90px);
+  background:var(--ink); color:var(--ground); padding:10px 20px; border-radius:var(--radius);
+  font-size:13.5px; z-index:100; transition:transform .25s cubic-bezier(.2,.8,.3,1); pointer-events:none;
+  box-shadow:var(--shadow); max-width:88vw; text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
+@media (max-width:720px){
+  .wrap{padding:0 14px 120px} .mast-in{padding:16px 14px}
+  .brand h1{font-size:25px} .step .lbl{display:none} .hint{display:none}
+  .rail{margin:16px 0}
+}
+
+.card-emp{background:var(--surface);border:1px solid var(--line);border-radius:var(--rl);
+  box-shadow:var(--shadow);margin:22px 0 20px;overflow:hidden}
+.card-emp > .note{margin:0;border-radius:0;border-left:0;border-right:0;border-top:0}
+.card-emp .panel-pad{padding:16px 18px}
+.card-emp h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;
+  letter-spacing:.04em;font-size:16px;margin:0 0 4px;color:var(--ink)}
+.card-emp h3 .badge{margin-left:7px;font-family:'IBM Plex Mono',monospace;font-size:12px;
+  font-weight:600;background:var(--surface-2);border:1px solid var(--line);color:var(--muted);
+  border-radius:999px;padding:1px 8px;vertical-align:2px;letter-spacing:0}
+/* --------------------------- Lista de empleados -------------------------- */
+.emp-add{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.emp-add input{flex:1;min-width:240px;border:1px solid var(--line);border-radius:var(--r);
+  padding:8px 11px;font:inherit;font-size:14px;background:var(--surface);color:var(--ink)}
+.emp-add input:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(240,96,48,.16)}
+.emp-lista{border:1px solid var(--line);border-radius:var(--rl);overflow:hidden}
+.emp-fila{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line-soft)}
+.emp-fila:last-child{border-bottom:0}
+.emp-fila:nth-child(odd){background:var(--s50)}
+.emp-fila .np{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);
+  background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:2px 7px;min-width:32px;text-align:center}
+.emp-fila .nom{flex:1;min-width:0;border:1px solid transparent;border-radius:var(--r);
+  padding:6px 9px;font:inherit;font-size:14px;background:transparent;color:var(--ink)}
+.emp-fila .nom:hover{border-color:var(--line)}
+.emp-fila .nom:focus{outline:none;border-color:var(--orange);background:var(--surface)}
+.emp-fila .acc{display:flex;gap:4px;flex-shrink:0}
+.emp-fila .acc button{border:1px solid var(--line);background:var(--surface);color:var(--muted);
+  border-radius:var(--r);width:30px;height:30px;cursor:pointer;font-size:14px;line-height:1;padding:0}
+.emp-fila .acc button:hover:not(:disabled){border-color:var(--orange);color:var(--orange)}
+.emp-fila .acc button:disabled{opacity:.35;cursor:default}
+.emp-fila .acc .quitar:hover{border-color:var(--crit-edge);color:var(--crit)}
+.emp-nota{margin:0 0 13px;padding:10px 13px;border-radius:var(--r);font-size:13px;line-height:1.5}
+.emp-nota.ok{background:var(--ok-bg);border:1px solid #a8d5b8;color:#1c5e33}
+.emp-nota.avisa{background:var(--warn-wash);border:1px solid var(--warn-edge);color:var(--warn)}
+</style>
+
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-in">
+    <a class="brand-link" href="index.html" title="Ir al inicio">
+      <img src="assets/emblem.png" alt="Ferretería San José" onerror="this.style.display='none'">
+      <div class="bt"><span class="n">Ferretería San José</span><span class="s">Conversor del marcador · interno</span></div>
+    </a>
+    <div class="right"><span id="quien">—</span><a href="interno.html">← Panel</a></div>
+  </div>
+</header>
+
+<header class="mast">
+  <div class="mast-in">
+    <div class="brand">
+      <span class="eyebrow">Ferretería San José · Planilla 2026</span>
+      <h1>Conversor de Marcador</h1>
+      <span class="sub">Convierte la exportación del marcador biométrico en el cuadro semanal de asistencia, listo para pegar en la planilla.</span>
+    </div>
+    <div class="mast-side">
+      <span class="chip">Semana sáb → vie</span>
+      <span class="chip" id="chipFile">Sin archivo</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <nav class="rail" aria-label="Progreso">
+    <div class="step active" id="st1"><span class="num">1</span><span class="lbl">Cargar archivo</span></div>
+    <div class="step" id="st2"><span class="num">2</span><span class="lbl">Revisar y corregir</span></div>
+    <div class="step" id="st3"><span class="num">3</span><span class="lbl">Exportar a planilla</span></div>
+  </nav>
+
+  <div id="dropZone" class="drop" tabindex="0" role="button" aria-label="Cargar archivo del marcador">
+    <h2>Suelta aquí el archivo del marcador</h2>
+    <p>o haz clic para buscarlo en tu computadora</p>
+    <div class="fmt mono">NGL_001.TXT · separado por tabulaciones · No / TMNo / EnNo / Name / GMNo / Mode / DateTime</div>
+    <input type="file" id="fileInput" accept=".txt,.csv,.dat,text/plain" hidden>
+  </div>
+
+  <!-- La lista de empleados va FUERA del bloque que se oculta: se tiene que
+       poder agregar gente antes de cargar ningún archivo, que es justo cuando
+       hace falta. -->
+    <section class="card-emp" id="p-emp">
+      <div class="note"><h3>Empleados de la planilla <span class="badge" id="bEmp">0</span></h3>
+        Esta es la lista de la planilla, <b>en el mismo orden</b>. El número de
+        cada uno es la fila que le toca en «📅 Asistencia Anual», así que
+        moverlos aquí mueve filas allá. La lista se guarda <b>en este equipo</b>.
+      </div>
+      <div class="panel-pad">
+        <div class="emp-add">
+          <input type="text" id="empNuevo" placeholder="APELLIDOS, NOMBRES"
+                 aria-label="Nombre del empleado nuevo" maxlength="60">
+          <button class="sm primary" id="btnEmpAdd">Agregar empleado</button>
+          <button class="sm" id="btnEmpReset">Volver a la lista original</button>
+        </div>
+        <div id="empAviso"></div>
+        <div class="emp-lista" id="empLista"></div>
+      </div>
+    </section>
+
+  <div id="app" hidden>
+
+    <div class="tiles" id="tiles"></div>
+
+    <div class="bar">
+      <div class="fld">
+        <label for="selSemana">Semana a exportar</label>
+        <select id="selSemana"></select>
+      </div>
+      <div class="fld">
+        <label for="inpDedupe">Agrupar marcas dentro de</label>
+        <input type="number" id="inpDedupe" min="0" max="120" step="1" value="5" style="width:74px">
+      </div>
+      <div class="fld">
+        <label for="inpMinAnio">Ignorar años antes de</label>
+        <input type="number" id="inpMinAnio" min="1990" max="2100" step="1" value="2020" style="width:82px">
+      </div>
+      <div class="hint">Las marcas repetidas dentro del intervalo se cuentan como una sola. Súbelo si el marcador registra varios intentos seguidos.</div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true"  data-p="p-grid">Cuadro semanal</button>
+      <button class="tab" role="tab" aria-selected="false" data-p="p-marcas">Marcas detectadas <span class="badge" id="bMarcas">0</span></button>
+      <button class="tab" role="tab" aria-selected="false" data-p="p-inc">Incidencias <span class="badge" id="bInc">0</span></button>
+      <button class="tab" role="tab" aria-selected="false" data-p="p-map">Usuarios del marcador <span class="badge" id="bMap">0</span></button>
+    </div>
+
+    <section class="panel" id="p-grid" role="tabpanel">
+      <div class="note">Las celdas se llenaron con la <b>primera</b> y la <b>última</b> marca de cada día. Podés corregir cualquier hora aquí antes de exportar — los totales se recalculan solos. Formato <b>HH:MM</b>.</div>
+      <div class="scroller"><table id="grid"></table></div>
+    </section>
+
+    <section class="panel" id="p-marcas" role="tabpanel" hidden>
+      <div class="note">Todas las marcas leídas del archivo, agrupadas por empleado y día. <b>Marcas</b> muestra los registros ya agrupados; <b>brutas</b> es cuántas veces marcó realmente.</div>
+      <div class="scroller"><table id="tblMarcas"></table></div>
+    </section>
+
+    <section class="panel" id="p-inc" role="tabpanel" hidden>
+      <div class="note">Todo lo que conviene revisar antes de cerrar la planilla. Nada de esto detiene la exportación.</div>
+      <div class="scroller"><table id="tblInc"></table></div>
+    </section>
+
+    <section class="panel" id="p-map" role="tabpanel" hidden>
+      <div class="note">Cada usuario del marcador debe apuntar a un empleado de la planilla. Los que aparecen <b>en rojo</b> no se van a exportar. El mapeo se guarda en un archivo aparte para no volver a configurarlo.</div>
+      <div class="panel-pad">
+        <div style="display:flex; gap:8px; margin-bottom:13px; flex-wrap:wrap">
+          <button class="sm" id="btnMapSave">Descargar mapeo</button>
+          <button class="sm" id="btnMapLoad">Cargar mapeo</button>
+          <input type="file" id="mapInput" accept=".json,application/json" hidden>
+        </div>
+        <div class="mapgrid" id="mapGrid"></div>
+      </div>
+    </section>
+
+
+
+    <div class="actions">
+      <div class="target" id="target"></div>
+      <button id="btnCopy">Copiar bloque</button>
+      <button class="primary" id="btnXlsx">Descargar Excel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   1. DATOS FIJOS DE LA PLANILLA
+   ============================================================ */
+
+/* La lista de empleados en el ORDEN del cuadro "📅 Asistencia Anual": el
+   número de cada uno es la fila que le toca en la planilla. Por eso el orden
+   importa y por eso se puede reordenar desde la pestaña "Empleados".
+
+   Estos son los que había al empezar; la lista de verdad vive en este equipo
+   (localStorage) y se edita en pantalla. Si se borra, se vuelve a esta. */
+const EMPLEADOS_INICIALES = [
+  "BENITEZ GRANADOS, VICTOR MANUEL",
+  "DIAZ CONTRERAS, JUAN CARLOS",
+  "GOMEZ URQUILLA, WILLIAM ROLANDO",
+  "GONZALEZ HERNANDEZ, CESAR JEOVANY",
+  "HERNANDEZ, CARLOS FRANCISCO",
+  "MARTINEZ DIAZ, MARIO JAVIER",
+  "RUBIO HERNANDEZ, MARCOS ANTONIO",
+  "SORTO CANALES, ELVIN ORLANDO",
+  "VILLATORO HERNANDEZ, SERGIO JAVIER",
+  "VILLATORO SAENZ, JEOVANY MISAEL",
+  "ILDER STEVEN",
+  "RONAL ISAAC",
+  "DAVID",
+  "GERSON"
+];
+
+const LS_EMPLEADOS = 'fsj-marcador-empleados';
+
+function cargarEmpleados(){
+  try{
+    var g = JSON.parse(localStorage.getItem(LS_EMPLEADOS) || 'null');
+    if(Array.isArray(g) && g.length) return g.map(function(x){ return String(x); });
+  }catch(e){}
+  return EMPLEADOS_INICIALES.slice();
+}
+function guardarEmpleados(){
+  try{ localStorage.setItem(LS_EMPLEADOS, JSON.stringify(EMPLEADOS)); }catch(e){}
+}
+
+/* La lista viva. Se puede agregar, renombrar, mover y quitar gente. */
+let EMPLEADOS = cargarEmpleados();
+const nEmpleados = function(){ return EMPLEADOS.length; };
+
+// Mapeo inicial: EnNo del marcador -> N° de empleado (1..14). null = sin asignar.
+const MAPEO_DEFECTO = {
+  1:null,  // diegob
+  2:10,    // misaelv -> VILLATORO SAENZ, JEOVANY MISAEL
+  3:6,     // mariod  -> MARTINEZ DIAZ, MARIO JAVIER
+  4:2,     // carlosd -> DIAZ CONTRERAS, JUAN CARLOS
+  5:5,     // carlosh -> HERNANDEZ, CARLOS FRANCISCO
+  6:11,    // ilderb  -> ILDER STEVEN
+  7:14,    // gersong -> GERSON
+  8:4,     // jeovanyg-> GONZALEZ HERNANDEZ, CESAR JEOVANY
+  9:7,     // marcosr -> RUBIO HERNANDEZ, MARCOS ANTONIO
+  10:9     // sergiov -> VILLATORO HERNANDEZ, SERGIO JAVIER
+};
+
+// Config espejo de la hoja "⚙️ Configuración"
+const HRS_ORD_LV = 9;    // B11
+const HRS_ORD_SD = 5.5;  // B12
+
+// Semana 1 = sábado 03/01/2026. Bloques cada 19 filas, empleados desde la fila 7.
+const SEM1_UTC   = Date.UTC(2026,0,3);
+const FILA_BASE  = 7;
+const PASO_FILA  = 19;
+const DIAS = ["SÁB","DOM","LUN","MAR","MIÉ","JUE","VIE"];
+
+/* ============================================================
+   2. ESTADO
+   ============================================================ */
+const S = {
+  crudas:[],           // toda fila válida del archivo
+  registros:[],        // un objeto por empleado+día
+  incidencias:[],
+  usuarios:new Map(),  // enNo -> {enNo, nombre, dias}
+  mapeo:Object.assign({}, MAPEO_DEFECTO),
+  semanas:[],
+  semana:null,
+  celdas:new Map(),    // "nEmp|dia|ent|sal" -> "HH:MM"
+  archivo:""
+};
+
+/* ============================================================
+   3. UTILIDADES
+   ============================================================ */
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const pad = n => String(n).padStart(2,"0");
+const hhmm = sec => pad(Math.floor(sec/3600)) + ":" + pad(Math.floor(sec%3600/60));
+const secDe = t => { const m=/^(\d{1,2}):(\d{2})$/.exec((t||"").trim()); if(!m) return null;
+  const h=+m[1], mi=+m[2]; return (h>23||mi>59)?null:h*3600+mi*60; };
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => (
+  {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function semanaDe(y,mo,d){ return Math.floor((Date.UTC(y,mo-1,d)-SEM1_UTC)/(7*86400000))+1; }
+function diaIdx(y,mo,d){ return (new Date(Date.UTC(y,mo-1,d)).getUTCDay()+1)%7; } // 0=sáb
+function fechaDeSemDia(sem,dia){ return new Date(SEM1_UTC + ((sem-1)*7+dia)*86400000); }
+function fmtDia(dt){ return pad(dt.getUTCDate())+"/"+pad(dt.getUTCMonth()+1); }
+function rangoSemana(sem){
+  const a=fechaDeSemDia(sem,0), b=fechaDeSemDia(sem,6);
+  return fmtDia(a)+" – "+fmtDia(b)+"/"+b.getUTCFullYear();
+}
+function filaExcel(sem){ return FILA_BASE + PASO_FILA*(sem-1); }
+
+/* Descarga: usa la capacidad del visor publicado si existe,
+   y si no, la descarga normal del navegador (sitio propio / archivo local). */
+let DL=null;
+const dlListo = (async()=>{
+  try{ DL = (window.claude && typeof claude.use==="function") ? await claude.use("downloads") : null; }
+  catch(_){ DL=null; }
+})();
+
+async function guardar(nombre, data){
+  await dlListo;
+  if(DL){
+    try{ await DL.save({filename:nombre, data}); toast("Guardado: "+nombre); return true; }
+    catch(e){
+      const c = e && e.code;
+      if(c==="declined"){ toast("Descarga cancelada."); return false; }
+      if(c==="rejected_extension" || c==="extension_not_enabled"){
+        toast("Esta vista no permite bajar archivos "+(nombre.split(".").pop())+". Usa «Copiar bloque» y pégalo directo en la planilla.");
+        return false;
+      }
+      if(c==="rate_limited"){ toast("Hay otra descarga en curso. Probá de nuevo en un momento."); return false; }
+      if(c==="too_large"){ toast("El archivo salió demasiado grande."); return false; }
+      /* cualquier otro caso: se intenta la vía normal */
+    }
+  }
+  try{
+    const blob = data instanceof Blob ? data : new Blob([data]);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href=url; a.download=nombre; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    toast("Descargado: "+nombre);
+    return true;
+  }catch(_){ toast("No se pudo descargar el archivo."); return false; }
+}
+
+let toastT;
+function toast(msg){
+  const el=$("#toast"); el.textContent=msg; el.classList.add("show");
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show"),2600);
+}
+
+/* ============================================================
+   4. LECTURA DEL ARCHIVO
+   ============================================================ */
+function parseTXT(text){
+  const filas=[];
+  const lineas=text.split(/\r?\n/);
+  for(const linea of lineas){
+    if(!linea.trim()) continue;
+    // el marcador exporta con tabulaciones; toleramos ; , y 2+ espacios
+    let p = linea.indexOf("\t")>=0 ? linea.split("\t") : linea.split(/\s*[;,]\s*|\s{2,}/);
+    p = p.map(s=>s.trim());
+    if(p.length<7 || !/^\d+$/.test(p[0])) continue;   // salta cabecera y basura
+    const m = /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})[\sT]+(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(p[6]);
+    if(!m) continue;
+    const y=+m[1], mo=+m[2], d=+m[3];
+    filas.push({
+      no:+p[0], enNo:+p[2], nombre:p[3]||"", modo:+p[5],
+      y, mo, d,
+      dia:pad(y)+"-"+pad(mo)+"-"+pad(d),
+      sec:(+m[4])*3600+(+m[5])*60+(+(m[6]||0)),
+      crudo:p[6]
+    });
+  }
+  return filas;
+}
+
+function procesar(){
+  const dedupeMin = Math.max(0, +$("#inpDedupe").value || 0);
+  const minAnio   = +$("#inpMinAnio").value || 0;
+
+  const inc=[], grupos=new Map(), usuarios=new Map();
+
+  for(const r of S.crudas){
+    if(r.y < minAnio){
+      inc.push({t:"crit", tipo:"Fecha inválida en el marcador", quien:"EnNo "+r.enNo+(r.nombre?" · "+r.nombre:""),
+        det:r.crudo, fix:"El reloj no tenía la fecha configurada cuando se registró. Se descarta."});
+      continue;
+    }
+    // sólo se piden mapear los usuarios con al menos una marca válida
+    if(!usuarios.has(r.enNo)) usuarios.set(r.enNo,{enNo:r.enNo, nombre:r.nombre, dias:new Set()});
+    const u=usuarios.get(r.enNo);
+    if(!u.nombre && r.nombre) u.nombre=r.nombre;
+    u.dias.add(r.dia);
+    const k=r.enNo+"|"+r.dia;
+    if(!grupos.has(k)) grupos.set(k,[]);
+    grupos.get(k).push(r);
+  }
+
+  const regs=[];
+  for(const arr of grupos.values()){
+    arr.sort((a,b)=>a.sec-b.sec);
+    const ded=[];
+    for(const r of arr){ if(!ded.length || r.sec-ded[ded.length-1].sec >= dedupeMin*60) ded.push(r); }
+
+    const p0=arr[0];
+    const nEmp = S.mapeo[p0.enNo] ?? null;
+    const reg={
+      enNo:p0.enNo, usuario:p0.nombre, dia:p0.dia,
+      y:p0.y, mo:p0.mo, d:p0.d,
+      sem:semanaDe(p0.y,p0.mo,p0.d), dow:diaIdx(p0.y,p0.mo,p0.d),
+      nEmp, empleado: nEmp ? EMPLEADOS[nEmp-1] : null,
+      marcas:ded.map(r=>hhmm(r.sec)), brutas:arr.length,
+      ent: ded.length ? hhmm(ded[0].sec) : null,
+      sal: ded.length>1 ? hhmm(ded[ded.length-1].sec) : null
+    };
+
+    const quien = "EnNo "+reg.enNo+(reg.usuario?" · "+reg.usuario:"");
+    if(!nEmp){
+      inc.push({t:"crit", tipo:"Usuario sin empleado asignado", quien, det:reg.dia,
+        fix:"Asignalo en la pestaña «Usuarios del marcador» o no se exportará."});
+    }
+    if(ded.length===1){
+      inc.push({t:"warn", tipo:"Una sola marca en el día", quien, det:reg.dia+" · "+reg.ent,
+        fix:"Falta la entrada o la salida. Completala a mano en el cuadro."});
+    }
+    if(ded.length>2){
+      inc.push({t:"warn", tipo:"Más de dos marcas en el día", quien, det:reg.dia+" · "+reg.marcas.join("  "),
+        fix:"Se tomó la primera y la última. Revisá si hubo salida a almuerzo."});
+    }
+    regs.push(reg);
+  }
+
+  regs.sort((a,b)=> a.sem-b.sem || a.dow-b.dow || (a.nEmp||99)-(b.nEmp||99));
+  S.registros=regs; S.incidencias=inc; S.usuarios=usuarios;
+
+  S.semanas=[...new Set(regs.map(r=>r.sem))].sort((a,b)=>a-b);
+  if(!S.semanas.includes(S.semana)) S.semana = S.semanas[S.semanas.length-1] ?? null;
+
+  sembrarCeldas();
+}
+
+// Rellena el cuadro con lo detectado, respetando ediciones manuales previas
+function sembrarCeldas(){
+  const previas = S.celdas;
+  S.celdas = new Map();
+  for(const r of S.registros){
+    if(r.sem!==S.semana || !r.nEmp) continue;
+    if(r.ent) S.celdas.set(r.nEmp+"|"+r.dow+"|ent", r.ent);
+    if(r.sal) S.celdas.set(r.nEmp+"|"+r.dow+"|sal", r.sal);
+  }
+  // reaplica ediciones manuales (incluye los borrados a propósito)
+  for(const [k,v] of previas){
+    if(!k.startsWith("m|")) continue;
+    S.celdas.set(k, v);
+    if(v) S.celdas.set(k.slice(2), v); else S.celdas.delete(k.slice(2));
+  }
+}
+
+/* ============================================================
+   5. CÁLCULOS (espejo de las fórmulas del libro)
+   ============================================================ */
+function filaCalc(nEmp){
+  let horas=0, diasLV=0, diasSD=0, extra=0;
+  for(let d=0; d<7; d++){
+    const e=secDe(S.celdas.get(nEmp+"|"+d+"|ent"));
+    const s=secDe(S.celdas.get(nEmp+"|"+d+"|sal"));
+    const finde = d<2;
+    if(e!=null) (finde? diasSD++ : diasLV++);
+    if(e!=null && s!=null && s>e){
+      const h=(s-e)/3600;
+      horas+=h;
+      extra += Math.max(0, h - (finde?HRS_ORD_SD:HRS_ORD_LV));
+    }
+  }
+  return {horas, diasLV, diasSD, extra};
+}
+
+/* ============================================================
+   6. RENDER
+   ============================================================ */
+function render(){
+  renderTiles(); renderSelSemana(); renderGrid();
+  renderMarcas(); renderInc(); renderMapeo(); renderPasos();
+  $("#target").innerHTML = S.semana
+    ? "Semana "+pad(S.semana)+" · pegar en <b>C"+filaExcel(S.semana)+"</b> de «📅 Asistencia Anual»"
+    : "";
+}
+
+function renderPasos(){
+  const hay = S.crudas.length>0;
+  const sinAsignar = [...S.usuarios.keys()].filter(k=>!S.mapeo[k]).length;
+  $("#st1").className = "step " + (hay?"done":"active");
+  $("#st2").className = "step " + (hay ? (sinAsignar? "active":"done") : "");
+  $("#st3").className = "step " + (hay && !sinAsignar ? "active":"");
+}
+
+function renderTiles(){
+  const delaSem = S.registros.filter(r=>r.sem===S.semana);
+  const conEmp  = delaSem.filter(r=>r.nEmp);
+  const sinSal  = conEmp.filter(r=>!r.sal).length;
+  const sinAsig = [...S.usuarios.keys()].filter(k=>!S.mapeo[k]).length;
+  const empleadosVistos = new Set(conEmp.map(r=>r.nEmp)).size;
+
+  const t=[
+    {k:"Marcas leídas", v:S.crudas.length, n:"registros en el archivo", c:"is-accent"},
+    {k:"Días con registro", v:delaSem.length, n:"empleado × día en la semana", c:""},
+    {k:"Empleados", v:empleadosVistos+" / 14", n:"aparecen en la semana", c:""},
+    {k:"Sin salida", v:sinSal, n:"días con una sola marca", c:sinSal?"is-warn":""},
+    {k:"Sin asignar", v:sinAsig, n:"usuarios del marcador", c:sinAsig?"is-crit":""}
+  ];
+  $("#tiles").innerHTML = t.map(x=>
+    '<div class="tile '+x.c+'"><div class="k">'+x.k+'</div><div class="v">'+x.v+'</div><div class="n">'+x.n+'</div></div>'
+  ).join("");
+}
+
+function renderSelSemana(){
+  const sel=$("#selSemana");
+  sel.innerHTML = S.semanas.map(s=>
+    '<option value="'+s+'"'+(s===S.semana?" selected":"")+'>Semana '+pad(s)+' · '+rangoSemana(s)+'</option>'
+  ).join("") || '<option>—</option>';
+}
+
+function renderGrid(){
+  if(S.semana==null){ $("#grid").innerHTML=""; return; }
+  let h='<thead><tr><th class="emp" rowspan="2">Empleado</th>';
+  for(let d=0; d<7; d++){
+    const dt=fechaDeSemDia(S.semana,d);
+    h+='<th class="day" colspan="2"><span class="dow">'+DIAS[d]+'</span><span class="dt">'+fmtDia(dt)+'</span></th>';
+  }
+  h+='<th class="num tot" rowspan="2">Hrs<br>semana</th><th class="num tot" rowspan="2">Días<br>L–V</th>'
+   + '<th class="num tot" rowspan="2">Días<br>S–D</th><th class="num tot" rowspan="2">Hrs<br>extra</th></tr><tr>';
+  for(let d=0; d<7; d++) h+='<th class="sub daygrp">Ent</th><th class="sub">Sal</th>';
+  h+='</tr></thead><tbody>';
+
+  const T={horas:0,diasLV:0,diasSD:0,extra:0};
+  for(let i=1;i<=nEmpleados();i++){
+    const c=filaCalc(i);
+    T.horas+=c.horas; T.diasLV+=c.diasLV; T.diasSD+=c.diasSD; T.extra+=c.extra;
+    h+='<tr><td class="emp"><span class="rownum">'+pad(i)+'</span> '+esc(EMPLEADOS[i-1])+'</td>';
+    for(let d=0; d<7; d++){
+      for(const campo of ["ent","sal"]){
+        const key=i+"|"+d+"|"+campo;
+        const v=S.celdas.get(key)||"";
+        const otro=S.celdas.get(i+"|"+d+"|"+(campo==="ent"?"sal":"ent"))||"";
+        let cls="t"+(campo==="ent"?" daygrp":"");
+        if(v && !secDe(v)) cls+=" bad";
+        else if(v && !otro) cls+=" solo";
+        else if(v) cls+=" filled";
+        h+='<td'+(campo==="ent"?' class="daygrp"':'')+'><input class="'+cls+'" data-k="'+key+'" value="'+esc(v)+'" '
+         + 'placeholder="--:--" inputmode="numeric" maxlength="5" aria-label="'+DIAS[d]+' '+campo+' '+esc(EMPLEADOS[i-1])+'"></td>';
+      }
+    }
+    h+='<td class="num tot">'+(c.horas?c.horas.toFixed(2):"—")+'</td>'
+     + '<td class="num tot">'+(c.diasLV||"—")+'</td>'
+     + '<td class="num tot">'+(c.diasSD||"—")+'</td>'
+     + '<td class="num tot">'+(c.extra?c.extra.toFixed(2):"—")+'</td></tr>';
+  }
+  h+='</tbody><tfoot><tr><td class="emp">Totales</td><td colspan="14"></td>'
+   + '<td class="num">'+T.horas.toFixed(2)+'</td><td class="num">'+T.diasLV+'</td>'
+   + '<td class="num">'+T.diasSD+'</td><td class="num">'+T.extra.toFixed(2)+'</td></tr></tfoot>';
+  $("#grid").innerHTML=h;
+}
+
+function renderMarcas(){
+  const rs=S.registros.filter(r=>r.sem===S.semana);
+  $("#bMarcas").textContent=rs.length;
+  if(!rs.length){ $("#tblMarcas").innerHTML='<tbody><tr><td class="empty">Sin marcas en esta semana.</td></tr></tbody>'; return; }
+  let h='<thead><tr><th>Día</th><th>Fecha</th><th>Usuario</th><th>Empleado</th>'
+      + '<th>Entrada</th><th>Salida</th><th>Marcas agrupadas</th><th class="num">Brutas</th></tr></thead><tbody>';
+  for(const r of rs){
+    h+='<tr><td>'+DIAS[r.dow]+'</td><td class="mono">'+r.dia+'</td>'
+     + '<td class="mono">'+esc(r.usuario||"—")+' <span class="pill">'+r.enNo+'</span></td>'
+     + '<td>'+(r.empleado?esc(r.empleado):'<span class="pill crit">Sin asignar</span>')+'</td>'
+     + '<td class="mono">'+(r.ent||"—")+'</td>'
+     + '<td class="mono">'+(r.sal||'<span class="pill warn">falta</span>')+'</td>'
+     + '<td class="mono">'+r.marcas.join("  ")+'</td>'
+     + '<td class="num">'+r.brutas+'</td></tr>';
+  }
+  $("#tblMarcas").innerHTML=h+'</tbody>';
+}
+
+function renderInc(){
+  const inc=S.incidencias;
+  const b=$("#bInc"); b.textContent=inc.length;
+  b.className = "badge" + (inc.length?" warn":"");
+  if(!inc.length){ $("#tblInc").innerHTML='<tbody><tr><td class="empty">Sin incidencias. Todo el archivo se leyó limpio.</td></tr></tbody>'; return; }
+  let h='<thead><tr><th>Tipo</th><th>Quién</th><th>Detalle</th><th>Qué hacer</th></tr></thead><tbody>';
+  for(const i of inc){
+    h+='<tr><td><span class="pill '+i.t+'">'+esc(i.tipo)+'</span></td>'
+     + '<td class="mono">'+esc(i.quien)+'</td><td class="mono">'+esc(i.det)+'</td>'
+     + '<td style="white-space:normal; color:var(--muted); max-width:44ch">'+esc(i.fix)+'</td></tr>';
+  }
+  $("#tblInc").innerHTML=h+'</tbody>';
+}
+
+function renderMapeo(){
+  const us=[...S.usuarios.values()].sort((a,b)=>a.enNo-b.enNo);
+  const sin=us.filter(u=>!S.mapeo[u.enNo]).length;
+  const b=$("#bMap"); b.textContent=sin?sin+" sin asignar":us.length;
+  b.className="badge"+(sin?" warn":"");
+  $("#mapGrid").innerHTML = us.map(u=>{
+    const val=S.mapeo[u.enNo]??"";
+    const opts='<option value="">— sin asignar —</option>' + EMPLEADOS.map((e,i)=>
+      '<option value="'+(i+1)+'"'+(val==i+1?" selected":"")+'>'+pad(i+1)+' · '+esc(e)+'</option>').join("");
+    return '<div class="maprow'+(val?"":" unassigned")+'">'
+      + '<span class="id">EnNo '+u.enNo+'</span>'
+      + '<span class="usr">'+esc(u.nombre||"(sin nombre)")+'</span>'
+      + '<select data-en="'+u.enNo+'">'+opts+'</select></div>';
+  }).join("") || '<div class="empty">Ningún usuario detectado todavía.</div>';
+}
+
+/* ============================================================
+   7. EXPORTACIÓN
+   ============================================================ */
+function bloqueTSV(){
+  const filas=[];
+  for(let i=1;i<=nEmpleados();i++){
+    const f=[];
+    for(let d=0; d<7; d++){
+      f.push(S.celdas.get(i+"|"+d+"|ent")||"");
+      f.push(S.celdas.get(i+"|"+d+"|sal")||"");
+    }
+    filas.push(f.join("\t"));
+  }
+  return filas.join("\n");
+}
+
+function celdaHora(t){
+  const s=secDe(t);
+  if(s==null) return {t:"s", v:""};
+  return {t:"n", v:s/86400, z:"hh:mm"};
+}
+
+function exportarXLSX(){
+  if(S.semana==null){ toast("Cargá primero un archivo del marcador."); return; }
+  const wb=XLSX.utils.book_new();
+  const sem=pad(S.semana), rango=rangoSemana(S.semana), fila=filaExcel(S.semana);
+
+  /* --- Hoja 1: bloque listo para pegar --- */
+  const enc1=["N°","NOMBRE"], enc2=["",""];
+  for(let d=0; d<7; d++){
+    const dt=fechaDeSemDia(S.semana,d);
+    enc1.push(DIAS[d]+" "+fmtDia(dt), ""); enc2.push("ENT","SAL");
+  }
+  const aoa=[
+    ["SEMANA "+sem+"  –  "+rango+"  –  Pegar el rango C:P en la fila "+fila+" de «📅 Asistencia Anual»"],
+    [], enc1, enc2
+  ];
+  for(let i=1;i<=nEmpleados();i++){
+    const f=[i, EMPLEADOS[i-1]];
+    for(let d=0; d<7; d++){ f.push(S.celdas.get(i+"|"+d+"|ent")||"", S.celdas.get(i+"|"+d+"|sal")||""); }
+    aoa.push(f);
+  }
+  const ws1=XLSX.utils.aoa_to_sheet(aoa);
+  for(let i=0;i<nEmpleados();i++){
+    for(let c=2;c<16;c++){
+      const ref=XLSX.utils.encode_cell({r:4+i, c});
+      const cur=ws1[ref];
+      if(cur && cur.v!=="" && cur.v!=null){ const nc=celdaHora(cur.v); if(nc.t==="n") ws1[ref]=nc; else delete ws1[ref]; }
+      else delete ws1[ref];
+    }
+  }
+  ws1["!cols"]=[{wch:4},{wch:36}].concat(Array(14).fill({wch:7}));
+  ws1["!merges"]=[{s:{r:0,c:0},e:{r:0,c:15}}];
+  XLSX.utils.book_append_sheet(wb, ws1, "Pegar en Asistencia");
+
+  /* --- Hoja 2: resumen con totales --- */
+  const r2=[["SEMANA "+sem+"  –  "+rango],[],
+    ["N°","EMPLEADO","HRS SEMANA","DÍAS L–V","DÍAS S–D","HRS EXTRA"]];
+  let TH=0,TL=0,TS=0,TE=0;
+  for(let i=1;i<=nEmpleados();i++){
+    const c=filaCalc(i); TH+=c.horas; TL+=c.diasLV; TS+=c.diasSD; TE+=c.extra;
+    r2.push([i, EMPLEADOS[i-1], +c.horas.toFixed(2), c.diasLV, c.diasSD, +c.extra.toFixed(2)]);
+  }
+  r2.push(["","TOTALES", +TH.toFixed(2), TL, TS, +TE.toFixed(2)]);
+  const ws2=XLSX.utils.aoa_to_sheet(r2);
+  ws2["!cols"]=[{wch:4},{wch:36},{wch:12},{wch:10},{wch:10},{wch:11}];
+  XLSX.utils.book_append_sheet(wb, ws2, "Resumen semana");
+
+  /* --- Hoja 3: marcas detalladas --- */
+  const r3=[["DÍA","FECHA","EnNo","USUARIO","N°","EMPLEADO","ENTRADA","SALIDA","MARCAS AGRUPADAS","MARCAS BRUTAS"]];
+  for(const r of S.registros.filter(x=>x.sem===S.semana)){
+    r3.push([DIAS[r.dow], r.dia, r.enNo, r.usuario||"", r.nEmp||"", r.empleado||"SIN ASIGNAR",
+             r.ent||"", r.sal||"", r.marcas.join(" "), r.brutas]);
+  }
+  const ws3=XLSX.utils.aoa_to_sheet(r3);
+  ws3["!cols"]=[{wch:6},{wch:12},{wch:7},{wch:12},{wch:5},{wch:36},{wch:9},{wch:9},{wch:26},{wch:13}];
+  XLSX.utils.book_append_sheet(wb, ws3, "Marcas detalladas");
+
+  /* --- Hoja 4: incidencias --- */
+  const r4=[["TIPO","QUIÉN","DETALLE","QUÉ HACER"]];
+  for(const i of S.incidencias) r4.push([i.tipo, i.quien, i.det, i.fix]);
+  if(S.incidencias.length===0) r4.push(["Sin incidencias","","",""]);
+  const ws4=XLSX.utils.aoa_to_sheet(r4);
+  ws4["!cols"]=[{wch:32},{wch:24},{wch:34},{wch:56}];
+  XLSX.utils.book_append_sheet(wb, ws4, "Incidencias");
+
+  const buf = XLSX.write(wb, {bookType:"xlsx", type:"array"});
+  guardar("Asistencia_FSJ_Sem"+sem+"_2026.xlsx",
+          new Blob([buf], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
+}
+
+/* ============================================================
+   8. EVENTOS
+   ============================================================ */
+const dz=$("#dropZone"), fi=$("#fileInput");
+dz.addEventListener("click", ()=>fi.click());
+dz.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); fi.click(); }});
+dz.addEventListener("dragover", e=>{ e.preventDefault(); dz.classList.add("over"); });
+dz.addEventListener("dragleave", ()=>dz.classList.remove("over"));
+dz.addEventListener("drop", e=>{
+  e.preventDefault(); dz.classList.remove("over");
+  const f=e.dataTransfer.files && e.dataTransfer.files[0]; if(f) leerArchivo(f);
+});
+fi.addEventListener("change", e=>{ const f=e.target.files[0]; if(f) leerArchivo(f); });
+
+function leerArchivo(file){
+  const fr=new FileReader();
+  fr.onload=()=>{
+    const filas=parseTXT(String(fr.result));
+    if(!filas.length){
+      toast("No se reconoció ninguna marca en ese archivo. Revisá que sea la exportación del marcador.");
+      return;
+    }
+    S.crudas=filas; S.archivo=file.name; S.celdas=new Map(); S.semana=null;
+    $("#chipFile").textContent=file.name+" · "+filas.length+" marcas";
+    $("#app").hidden=false;
+    procesar(); render();
+    dz.classList.add("compact");
+    dz.querySelector("h2").textContent="Archivo";
+    dz.querySelector("p").textContent=file.name+" · "+filas.length+" marcas · clic para cambiar";
+    toast(filas.length+" marcas leídas de "+file.name);
+  };
+  fr.onerror=()=>toast("No se pudo leer el archivo.");
+  fr.readAsText(file,"utf-8");
+}
+
+$("#selSemana").addEventListener("change", e=>{ S.semana=+e.target.value; S.celdas=new Map(); sembrarCeldas(); render(); });
+$("#inpDedupe").addEventListener("change", ()=>{ S.celdas=new Map(); procesar(); render(); });
+$("#inpMinAnio").addEventListener("change", ()=>{ S.celdas=new Map(); procesar(); render(); });
+
+// edición de horas en el cuadro
+$("#grid").addEventListener("input", e=>{
+  const el=e.target; if(!el.classList.contains("t")) return;
+  const k=el.dataset.k, v=el.value.trim();
+  if(v) S.celdas.set(k,v); else S.celdas.delete(k);
+  S.celdas.set("m|"+k, v);           // recuerda que fue editado a mano (aunque se haya borrado)
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>{
+    const foco=document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.k : null;
+    const pos=document.activeElement && document.activeElement.selectionStart;
+    renderGrid(); renderTiles();
+    if(foco){ const n=$('#grid input[data-k="'+foco+'"]'); if(n){ n.focus(); try{n.setSelectionRange(pos,pos);}catch(_){} } }
+  },420);
+});
+
+// mapeo
+$("#mapGrid").addEventListener("change", e=>{
+  const sel=e.target; if(sel.tagName!=="SELECT") return;
+  const en=+sel.dataset.en, v=sel.value?+sel.value:null;
+  for(const [k,val] of Object.entries(S.mapeo)) if(val===v && +k!==en) S.mapeo[k]=null;
+  S.mapeo[en]=v; S.celdas=new Map(); procesar(); render();
+});
+$("#btnMapSave").addEventListener("click", ()=>{
+  const data={ ferreteria:"San José", version:1, generado:new Date().toISOString(),
+    empleados:EMPLEADOS, mapeo:S.mapeo };
+  guardar("mapeo-marcador-fsj.json", JSON.stringify(data,null,2));
+});
+$("#btnMapLoad").addEventListener("click", ()=>$("#mapInput").click());
+$("#mapInput").addEventListener("change", e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const fr=new FileReader();
+  fr.onload=()=>{
+    try{
+      const d=JSON.parse(String(fr.result));
+      if(!d || typeof d.mapeo!=="object") throw 0;
+      S.mapeo=Object.assign({}, MAPEO_DEFECTO, d.mapeo);
+      S.celdas=new Map(); procesar(); render(); toast("Mapeo cargado.");
+    }catch(_){ toast("Ese archivo no tiene un mapeo válido."); }
+  };
+  fr.readAsText(f);
+});
+
+// tabs
+$$(".tab").forEach(t=>t.addEventListener("click", ()=>{
+  $$(".tab").forEach(x=>x.setAttribute("aria-selected","false"));
+  t.setAttribute("aria-selected","true");
+  $$(".panel").forEach(p=>p.hidden=true);
+  $("#"+t.dataset.p).hidden=false;
+}));
+
+// acciones
+$("#btnCopy").addEventListener("click", async ()=>{
+  if(S.semana==null){ toast("Cargá primero un archivo."); return; }
+  const txt=bloqueTSV();
+  try{ await navigator.clipboard.writeText(txt); }
+  catch(_){
+    const ta=document.createElement("textarea");
+    ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); }catch(__){}
+    document.body.removeChild(ta);
+  }
+  toast("Bloque copiado · pégalo en C"+filaExcel(S.semana)+" de «📅 Asistencia Anual»");
+});
+$("#btnXlsx").addEventListener("click", exportarXLSX);
+
+/* ============================================================
+   PESTAÑA EMPLEADOS — agregar, renombrar, mover, quitar
+   ============================================================ */
+
+/* Cuántos caben hoy en la planilla sin tocarla: los bloques de semana van
+   cada PASO_FILA filas y los empleados empiezan en FILA_BASE, así que pasar
+   de los que había obliga a hacerle sitio al cuadro. */
+const EMP_ORIGINALES = EMPLEADOS_INICIALES.length;
+
+function pintarEmpleados(){
+  const cont = $("#empLista");
+  if(!cont) return;
+  $("#bEmp").textContent = nEmpleados();
+
+  const n = nEmpleados();
+  let aviso = '';
+  if(n > EMP_ORIGINALES){
+    aviso = '<div class="emp-nota avisa"><b>Son ' + n + ', antes eran ' + EMP_ORIGINALES + '.</b> '+
+      'Acuérdate de agregarle las filas al cuadro «📅 Asistencia Anual» de la planilla: cada '+
+      'semana ocupa ' + PASO_FILA + ' filas y los empleados empiezan en la ' + FILA_BASE + '. '+
+      'Si no hay sitio, la semana siguiente se pisa.</div>';
+  } else if(n < EMP_ORIGINALES){
+    aviso = '<div class="emp-nota avisa">Quedan <b>' + n + '</b> empleados; la planilla estaba '+
+      'hecha para ' + EMP_ORIGINALES + '. Las filas de más quedarán vacías, que no molesta.</div>';
+  } else {
+    aviso = '<div class="emp-nota ok">' + n + ' empleados, igual que la planilla. '+
+      'El número es la fila: el 1 va en la ' + FILA_BASE + ' de cada bloque de semana.</div>';
+  }
+  $("#empAviso").innerHTML = aviso;
+
+  cont.innerHTML = EMPLEADOS.map(function(nom, i){
+    return '<div class="emp-fila">'+
+      '<span class="np">'+pad(i+1)+'</span>'+
+      '<input class="nom" data-i="'+i+'" value="'+esc(nom)+'" maxlength="60" '+
+        'aria-label="Nombre del empleado '+(i+1)+'">'+
+      '<span class="acc">'+
+        '<button class="subir" data-i="'+i+'" title="Subir"'+(i===0?' disabled':'')+'>↑</button>'+
+        '<button class="bajar" data-i="'+i+'" title="Bajar"'+(i===EMPLEADOS.length-1?' disabled':'')+'>↓</button>'+
+        '<button class="quitar" data-i="'+i+'" title="Quitar de la lista">✕</button>'+
+      '</span></div>';
+  }).join('');
+}
+
+/* Al cambiar la lista hay que rehacerlo todo: el cuadro, el mapeo de usuarios
+   del marcador y los totales dependen del número de cada empleado. */
+function empleadosCambiaron(){
+  guardarEmpleados();
+  pintarEmpleados();
+  S.celdas = new Map();
+  procesar();
+  render();
+}
+
+$("#btnEmpAdd").addEventListener("click", function(){
+  const inp = $("#empNuevo");
+  const nom = inp.value.trim().toUpperCase();
+  if(!nom) return toast("Escribe el nombre primero.");
+  if(EMPLEADOS.some(function(e){ return e.toUpperCase() === nom; }))
+    return toast("Ese empleado ya está en la lista.");
+  EMPLEADOS.push(nom);
+  inp.value = "";
+  empleadosCambiaron();
+  toast("Agregado: " + nom + " (N° " + nEmpleados() + ")");
+});
+
+$("#empNuevo").addEventListener("keydown", function(e){
+  if(e.key === "Enter"){ e.preventDefault(); $("#btnEmpAdd").click(); }
+});
+
+$("#btnEmpReset").addEventListener("click", function(){
+  if(!confirm("¿Volver a la lista original de " + EMP_ORIGINALES + " empleados?\n"+
+              "Se pierden los cambios que hiciste a la lista.")) return;
+  EMPLEADOS = EMPLEADOS_INICIALES.slice();
+  empleadosCambiaron();
+  toast("Lista restaurada.");
+});
+
+$("#empLista").addEventListener("click", function(e){
+  const b = e.target.closest("button"); if(!b) return;
+  const i = +b.dataset.i;
+  if(b.classList.contains("subir") && i > 0){
+    const t = EMPLEADOS[i-1]; EMPLEADOS[i-1] = EMPLEADOS[i]; EMPLEADOS[i] = t;
+    moverMapeo(i+1, i);
+  } else if(b.classList.contains("bajar") && i < EMPLEADOS.length-1){
+    const t = EMPLEADOS[i+1]; EMPLEADOS[i+1] = EMPLEADOS[i]; EMPLEADOS[i] = t;
+    moverMapeo(i+1, i+2);
+  } else if(b.classList.contains("quitar")){
+    if(EMPLEADOS.length <= 1) return toast("Tiene que quedar al menos uno.");
+    if(!confirm("¿Quitar a " + EMPLEADOS[i] + " de la lista?\n"+
+                "Los que estén debajo suben un número, o sea una fila en la planilla.")) return;
+    EMPLEADOS.splice(i, 1);
+    quitarDelMapeo(i+1);
+  } else return;
+  empleadosCambiaron();
+});
+
+/* Si dos empleados intercambian su número, el mapeo del marcador tiene que
+   seguirlos: si no, las marcas de uno terminarían en la fila del otro. */
+function moverMapeo(a, b){
+  for(const k of Object.keys(S.mapeo)){
+    if(S.mapeo[k] === a) S.mapeo[k] = -b;
+    else if(S.mapeo[k] === b) S.mapeo[k] = -a;
+  }
+  for(const k of Object.keys(S.mapeo)){
+    if(S.mapeo[k] < 0) S.mapeo[k] = -S.mapeo[k];
+  }
+}
+
+/* Al quitar a alguien, quien apuntaba a él se queda sin asignar y los de
+   abajo bajan un número. */
+function quitarDelMapeo(n){
+  for(const k of Object.keys(S.mapeo)){
+    const v = S.mapeo[k];
+    if(v === n) S.mapeo[k] = null;
+    else if(v > n) S.mapeo[k] = v - 1;
+  }
+}
+
+$("#empLista").addEventListener("change", function(e){
+  const inp = e.target.closest("input.nom"); if(!inp) return;
+  const i = +inp.dataset.i;
+  const nom = inp.value.trim().toUpperCase();
+  if(!nom){ inp.value = EMPLEADOS[i]; return toast("El nombre no puede quedar vacío."); }
+  EMPLEADOS[i] = nom;
+  empleadosCambiaron();
+});
+
+pintarEmpleados();
+</script>
+
+<script>
+  /* Quién entró. acceso.js llama a esto en cuanto la persona pasa el candado;
+     si se lee al cargar la página todavía no hay sesión. */
+  window.__fsjTrasLogin = function(u){
+    u = u || (window.FSJAuth && FSJAuth.usuario && FSJAuth.usuario());
+    var e = document.getElementById('quien');
+    if(u && e) e.textContent = 'Empleado: ' + u.nombre;
+  };
+  window.__fsjTrasLogin();
+</script>
+</body>
+</html>
+

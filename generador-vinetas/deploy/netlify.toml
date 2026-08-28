@@ -66,6 +66,11 @@
     X-Robots-Tag = "noindex, nofollow, noarchive"
 
 [[headers]]
+  for = "/conversor-marcador.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
   for = "/cargar-archivos.html"
   [headers.values]
     X-Robots-Tag = "noindex, nofollow, noarchive"
