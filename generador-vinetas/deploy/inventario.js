@@ -1704,8 +1704,11 @@ window.Inventario = (function () {
        sesión cerrada). Sin esperar: no hay por qué retrasar la pantalla. */
     _reintentarCola();
 
-    // Fotos de producto publicadas en el sitio (no pisan las locales del equipo)
-    for (const url of ['./imagenes-data.json', '../imagenes-data.json']) {
+    /* Fotos publicadas dentro de un archivo (no pisan las locales del equipo).
+       Es el método viejo, de cuando no había servidor de fotos. Si el servidor
+       está activo ese archivo sobra, y pedirlo solo deja un 404 en la consola
+       de cada página. Se busca únicamente cuando hace falta de verdad. */
+    for (const url of (servidorActivo ? [] : ['./imagenes-data.json', '../imagenes-data.json'])) {
       try {
         const r = await fetch(url, { cache: 'no-store' });
         if (!r.ok) continue;
