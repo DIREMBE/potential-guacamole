@@ -40,6 +40,9 @@ vinetas-precios.html     Generador de viñetas conectado al inventario. (Interno
 calculadora-fletes.html  Calculadora de fletes. (Interno)
 inventario.js            Motor de datos compartido (inventario, fotos, historial).
                          Lo usan TODAS las páginas internas, una sola copia.
+analisis.js              NUEVO · La parte que PIENSA del análisis: reconocer
+                         columnas, detectar errores y armar el sugerido de
+                         compras. La usan el análisis y el tablero, una copia.
 catalogo-data.json       NUEVO · Lo que baja el CLIENTE: solo los productos que
                          puede ver y solo los datos que se le enseñan (1 MB).
 inventario-data.json     La base del panel: los 11.267 productos, incluidos los
@@ -260,6 +263,29 @@ cambios quedan sin publicar. Sin cargar nada.
 
 **Paso 1 · Cargar.** Sueltas el archivo. Reconoce solo si es el reporte de
 FelTec o la hoja de conteo. Nada se aplica todavía.
+
+### Primero: ¿qué vas a hacer?
+
+Arriba hay cuatro puertas y se entra por una. Lo demás se esconde, porque
+estorba más de lo que ayuda cuando ya sabes a qué viniste. El tablero recuerda
+la última que usaste.
+
+| Puerta | Para qué |
+|---|---|
+| **Actualizar con un archivo** | Cargar el Excel y elegir qué cambios entran |
+| **Revisar errores** | Qué viene mal en el reporte, con buscador por producto |
+| **Qué comprar** | El sugerido según movimiento y lo que está parado |
+| **Ajustar y publicar** | Precios, códigos, ofertas, bajas, y los archivos |
+
+**El archivo se lee UNA vez y sirve para las tres primeras.** Cargas el reporte
+en «Actualizar», te pasas a «Revisar errores» y ya están ahí; te pasas a «Qué
+comprar» y también. Nadie sube el mismo archivo tres veces.
+
+**Buscador en los errores.** Escribes un producto y todas las listas se filtran
+a la vez; cada error dice cuántos de los suyos coinciden, así ves de un vistazo
+en cuáles está metido. Si no aparece en ninguno, lo dice: *«no aparece en
+ningún error, si está en el reporte está limpio»*. Está tanto en el tablero como
+en la pantalla de análisis completa.
 
 **Paso 2 · Revisar y elegir — aquí está el buscador.** Escribes «cemento» y de
 los 453 cambios te quedan los 18 que te interesan. Tres cosas que importan:

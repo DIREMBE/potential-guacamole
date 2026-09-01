@@ -66,6 +66,24 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
 .toast.on{opacity:1;transform:translateX(-50%)}
 .toast.err{background:var(--dang)}
 
+/* --------------------------- ¿Qué vas a hacer? ---------------------------
+   Cuatro puertas grandes. Se entra por una y se ve solo eso: el resto estorba
+   más de lo que ayuda cuando ya sabes a qué viniste.                        */
+.flujos{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-bottom:20px}
+.flujo{display:flex;flex-direction:column;gap:4px;text-align:left;background:#fff;
+  border:1px solid var(--s200);border-radius:var(--rl);padding:14px 16px;cursor:pointer;
+  transition:.15s;box-shadow:0 1px 2px rgba(23,21,18,.08)}
+.flujo:hover{border-color:var(--s400)}
+.flujo .fi{font-size:22px;line-height:1}
+.flujo b{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.03em;
+  font-size:16px;color:var(--s900)}
+.flujo span:not(.fi){font-size:12.5px;color:var(--s500);line-height:1.45}
+.flujo.on{border-color:var(--orange);background:#fdf5f1;box-shadow:0 0 0 3px rgba(240,96,48,.14)}
+.flujo.on b{color:var(--orange-2)}
+[data-flujo]{display:none}
+[data-flujo].ver{display:block}
+@media(max-width:640px){ .flujo{padding:12px 13px} .flujo span:not(.fi){display:none} }
+
 /* ------------------------------ el pipeline ------------------------------
    Cada paso lleva su número a la vista. Un empleado que se pierde tiene que
    poder mirar la pantalla y saber en cuál va sin preguntarle a nadie.        */
@@ -148,6 +166,30 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
 <div class="wrap">
   <div id="sync-estado"></div>
 
+  <!-- ========================== ¿QUÉ VAS A HACER? ======================= -->
+  <div class="flujos" id="flujos">
+    <button class="flujo on" data-f="archivo">
+      <span class="fi">📄</span>
+      <b>Actualizar con un archivo</b>
+      <span>Cargas el Excel, eliges qué cambios entran y los aplicas.</span>
+    </button>
+    <button class="flujo" data-f="errores">
+      <span class="fi">🔎</span>
+      <b>Revisar errores</b>
+      <span>Qué viene mal en el reporte, con buscador por producto.</span>
+    </button>
+    <button class="flujo" data-f="comprar">
+      <span class="fi">🛒</span>
+      <b>Qué comprar</b>
+      <span>Sugerido según el movimiento, y qué está parado.</span>
+    </button>
+    <button class="flujo" data-f="ajustar">
+      <span class="fi">🧰</span>
+      <b>Ajustar y publicar</b>
+      <span>Precios, códigos, ofertas, bajas — y guardar al sitio.</span>
+    </button>
+  </div>
+
   <!-- ============================ DÓNDE ESTAMOS ======================== -->
   <div class="card">
     <div class="card-h"><h2>Cómo está el inventario</h2>
@@ -158,7 +200,7 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
   </div>
 
   <!-- =============================== PASO 1 =========================== -->
-  <div class="card paso activo" id="paso1">
+  <div class="card paso activo" id="paso1" data-flujo="archivo errores comprar">
     <div class="card-h"><span class="np">1</span><h2>Cargar el archivo</h2>
       <span class="hint">El reporte de FelTec o la hoja de conteo — se reconoce solo</span>
       <span class="estado" id="p1-estado"></span>
@@ -179,7 +221,7 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
   </div>
 
   <!-- =============================== PASO 2 =========================== -->
-  <div class="card paso apagado" id="paso2">
+  <div class="card paso apagado" id="paso2" data-flujo="archivo">
     <div class="card-h"><span class="np">2</span><h2>Revisar y elegir</h2>
       <span class="hint" id="p2-sub">Marca lo que quieras aplicar</span>
       <span class="estado" id="p2-estado"></span>
@@ -211,7 +253,7 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
   </div>
 
   <!-- =============================== PASO 3 =========================== -->
-  <div class="card paso" id="paso3">
+  <div class="card paso" id="paso3" data-flujo="ajustar">
     <div class="card-h"><span class="np">3</span><h2>Ajustar productos</h2>
       <span class="hint">Precio, código, promoción, baja y alta — sin cambiar de ventana</span>
       <span class="estado" id="p3-estado"></span>
@@ -245,7 +287,7 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
   </div>
 
   <!-- =============================== PASO 4 =========================== -->
-  <div class="card paso" id="paso4">
+  <div class="card paso" id="paso4" data-flujo="ajustar">
     <div class="card-h"><span class="np">4</span><h2>Publicar al sitio</h2>
       <span class="hint">Solo hace falta tras cargar el Excel mensual</span>
       <span class="estado" id="p4-estado"></span>
@@ -263,6 +305,50 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
         sube la carpeta a Netlify. <b>Sube siempre los dos JSON</b>: uno es la base del
         panel y el otro el que baja el cliente.
       </div>
+    </div>
+  </div>
+
+  <!-- ===================== ERRORES DEL REPORTE ========================= -->
+  <div class="card" id="card-errores" data-flujo="errores">
+    <div class="card-h"><span class="np">2</span><h2>Errores que trae el reporte</h2>
+      <span class="hint">Lo que conviene arreglar en FelTec, no aquí</span>
+      <span class="estado" id="err-estado"></span>
+    </div>
+    <div class="card-b">
+      <div class="busca">
+        <span class="lupa">🔍</span>
+        <input type="text" id="q-err" placeholder="¿Está este producto en algún error? Nombre, ITEM o categoría…"
+               autocomplete="off" aria-label="Buscar dentro de los errores">
+        <button class="x" id="q-err-x" title="Limpiar" hidden>✕</button>
+      </div>
+      <div class="filtro-info" id="q-err-info"></div>
+      <div id="errores"><div class="empty">Carga un reporte arriba para ver qué trae mal.</div></div>
+    </div>
+  </div>
+
+  <!-- ======================== QUÉ HAY QUE COMPRAR ====================== -->
+  <div class="card" id="card-comprar" data-flujo="comprar">
+    <div class="card-h"><span class="np">2</span><h2>Qué hay que comprar</h2>
+      <span class="hint">Según lo que se movió, no según cantidades mínimas</span>
+      <span class="estado" id="com-estado"></span>
+    </div>
+    <div class="card-b">
+      <div class="row" style="margin-bottom:14px">
+        <label style="font-size:12.5px;color:var(--s500);display:flex;flex-direction:column;gap:4px">
+          Días del periodo <input type="number" id="com-dias" class="pin" min="1" max="365" value="30"></label>
+        <label style="font-size:12.5px;color:var(--s500);display:flex;flex-direction:column;gap:4px">
+          Cobertura para <input type="number" id="com-obj" class="pin" min="1" max="365" value="30"></label>
+        <label style="font-size:12.5px;color:var(--s500);display:flex;flex-direction:column;gap:4px">
+          Agrupar por
+          <select id="com-por" class="btn b-gh b-sm" style="padding-right:26px">
+            <option value="cat">Categoría</option><option value="marca">Marca</option>
+          </select></label>
+        <button class="btn b-gh b-sm" id="com-csv" style="margin-left:auto">Descargar pedido (CSV)</button>
+      </div>
+      <div class="sum" id="com-kpis"></div>
+      <div class="note" id="com-nota"></div>
+      <div id="com-grupos" style="margin-top:14px">
+        <div class="empty">Carga un reporte arriba para ver qué hay que pedir.</div></div>
     </div>
   </div>
 
@@ -284,6 +370,7 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.mini.min.js"></script>
 <script src="inventario.js"></script>
+<script src="analisis.js"></script>
 <script src="sincronia.js"></script>
 <script>
 (function(){
@@ -327,6 +414,25 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
     e.classList.remove('activo','listo','apagado');
     if(estado) e.classList.add(estado);
   }
+
+  /* ==================================================================== */
+  /*  ¿QUÉ VAS A HACER? — se enseña un flujo a la vez                     */
+  /* ==================================================================== */
+  var flujo='archivo';
+  function verFlujo(f){
+    flujo=f;
+    [].forEach.call(document.querySelectorAll('.flujo'), function(b){
+      b.classList.toggle('on', b.dataset.f===f);
+    });
+    [].forEach.call(document.querySelectorAll('[data-flujo]'), function(e){
+      e.classList.toggle('ver', e.dataset.flujo.split(' ').indexOf(f)>=0);
+    });
+    try{ localStorage.setItem('fsj-panel-flujo', f); }catch(e){}
+    if(f==='ajustar') pintarProductos();
+  }
+  document.getElementById('flujos').addEventListener('click',function(e){
+    var b=e.target.closest('.flujo'); if(b) verFlujo(b.dataset.f);
+  });
 
   /* ==================================================================== */
   /*  CÓMO ESTÁ EL INVENTARIO                                             */
@@ -381,6 +487,9 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
         analisis=a; tipo='reporte';
         $('p1-estado').textContent=f.name+' · reporte de inventario';
         pintarReporte(a);
+        /* El MISMO archivo sirve para los otros dos flujos. Se lee una vez y
+           se aprovecha; hacer al empleado subirlo tres veces sería absurdo. */
+        analizarDeFondo(f);
       }).catch(function(err){
         $('p1-estado').textContent='';
         toast(err.message||'No se pudo leer el archivo.',true);
@@ -682,6 +791,175 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
   });
 
   /* ==================================================================== */
+  /*  ERRORES Y COMPRAS — del mismo archivo, sin volverlo a subir         */
+  /*                                                                      */
+  /*  La lógica no está aquí: vive en analisis.js, la misma que usa la    */
+  /*  pantalla de análisis completa. Aquí solo se dibuja.                 */
+  /* ==================================================================== */
+  var crudo=null, errores=[];
+
+  function analizarDeFondo(f){
+    if(!window.Analisis || !window.XLSX) return;
+    $('err-estado').textContent='leyendo…';
+    f.arrayBuffer().then(function(buf){
+      var wb=XLSX.read(new Uint8Array(buf),{type:'array'});
+      var filas=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,blankrows:false});
+      var col=Analisis.columnas(filas[0]);
+      if(col.item<0||col.nombre<0) throw new Error('sin columnas');
+      crudo=Analisis.analizar(filas,col).filas;
+      errores=Analisis.detectar(crudo);
+      var d=Analisis.diasDelNombre(f.name);
+      if(d) $('com-dias').value=d;
+      pintarErrores(); pintarCompras();
+      $('err-estado').textContent=nf(errores.reduce(function(a,x){return a+x.lista.length;},0))+' posible(s) error(es)';
+    }).catch(function(){
+      crudo=null; errores=[];
+      $('err-estado').textContent='este archivo no trae columnas para analizar';
+      $('errores').innerHTML='<div class="empty">Este archivo no se puede analizar (la hoja de conteo no trae movimiento).</div>';
+      $('com-grupos').innerHTML='<div class="empty">Hace falta el reporte de FelTec, que trae las salidas.</div>';
+      $('com-kpis').innerHTML=''; $('com-nota').innerHTML='';
+    });
+  }
+
+  function casaErr(p, pal){
+    return coincide((p.nombre||'')+' '+(p.item||'')+' '+(p.cat||''), pal);
+  }
+
+  function pintarErrores(){
+    if(!errores.length){
+      $('errores').innerHTML='<div class="empty">Este reporte no trae errores. Raro y bueno.</div>';
+      $('q-err-info').innerHTML=''; return;
+    }
+    var q=$('q-err').value.trim(), pal=palabrasDe(q);
+    $('q-err-x').hidden=!q;
+    var enCuantos=0, total=0;
+    var html=errores.map(function(a,i){
+      var lista = pal.length ? a.lista.filter(function(p){return casaErr(p,pal);}) : a.lista;
+      if(pal.length){ if(!lista.length) return ''; enCuantos++; total+=lista.length; }
+      var abierto = pal.length>0;
+      return '<div class="grupo'+(abierto?' on':'')+'">'+
+        '<div class="grupo-h"><span class="n">'+nf(lista.length)+'</span>'+
+        '<span class="t"><b>'+esc(a.titulo)+'</b><span>'+esc(a.desc)+'</span></span>'+
+        (pal.length?'<span class="marcados"><b>'+nf(lista.length)+'</b> de '+nf(a.lista.length)+'</span>':'')+
+        '<span style="font-size:13px;color:var(--s500)" class="ch">'+(abierto?'ocultar':'ver')+'</span></div>'+
+        '<div class="grupo-b"><div class="scroll"><table><thead><tr>'+
+        a.cols.map(function(c){return '<th>'+esc(c[1])+'</th>';}).join('')+
+        '</tr></thead><tbody>'+
+        lista.slice(0,60).map(function(p){
+          return '<tr>'+a.cols.map(function(c){
+            var v=p[c[0]];
+            if(c[0]==='venta'||c[0]==='compra') return '<td class="mono">'+money(v)+'</td>';
+            if(typeof v==='number') return '<td class="mono">'+nf(v)+'</td>';
+            return '<td'+(c[0]==='item'?' class="mono"':'')+'>'+esc(v)+'</td>';
+          }).join('')+'</tr>';
+        }).join('')+
+        '</tbody></table></div>'+
+        (lista.length>60?'<div class="filtro-info">Se muestran 60 de '+nf(lista.length)+'.</div>':'')+
+        '</div></div>';
+    }).join('');
+
+    if(pal.length && !html){
+      $('errores').innerHTML='<div class="empty">«'+esc(q)+'» no aparece en ningún error. '+
+        'Si está en el reporte, está limpio.</div>';
+      $('q-err-info').innerHTML=''; return;
+    }
+    $('errores').innerHTML=html;
+    $('q-err-info').innerHTML = pal.length
+      ? '<b>'+nf(total)+'</b> coincidencia(s) en <b>'+enCuantos+'</b> de los '+errores.length+' errores'
+      : '';
+  }
+
+  var relojErr;
+  $('q-err').addEventListener('input',function(){
+    clearTimeout(relojErr); relojErr=setTimeout(pintarErrores,180);
+  });
+  $('q-err-x').addEventListener('click',function(){ $('q-err').value=''; pintarErrores(); });
+  $('errores').addEventListener('click',function(e){
+    var h=e.target.closest('.grupo-h'); if(!h) return;
+    var g=h.closest('.grupo'); g.classList.toggle('on');
+    var c=h.querySelector('.ch'); if(c) c.textContent=g.classList.contains('on')?'ocultar':'ver';
+  });
+
+  /* ---------------------------- qué comprar --------------------------- */
+  var compras=[], congelados=[];
+
+  function pintarCompras(){
+    if(!crudo){ return; }
+    var dias=Math.max(1,parseInt($('com-dias').value,10)||30);
+    var obj=Math.max(1,parseInt($('com-obj').value,10)||30);
+    var por=$('com-por').value;
+    compras=Analisis.compras(crudo,dias,obj);
+    congelados=Analisis.congelado(crudo);
+
+    var unidades=compras.reduce(function(a,p){return a+p.pedir;},0);
+    var dinero=compras.reduce(function(a,p){return a+p.costo;},0);
+    var agotados=compras.filter(function(p){return p.agotado;}).length;
+    var quieto=congelados.reduce(function(a,p){return a+p.dinero;},0);
+    var conOferta=congelados.filter(function(p){return p.pct>0;}).length;
+
+    $('com-kpis').innerHTML=
+      caja(nf(compras.length),'Productos a pedir', compras.length?'w':'')+
+      caja(nf(agotados),'Ya agotados', agotados?'d':'')+
+      caja(nf(unidades),'Unidades')+
+      caja(Analisis.money0(dinero),'Costo del pedido','n')+
+      caja(nf(congelados.length),'Parados sin venderse', congelados.length?'w':'')+
+      caja(nf(conOferta),'Con oferta sugerida','o');
+
+    $('com-nota').innerHTML=
+      'Se pide para que aguante <b>'+obj+' días</b> al ritmo del periodo: '+
+      '<i>salida ÷ '+dias+' días × '+obj+' − existencia</i>. '+
+      '<b>Ojo:</b> SALIDA es todo lo que salió, no solo lo vendido. '+
+      'Hay <b>'+Analisis.money0(quieto)+'</b> parados sin una sola salida; el descuento sugerido '+
+      'regala la mitad del margen y nunca baja del costo. '+
+      '<a href="analisis-inventario.html">Ver el análisis completo →</a>';
+
+    var grupos=Analisis.agrupar(compras,por,function(p){return p.costo;});
+    $('com-grupos').innerHTML = grupos.length ? grupos.map(function(g,i){
+      var u=g.items.reduce(function(a,p){return a+p.pedir;},0);
+      return '<div class="grupo'+(i===0?' on':'')+'">'+
+        '<div class="grupo-h"><span class="n">'+nf(g.items.length)+'</span>'+
+        '<span class="t"><b>'+esc(g.nombre)+'</b><span>'+nf(u)+' unidades · '+Analisis.money0(g.total)+'</span></span>'+
+        '<span style="font-size:13px;color:var(--s500)" class="ch">'+(i===0?'ocultar':'ver')+'</span></div>'+
+        '<div class="grupo-b"><div class="scroll"><table><thead><tr>'+
+        '<th>ITEM</th><th>Producto</th><th>Salió</th><th>Hay</th><th>Aguanta</th><th>A pedir</th><th>Costo</th>'+
+        '</tr></thead><tbody>'+
+        g.items.slice(0,60).map(function(p){
+          return '<tr><td class="mono">'+esc(p.item)+'</td><td>'+esc(p.nombre)+'</td>'+
+            '<td class="mono">'+nf(p.sal)+'</td><td class="mono">'+nf(p.exist)+'</td>'+
+            '<td class="mono">'+(p.exist<=0?'0 días':Math.round(p.cob)+' días')+'</td>'+
+            '<td class="mono"><b>'+nf(p.pedir)+'</b></td>'+
+            '<td class="mono">'+(p.costo?money(p.costo):'—')+'</td></tr>';
+        }).join('')+'</tbody></table></div></div></div>';
+    }).join('') : '<div class="empty">Nada que pedir con estos números.</div>';
+  }
+
+  ['com-dias','com-obj','com-por'].forEach(function(id){
+    $(id).addEventListener('change',pintarCompras);
+  });
+  $('com-grupos').addEventListener('click',function(e){
+    var h=e.target.closest('.grupo-h'); if(!h) return;
+    var g=h.closest('.grupo'); g.classList.toggle('on');
+    var c=h.querySelector('.ch'); if(c) c.textContent=g.classList.contains('on')?'ocultar':'ver';
+  });
+  $('com-csv').addEventListener('click',function(){
+    if(!compras.length) return toast('No hay nada que pedir todavía.',true);
+    var L=['Grupo;ITEM;Producto;Categoria;Marca;Salio;Existencia;Dias que aguanta;A pedir;Costo total'];
+    Analisis.agrupar(compras,$('com-por').value,function(p){return p.costo;}).forEach(function(g){
+      g.items.forEach(function(p){
+        L.push([g.nombre,p.item,p.nombre,p.cat,p.marca,p.sal,p.exist,
+          p.exist<=0?0:Math.round(p.cob),p.pedir,p.costo?p.costo.toFixed(2):'']
+          .map(function(v){var t=String(v==null?'':v);
+            return /[";\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t;}).join(';'));
+      });
+    });
+    var blob=new Blob(['\ufeff'+L.join('\n')],{type:'text/csv;charset=utf-8'});
+    var url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url; a.download='pedido-sugerido.csv'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url);},900);
+    toast('pedido-sugerido.csv descargado ('+nf(compras.length)+' productos).');
+  });
+
+  /* ==================================================================== */
   /*  PASO 3 — AJUSTAR PRODUCTOS                                          */
   /* ==================================================================== */
   var TOPE_PROD=60;
@@ -833,6 +1111,9 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
       toast(r.recibidos ? 'Llegaron '+r.recibidos+' cambio(s) de otros equipos.' : 'Todo al día.');
     });
   });
+
+  try{ verFlujo(localStorage.getItem('fsj-panel-flujo')||'archivo'); }
+  catch(e){ verFlujo('archivo'); }
 
   Inventario.init(['./inventario-data.json']).then(function(){
     pintarEstado(); pintarProductos();
