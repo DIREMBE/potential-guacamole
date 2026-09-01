@@ -11,6 +11,9 @@ index.html               Home: showcase de 15 productos (5 a la vez). El menú
 catalogo.html            NUEVO · Catálogo showcase: fotos, precios, búsqueda,
                          armado de cotización y envío por WhatsApp. (Público)
 interno.html             Panel de empleados (entrada con clave personal).
+panel-inventario.html    NUEVO · EL TABLERO. Todo el trabajo del día en una
+                         pantalla: cargar, elegir con buscador, ajustar y
+                         publicar. Es por donde se empieza.
 usuarios.js              Solo los NOMBRES y roles. Las claves NO están aquí:
                          viven en Netlify (ver el final de este manual).
 acceso.js                Pantalla de entrada: pide tu nombre y luego TU clave
@@ -241,6 +244,53 @@ reactiva cuando quieras desde la lista de esta pestaña.
   `showcase-data.json` (los 15 del inicio).
 - Súbelos a la raíz del sitio, reemplazando los anteriores, y vuelve a desplegar:
   **todos los equipos y los clientes** verán esos precios y fotos.
+
+---
+
+## El tablero: todo el día en una pantalla (nuevo)
+
+`panel-inventario.html` — la primera tarjeta del panel, y la que hay que usar a
+diario. Antes el trabajo estaba repartido en tres ventanas y había que ir y
+volver; ahora es un solo camino de cuatro pasos, con el número a la vista para
+que nadie se pierda.
+
+**Arriba, cómo está el inventario**: cuántos productos, cuántos con precio,
+cuántos con existencia esperando precio, cuántos dados de baja y cuántos
+cambios quedan sin publicar. Sin cargar nada.
+
+**Paso 1 · Cargar.** Sueltas el archivo. Reconoce solo si es el reporte de
+FelTec o la hoja de conteo. Nada se aplica todavía.
+
+**Paso 2 · Revisar y elegir — aquí está el buscador.** Escribes «cemento» y de
+los 453 cambios te quedan los 18 que te interesan. Tres cosas que importan:
+
+- **Lo que marcas no se pierde al buscar.** La selección no vive en las
+  casillas de la tabla, vive aparte; el buscador solo cambia lo que se ve.
+- **«Marcar los que se ven» alcanza a todos los que coinciden**, no solo a los
+  que caben en pantalla. Si la búsqueda encuentra 300 y solo se pintan 200, el
+  botón marca los 300.
+- **Buscas por varias palabras y en cualquier orden**, sin acentos: «blanco
+  cemento» encuentra «CEMENTO BLANCO CEMEX».
+
+Cada grupo lleva su cuenta de marcados, y abajo el total. Si no hay nada
+marcado, el botón de aplicar está apagado. Y **«Marcar todo» nunca marca las
+bajas**: dar de baja en masa por un archivo raro es el error caro de esta
+pantalla.
+
+Si el archivo no cambia nada —lo normal si ya lo aplicaste— lo dice, en vez de
+dejarte una pantalla en blanco.
+
+**Paso 3 · Ajustar.** Buscas o escaneas un producto y corriges el precio y el
+código ahí mismo, en la tabla. También das de baja, lo regresas, o pones una
+oferta sin salir de la pantalla. Hay filtros rápidos: *con existencia y sin
+precio*, *dados de baja*, *en oferta*. Todo se comparte con los demás equipos
+al instante.
+
+**Paso 4 · Publicar.** Los archivos, solo cuando toca.
+
+Las ventanas de antes siguen ahí, enlazadas abajo como **Herramientas aparte**:
+el análisis con el sugerido de compras, administrar productos completo, fotos e
+historial, y las viñetas. Nada se perdió; lo que cambió es por dónde se empieza.
 
 ---
 

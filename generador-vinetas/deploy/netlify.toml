@@ -41,6 +41,11 @@
 
 # Las páginas internas no deben quedar en Google ni en cachés públicas.
 [[headers]]
+  for = "/panel-inventario.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
   for = "/interno.html"
   [headers.values]
     X-Robots-Tag = "noindex, nofollow, noarchive"

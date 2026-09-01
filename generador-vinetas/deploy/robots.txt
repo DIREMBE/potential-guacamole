@@ -3,6 +3,7 @@
 User-agent: *
 Allow: /
 Disallow: /interno.html
+Disallow: /panel-inventario.html
 Disallow: /inventario-admin.html
 Disallow: /analisis-inventario.html
 Disallow: /vinetas-precios.html

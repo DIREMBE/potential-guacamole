@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel de inventario — Ferretería San José</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="assets/emblem.png">
+<script src="usuarios.js"></script>
+<script>window.FSJ_ACCESO = { sub: 'Panel de inventario · solo personal' };</script>
+<script src="acceso.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#F06030; --orange-2:#d6481c; --blue:#0070C0; --blue-2:#0a5c99;
+  --s50:#f6f5f3; --s100:#e9e6e1; --s200:#d3cec5; --s300:#b3ab9d; --s400:#8b8175;
+  --s500:#6b6255; --s600:#544c42; --s700:#3f3931; --s900:#171512;
+  --ok:#2e7d43; --ok-bg:#e7f3ea; --warn:#c98a12; --warn-bg:#fbf1de; --dang:#c22e26; --dang-bg:#fbe9e7;
+  --r:6px; --rl:10px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--s50);color:var(--s900);font-family:'Barlow',system-ui,sans-serif;font-size:15px;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.04em;margin:0;line-height:1.05}
+a{color:var(--blue-2)}
+img{display:block;max-width:100%}
+button,input,select{font-family:inherit}
+
+header.bar{background:var(--s900);color:#fff;border-bottom:3px solid var(--orange)}
+.bar-in{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:12px clamp(16px,4vw,40px)}
+.bar-in img{height:40px}
+.bt{display:flex;flex-direction:column;line-height:1.15}
+.bt .n{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:19px}
+.bt .s{font-size:12px;color:var(--s300);text-transform:uppercase;letter-spacing:.08em}
+.bar-in .right{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:13.5px;color:var(--s300)}
+.bar-in .right a{color:var(--s300);text-decoration:none}
+.bar-in .right a:hover{color:var(--orange)}
+.brand-link{display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit;border-radius:8px}
+.brand-link:hover{opacity:.85}
+.brand-link:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
+
+.wrap{max-width:1240px;margin:0 auto;padding:20px clamp(16px,4vw,40px) 70px}
+.card{background:#fff;border:1px solid var(--s200);border-radius:var(--rl);box-shadow:0 1px 2px rgba(23,21,18,.08);margin-bottom:18px}
+.card-h{padding:14px 18px;border-bottom:1px solid var(--s100);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.card-h h2{font-size:17px}
+.card-h .hint{font-size:12.5px;color:var(--s500);font-family:'Barlow',sans-serif;text-transform:none;letter-spacing:0}
+.card-b{padding:16px 18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:600;font-size:14px;padding:9px 15px;border-radius:var(--r);border:1px solid transparent;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.b-pri{background:var(--orange);color:#fff}.b-pri:not(:disabled):hover{background:var(--orange-2)}
+.b-sec{background:var(--blue);color:#fff}.b-sec:not(:disabled):hover{background:var(--blue-2)}
+.b-gh{background:#fff;color:var(--s700);border-color:var(--s300)}.b-gh:not(:disabled):hover{background:var(--s50)}
+.b-dg{background:#fff;color:var(--dang);border-color:#e6b3ae}.b-dg:not(:disabled):hover{background:var(--dang-bg)}
+.b-sm{padding:6px 11px;font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.note{background:var(--s50);border-left:3px solid var(--s300);padding:11px 13px;border-radius:0 var(--r) var(--r) 0;font-size:13.5px;color:var(--s600);line-height:1.55;margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;font-size:12.5px;letter-spacing:.03em;color:var(--s600);padding:8px;border-bottom:2px solid var(--s200);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:13px}
+.up{color:var(--dang);font-weight:600}.down{color:var(--ok);font-weight:600}
+.scroll{overflow:auto;max-height:440px}
+.empty{color:var(--s400);font-style:italic;padding:22px;text-align:center}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(16px);opacity:0;background:var(--s900);color:#fff;padding:11px 18px;border-radius:var(--r);font-size:14px;z-index:200;transition:.2s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.toast.err{background:var(--dang)}
+
+/* ------------------------------ el pipeline ------------------------------
+   Cada paso lleva su número a la vista. Un empleado que se pierde tiene que
+   poder mirar la pantalla y saber en cuál va sin preguntarle a nadie.        */
+.paso .card-h{gap:12px}
+.paso .np{font-family:'Anton',sans-serif;font-size:22px;line-height:1;color:#fff;
+  background:var(--s300);border-radius:50%;width:34px;height:34px;display:flex;
+  align-items:center;justify-content:center;flex:none}
+.paso.listo .np{background:var(--ok)}
+.paso.activo .np{background:var(--orange)}
+.paso.apagado{opacity:.62}
+.paso.apagado .card-b{display:none}
+.paso .estado{margin-left:auto;font-size:13px;color:var(--s500)}
+
+.zona{border:2px dashed var(--s300);border-radius:var(--rl);padding:26px;text-align:center;background:#fff;transition:.15s;cursor:pointer}
+.zona.sobre{border-color:var(--orange);background:#fdf5f1}
+.zona .g{font-size:32px}
+.zona p{margin:8px 0 0;color:var(--s500);font-size:14px}
+
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.sbox{border:1px solid var(--s200);border-radius:var(--rl);padding:12px 14px;background:#fff}
+.sbox .v{font-family:'Anton',sans-serif;font-size:26px;line-height:1}
+.sbox .l{font-size:12px;color:var(--s500);text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+.sbox.w{border-color:var(--warn);background:var(--warn-bg)}
+.sbox.n{border-color:var(--blue);background:#e8f2fa}
+.sbox.d{border-color:var(--dang);background:var(--dang-bg)}
+.sbox.o{border-color:var(--ok);background:var(--ok-bg)}
+
+.grupo{border:1px solid var(--s200);border-radius:var(--rl);margin-bottom:14px;overflow:hidden}
+.grupo-h{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--s50);cursor:pointer}
+.grupo-h .n{font-family:'Anton',sans-serif;font-size:20px;min-width:58px}
+.grupo-h .t{flex:1}
+.grupo-h .t b{display:block;font-size:15px}
+.grupo-h .t span{font-size:12.5px;color:var(--s500)}
+.grupo-h .marcados{font-size:13px;color:var(--s600);white-space:nowrap}
+.grupo-h .marcados b{color:var(--ok)}
+.grupo-b{display:none;padding:0 14px 14px}
+.grupo.on .grupo-b{display:block}
+.acc-grupo{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 0}
+
+/* ------------------------------- buscadores ------------------------------ */
+.busca{position:relative;flex:1;min-width:230px}
+.busca input{width:100%;height:40px;padding:0 34px 0 36px;border-radius:var(--r);
+  border:1px solid var(--s300);background:#fff;font-size:15px;color:var(--s900)}
+.busca input:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(240,96,48,.16)}
+.busca .lupa{position:absolute;left:12px;top:11px;color:var(--s400);font-size:16px;pointer-events:none}
+.busca .x{position:absolute;right:8px;top:8px;border:0;background:transparent;color:var(--s400);
+  font-size:18px;cursor:pointer;line-height:1;padding:3px 6px;border-radius:4px}
+.busca .x:hover{background:var(--s100);color:var(--s700)}
+.filtro-info{font-size:13px;color:var(--s500);padding:2px 0 8px}
+.filtro-info b{color:var(--s700)}
+
+.pin{width:96px;border:1px solid var(--s200);border-radius:var(--r);padding:5px 8px;
+  font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right}
+.pin:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(240,96,48,.16)}
+.pin.txt{text-align:left;width:150px}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;
+  text-transform:uppercase;letter-spacing:.04em}
+.chip.baja{background:var(--dang-bg);color:var(--dang)}
+.chip.oferta{background:var(--warn-bg);color:#6E5507}
+.acciones{display:flex;gap:6px;flex-wrap:wrap}
+.avanzado{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.avanzado a{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--s200);
+  border-radius:var(--rl);padding:10px 14px;text-decoration:none;color:var(--s700);font-size:13.5px}
+.avanzado a:hover{border-color:var(--orange);color:var(--orange)}
+@media(max-width:640px){ .pin{width:78px} .pin.txt{width:120px} }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-in">
+    <a class="brand-link" href="index.html" title="Ir al inicio">
+      <img src="assets/emblem.png" alt="Ferretería San José" onerror="this.style.display='none'">
+      <div class="bt"><span class="n">Ferretería San José</span><span class="s">Panel de inventario · interno</span></div>
+    </a>
+    <div class="right"><span id="quien">—</span><a href="interno.html">← Panel</a></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="sync-estado"></div>
+
+  <!-- ============================ DÓNDE ESTAMOS ======================== -->
+  <div class="card">
+    <div class="card-h"><h2>Cómo está el inventario</h2>
+      <span class="hint" id="est-sub">Cargando…</span>
+      <button class="btn b-gh b-sm" id="refrescar" style="margin-left:auto">Actualizar</button>
+    </div>
+    <div class="card-b"><div class="sum" id="est-kpis"></div></div>
+  </div>
+
+  <!-- =============================== PASO 1 =========================== -->
+  <div class="card paso activo" id="paso1">
+    <div class="card-h"><span class="np">1</span><h2>Cargar el archivo</h2>
+      <span class="hint">El reporte de FelTec o la hoja de conteo — se reconoce solo</span>
+      <span class="estado" id="p1-estado"></span>
+    </div>
+    <div class="card-b">
+      <div class="zona" id="zona">
+        <div class="g">📄</div>
+        <b>Suelta aquí el archivo</b>
+        <p>o haz clic para buscarlo · .xlsx, .xls o .csv</p>
+        <input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
+      </div>
+      <div class="note">
+        Nada se aplica al pulsar aquí. El archivo se lee, se te enseña qué
+        cambiaría, y tú eliges qué entra. Si solo vienes a corregir precios,
+        salta al <b>paso 3</b>.
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================== PASO 2 =========================== -->
+  <div class="card paso apagado" id="paso2">
+    <div class="card-h"><span class="np">2</span><h2>Revisar y elegir</h2>
+      <span class="hint" id="p2-sub">Marca lo que quieras aplicar</span>
+      <span class="estado" id="p2-estado"></span>
+    </div>
+    <div class="card-b">
+      <div class="sum" id="sum"></div>
+
+      <div class="row" style="margin-bottom:6px">
+        <div class="busca">
+          <span class="lupa">🔍</span>
+          <input type="text" id="q-rev" placeholder="Buscar por nombre, ITEM o código de barras…"
+                 autocomplete="off" aria-label="Buscar dentro de los cambios">
+          <button class="x" id="q-rev-x" title="Limpiar" hidden>✕</button>
+        </div>
+        <button class="btn b-gh b-sm" id="todo-si">Marcar todo</button>
+        <button class="btn b-gh b-sm" id="todo-no">Desmarcar todo</button>
+        <button class="btn b-gh b-sm" id="csv">Descargar la revisión (CSV)</button>
+      </div>
+      <div class="filtro-info" id="q-info"></div>
+
+      <div id="grupos"></div>
+
+      <div class="row" style="margin-top:16px;border-top:1px solid var(--s100);padding-top:16px">
+        <button class="btn b-pri" id="aplicar">Aplicar lo marcado</button>
+        <button class="btn b-gh" id="cancelar">Descartar este archivo</button>
+        <span class="hint" id="p2-resumen" style="color:var(--s500);font-size:13px"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================== PASO 3 =========================== -->
+  <div class="card paso" id="paso3">
+    <div class="card-h"><span class="np">3</span><h2>Ajustar productos</h2>
+      <span class="hint">Precio, código, promoción, baja y alta — sin cambiar de ventana</span>
+      <span class="estado" id="p3-estado"></span>
+    </div>
+    <div class="card-b">
+      <div class="row" style="margin-bottom:8px">
+        <div class="busca">
+          <span class="lupa">🔍</span>
+          <input type="text" id="q-prod" placeholder="Escribe o escanea: nombre, ITEM o código…"
+                 autocomplete="off" aria-label="Buscar un producto">
+          <button class="x" id="q-prod-x" title="Limpiar" hidden>✕</button>
+        </div>
+        <select id="f-prod" class="btn b-gh b-sm" style="padding-right:26px">
+          <option value="">Todo el inventario</option>
+          <option value="sinprecio">Con existencia y sin precio</option>
+          <option value="bajas">Dados de baja</option>
+          <option value="ofertas">En oferta</option>
+        </select>
+      </div>
+      <div class="filtro-info" id="p-info"></div>
+      <div class="scroll"><table>
+        <thead><tr><th>ITEM</th><th>Producto</th><th>Precio</th><th>Código de barras</th>
+          <th>Existencia</th><th></th></tr></thead>
+        <tbody id="p-body"></tbody></table></div>
+      <div class="note">
+        El <b>precio</b> y el <b>código</b> se guardan al salir de la casilla, y se
+        comparten con los demás equipos al instante. Cambiar un precio queda en el
+        historial con tu nombre.
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================== PASO 4 =========================== -->
+  <div class="card paso" id="paso4">
+    <div class="card-h"><span class="np">4</span><h2>Publicar al sitio</h2>
+      <span class="hint">Solo hace falta tras cargar el Excel mensual</span>
+      <span class="estado" id="p4-estado"></span>
+    </div>
+    <div class="card-b">
+      <div class="row">
+        <button class="btn b-pri" id="pub-todo">Publicar todo (descarga los archivos)</button>
+        <button class="btn b-gh b-sm" id="pub-datos">Solo inventario-data.json</button>
+        <button class="btn b-gh b-sm" id="pub-cat">Solo catalogo-data.json</button>
+        <button class="btn b-gh b-sm" id="pub-show">Solo showcase-data.json</button>
+      </div>
+      <div class="note" id="pub-ayuda">
+        Se descargan a tu carpeta de <b>Descargas</b>. Cópialos dentro de la carpeta
+        del sitio <b>reemplazando</b> los anteriores (junto a <code>index.html</code>) y
+        sube la carpeta a Netlify. <b>Sube siempre los dos JSON</b>: uno es la base del
+        panel y el otro el que baja el cliente.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h2>Herramientas aparte</h2>
+      <span class="hint">Lo que no cabe en el paso a paso</span></div>
+    <div class="card-b">
+      <div class="avanzado">
+        <a href="analisis-inventario.html">📊 Análisis y sugerido de compras</a>
+        <a href="administrar-productos.html">🧰 Administrar productos (todo)</a>
+        <a href="inventario-admin.html">🖼 Fotos e historial</a>
+        <a href="vinetas-precios.html">🏷 Viñetas de precio</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.mini.min.js"></script>
+<script src="inventario.js"></script>
+<script src="sincronia.js"></script>
+<script>
+(function(){
+  'use strict';
+  var $=function(id){return document.getElementById(id);};
+  var nf=function(n){return Number(n||0).toLocaleString('es-SV');};
+  var money=function(n){return 'US$'+(Number(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});};
+  var tt; function toast(m,e){var t=$('toast');t.textContent=m;t.className='toast on'+(e?' err':'');
+    clearTimeout(tt);tt=setTimeout(function(){t.className='toast'+(e?' err':'');},3000);}
+
+  var empleado='';
+  window.__fsjTrasLogin=function(u){
+    u=u||(window.FSJAuth&&FSJAuth.usuario&&FSJAuth.usuario());
+    if(!u) return;
+    empleado=u.nombre;
+    $('quien').textContent='Empleado: '+u.nombre;
+    if(Inventario.setClaveServidor) Inventario.setClaveServidor(u.pin||'');
+  };
+  window.__fsjTrasLogin();
+
+  /* Se quita el acento y se pasa a minúsculas: quien busca "martillo" tiene
+     que encontrar "MARTILLO" y quien busca "cañeria" también "CAÑERÍA". */
+  function norm(s){
+    var t=String(s==null?'':s).toLowerCase();
+    try{ t=t.normalize('NFD').replace(/[\u0300-\u036f]/g,''); }catch(e){}
+    return t;
+  }
+  /* Todas las palabras que se escriben tienen que aparecer, en cualquier
+     orden: "stihl 250" encuentra "MOTOSIERRA STIHL 250". */
+  function coincide(texto, palabras){
+    var t=norm(texto);
+    for(var i=0;i<palabras.length;i++) if(t.indexOf(palabras[i])<0) return false;
+    return true;
+  }
+  function palabrasDe(q){ return norm(q).split(/\s+/).filter(Boolean); }
+
+  function paso(id, estado){
+    var e=$(id); if(!e) return;
+    e.classList.remove('activo','listo','apagado');
+    if(estado) e.classList.add(estado);
+  }
+
+  /* ==================================================================== */
+  /*  CÓMO ESTÁ EL INVENTARIO                                             */
+  /* ==================================================================== */
+  function pintarEstado(){
+    if(!window.Inventario || !Inventario.disponible()){
+      $('est-sub').textContent='Sin inventario cargado en este equipo.'; return;
+    }
+    var s=Inventario.stats();
+    var pend=Inventario.pendientes();
+    var sinP=Inventario.sinPrecio('',5000).length;
+    var bajas=Inventario.deBaja('',5000,'todos').length;
+    $('est-sub').textContent='Actualizado '+(s.lastUpload?new Date(s.lastUpload).toLocaleDateString('es-SV',
+      {day:'numeric',month:'short',year:'numeric'}):'—');
+    $('est-kpis').innerHTML=
+      caja(nf(s.total),'Productos','') +
+      caja(nf(s.conPrecio),'Con precio', s.conPrecio?'o':'') +
+      caja(nf(sinP),'Con stock y sin precio', sinP?'w':'') +
+      caja(nf(bajas),'Dados de baja','') +
+      caja(nf(pend.total),'Sin publicar', pend.total?'d':'o');
+    $('p4-estado').textContent = pend.total ? pend.total+' cambio(s) sin publicar' : 'todo publicado';
+    $('p3-estado').textContent = sinP ? sinP+' producto(s) esperan precio' : '';
+  }
+  function caja(v,l,cls){return '<div class="sbox '+(cls||'')+'"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';}
+
+  /* ==================================================================== */
+  /*  PASO 1 — CARGAR                                                     */
+  /* ==================================================================== */
+  var zona=$('zona');
+  zona.addEventListener('click',function(){$('file').click();});
+  ['dragenter','dragover'].forEach(function(ev){
+    zona.addEventListener(ev,function(e){e.preventDefault();zona.classList.add('sobre');});});
+  ['dragleave','drop'].forEach(function(ev){
+    zona.addEventListener(ev,function(e){e.preventDefault();zona.classList.remove('sobre');});});
+  zona.addEventListener('drop',function(e){
+    var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) leer(f);});
+  $('file').addEventListener('change',function(e){
+    var f=e.target.files&&e.target.files[0]; e.target.value=''; if(f) leer(f);});
+
+  var analisis=null, tipo='';
+
+  function leer(f){
+    $('p1-estado').textContent='Leyendo '+f.name+'…';
+    /* Primero se prueba como hoja de conteo (es la que trae columna CÓDIGO);
+       si no lo es, se trata como el reporte de FelTec. */
+    Inventario.analizarConteo(f).then(function(a){
+      analisis=a; tipo='conteo';
+      $('p1-estado').textContent=f.name+' · hoja de conteo';
+      pintarConteo(a);
+    }).catch(function(){
+      Inventario.analizarArchivo(f).then(function(a){
+        analisis=a; tipo='reporte';
+        $('p1-estado').textContent=f.name+' · reporte de inventario';
+        pintarReporte(a);
+      }).catch(function(err){
+        $('p1-estado').textContent='';
+        toast(err.message||'No se pudo leer el archivo.',true);
+      });
+    });
+  }
+
+  /* ==================================================================== */
+  /*  PASO 2 — REVISAR Y ELEGIR                                           */
+  /*                                                                      */
+  /*  Lo marcado NO vive en las casillas de la tabla: vive en estos        */
+  /*  conjuntos. Así el buscador puede pintar solo 200 filas de las 4.000  */
+  /*  que hay sin que se pierda lo que ya estaba elegido, y "marcar los    */
+  /*  que se ven" puede alcanzar a todos los que coinciden, no solo a los  */
+  /*  que caben en pantalla.                                              */
+  /* ==================================================================== */
+  var TOPE_FILAS = 200;
+  var G = {};          // id de grupo -> { filas, marcados:Set, def, cols, titulo, desc }
+
+  function nuevoGrupo(id, titulo, desc, filas, marcadoPorDefecto, cols){
+    G[id]={ id:id, titulo:titulo, desc:desc, filas:filas, cols:cols,
+      marcados:new Set(marcadoPorDefecto ? filas.map(function(f){return String(f.__k);}) : []) };
+  }
+
+  function filtradas(g){
+    var q=$('q-rev').value.trim();
+    if(!q) return g.filas;
+    var pal=palabrasDe(q);
+    return g.filas.filter(function(f){
+      return coincide((f.nombre||'')+' '+(f.item||'')+' '+(f.codigo||''), pal);
+    });
+  }
+
+  function pintarGrupos(){
+    var q=$('q-rev').value.trim();
+    var ids=Object.keys(G);
+    if(!ids.length){
+      /* Que un archivo no cambie nada es lo normal cuando ya se aplicó antes.
+         Hay que decirlo: una pantalla en blanco parece que algo falló. */
+      $('grupos').innerHTML='<div class="empty">Este archivo no cambia nada: '+
+        'el inventario ya está igual que él.</div>';
+      $('q-info').innerHTML=''; $('aplicar').disabled=true;
+      $('p2-resumen').textContent='no hay nada que aplicar';
+      return;
+    }
+
+    var totalVis=0, totalTodo=0;
+    var h=ids.map(function(id){
+      var g=G[id], vis=filtradas(g);
+      totalVis+=vis.length; totalTodo+=g.filas.length;
+      var abierto = q ? vis.length>0 : (id!=='faltan');
+      var cuerpo = vis.length
+        ? '<div class="acc-grupo">'+
+            '<button class="btn b-gh b-sm" data-todos="si" data-g="'+id+'">Marcar los '+nf(vis.length)+' que se ven</button>'+
+            '<button class="btn b-gh b-sm" data-todos="no" data-g="'+id+'">Desmarcar los que se ven</button>'+
+          '</div>'+
+          '<div class="scroll"><table><thead><tr><th style="width:34px"></th>'+
+          g.cols.map(function(c){return '<th>'+c[0]+'</th>';}).join('')+
+          '</tr></thead><tbody>'+
+          vis.slice(0,TOPE_FILAS).map(function(f){
+            var k=String(f.__k);
+            return '<tr><td><input type="checkbox" class="ck" data-g="'+id+'" data-k="'+esc(k)+'"'+
+              (g.marcados.has(k)?' checked':'')+'></td>'+
+              g.cols.map(function(c){return c[1](f);}).join('')+'</tr>';
+          }).join('')+
+          '</tbody></table></div>'+
+          (vis.length>TOPE_FILAS
+            ? '<div class="filtro-info">Se muestran '+TOPE_FILAS+' de '+nf(vis.length)+
+              '. Los botones de arriba alcanzan a <b>todos</b> los que coinciden, no solo a estos. '+
+              'Afina la búsqueda para verlos.</div>'
+            : '')
+        : '<div class="empty">Ninguno coincide con «'+esc(q)+'».</div>';
+
+      return '<div class="grupo'+(abierto?' on':'')+'" id="g-'+id+'">'+
+        '<div class="grupo-h"><span class="n">'+nf(g.filas.length)+'</span>'+
+        '<span class="t"><b>'+esc(g.titulo)+'</b><span>'+g.desc+'</span></span>'+
+        '<span class="marcados"><b>'+nf(g.marcados.size)+'</b> marcado(s)'+
+          (q&&vis.length!==g.filas.length ? ' · '+nf(vis.length)+' se ven' : '')+'</span>'+
+        '<span style="font-size:13px;color:var(--s500)" class="ch">'+(abierto?'ocultar':'ver')+'</span></div>'+
+        '<div class="grupo-b">'+cuerpo+'</div></div>';
+    }).join('');
+
+    $('grupos').innerHTML=h;
+    $('q-info').innerHTML = q
+      ? 'Se ven <b>'+nf(totalVis)+'</b> de '+nf(totalTodo)+' · buscando «'+esc(q)+'»'
+      : '';
+    $('q-rev-x').hidden = !q;
+    resumen();
+  }
+
+  function resumen(){
+    var n=0; Object.keys(G).forEach(function(id){ n+=G[id].marcados.size; });
+    $('p2-resumen').textContent = n ? nf(n)+' marcado(s) en total' : 'no hay nada marcado';
+    $('aplicar').disabled = n===0;
+    $('p2-estado').textContent = n ? nf(n)+' marcado(s)' : '';
+  }
+
+  var relojBusca;
+  $('q-rev').addEventListener('input',function(){
+    clearTimeout(relojBusca); relojBusca=setTimeout(pintarGrupos,180);
+  });
+  $('q-rev-x').addEventListener('click',function(){ $('q-rev').value=''; pintarGrupos(); });
+
+  $('grupos').addEventListener('change',function(e){
+    var c=e.target.closest('input.ck'); if(!c) return;
+    var g=G[c.dataset.g]; if(!g) return;
+    if(c.checked) g.marcados.add(c.dataset.k); else g.marcados.delete(c.dataset.k);
+    var cab=document.querySelector('#g-'+c.dataset.g+' .marcados');
+    if(cab) cab.innerHTML='<b>'+nf(g.marcados.size)+'</b> marcado(s)';
+    resumen();
+  });
+
+  $('grupos').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-todos]');
+    if(b){
+      var g=G[b.dataset.g]; if(!g) return;
+      var vis=filtradas(g);
+      vis.forEach(function(f){
+        if(b.dataset.todos==='si') g.marcados.add(String(f.__k));
+        else g.marcados.delete(String(f.__k));
+      });
+      pintarGrupos();
+      return;
+    }
+    var h=e.target.closest('.grupo-h'); if(!h) return;
+    var gr=h.closest('.grupo'); gr.classList.toggle('on');
+    var ch=h.querySelector('.ch'); if(ch) ch.textContent=gr.classList.contains('on')?'ocultar':'ver';
+  });
+
+  $('todo-si').addEventListener('click',function(){
+    /* "Ya no vienen en el archivo" se queda fuera a propósito: dar de baja en
+       masa por un archivo raro es el error caro de esta pantalla. */
+    Object.keys(G).forEach(function(id){
+      if(id==='faltan') return;
+      filtradas(G[id]).forEach(function(f){ G[id].marcados.add(String(f.__k)); });
+    });
+    pintarGrupos();
+  });
+  $('todo-no').addEventListener('click',function(){
+    Object.keys(G).forEach(function(id){
+      filtradas(G[id]).forEach(function(f){ G[id].marcados.delete(String(f.__k)); });
+    });
+    pintarGrupos();
+  });
+
+  /* ---------------------------- el reporte ---------------------------- */
+  function pintarReporte(a){
+    G={};
+    $('p2-sub').textContent=nf(a.total)+' filas leídas · nada se aplica hasta que pulses Aplicar';
+    $('sum').innerHTML=
+      caja(nf(a.precios.length),'Cambios de precio', a.precios.length?'w':'') +
+      caja(nf(a.nuevos.length),'Productos nuevos', a.nuevos.length?'n':'') +
+      caja(nf(a.faltantes.length),'Ya no vienen', a.faltantes.length?'d':'') +
+      caja(nf(a.sinCambio),'Sin cambios','o');
+
+    a.precios.forEach(function(r){ r.__k=r.item; });
+    a.nuevos.forEach(function(r){ r.__k=r.item; });
+    a.faltantes.forEach(function(r){ r.__k=r.item; });
+
+    if(a.precios.length) nuevoGrupo('precios','Cambios de precio',
+      'Marca los que quieras aplicar. Los que no marques se quedan como están.',
+      a.precios, true, [
+        ['ITEM', function(r){return '<td class="mono">'+esc(r.item)+'</td>';}],
+        ['Producto', function(r){return '<td>'+esc(r.nombre)+'</td>';}],
+        ['Ahora', function(r){return '<td class="mono">'+money(r.actual)+'</td>';}],
+        ['En el archivo', function(r){return '<td class="mono"><b>'+money(r.nuevo)+'</b></td>';}],
+        ['Variación', function(r){
+          var d=(Number(r.actual)>0)?((r.nuevo-r.actual)/r.actual*100):0;
+          var cls=r.nuevo>r.actual?'up':'down', sig=r.nuevo>r.actual?'▲':'▼';
+          return '<td class="'+cls+'">'+sig+' '+(Number(r.actual)>0?Math.abs(d).toFixed(1)+'%':'—')+'</td>';}]
+      ]);
+
+    if(a.nuevos.length) nuevoGrupo('nuevos','Productos nuevos',
+      'No estaban en el inventario. Se dan de alta solo si los marcas.',
+      a.nuevos, true, [
+        ['ITEM', function(r){return '<td class="mono">'+esc(r.item)+'</td>';}],
+        ['Producto', function(r){return '<td>'+esc(r.nombre)+'</td>';}],
+        ['Categoría', function(r){return '<td>'+esc(r.categoria||'')+'</td>';}],
+        ['Precio', function(r){return '<td class="mono">'+money(r.precio)+'</td>';}],
+        ['Existencia', function(r){return '<td class="mono">'+nf(r.existencia)+'</td>';}]
+      ]);
+
+    if(a.faltantes.length) nuevoGrupo('faltan','Ya no vienen en el archivo',
+      'Ojo: NO se borran. Si los marcas, se dan de baja (salen del catálogo pero conservan foto e historial).',
+      a.faltantes, false, [
+        ['ITEM', function(r){return '<td class="mono">'+esc(r.item)+'</td>';}],
+        ['Producto', function(r){return '<td>'+esc(r.nombre)+'</td>';}],
+        ['Precio', function(r){return '<td class="mono">'+money(r.precio)+'</td>';}],
+        ['Existencia', function(r){return '<td class="mono">'+nf(r.existencia)+'</td>';}]
+      ]);
+
+    abrirPaso2();
+  }
+
+  /* -------------------------- la hoja de conteo ----------------------- */
+  function pintarConteo(a){
+    G={};
+    $('p2-sub').textContent=nf(a.filas)+' filas leídas · códigos de barra y costos';
+    $('sum').innerHTML=
+      caja(nf(a.conCodigo.length),'Casan con un producto','o') +
+      caja(nf(a.nuevos.length),'No están en el inventario', a.nuevos.length?'n':'') +
+      caja(nf(a.ambiguos.length),'Dudosos', a.ambiguos.length?'w':'') +
+      caja(nf(a.sinCodigo||0),'Sin código','');
+
+    a.conCodigo.forEach(function(r){ r.__k=r.item; });
+    a.nuevos.forEach(function(r,i){ r.__k=r.codigo+'|'+r.nombre; r.__i=i; });
+
+    if(a.conCodigo.length) nuevoGrupo('codigos','Códigos de barra y costos',
+      'Se le ponen el código y el costo a productos que ya tienes.',
+      a.conCodigo, true, [
+        ['ITEM', function(r){return '<td class="mono">'+esc(r.item)+'</td>';}],
+        ['Producto', function(r){return '<td>'+esc(r.nombre)+'</td>';}],
+        ['Código', function(r){return '<td class="mono">'+esc(r.codigo||'')+'</td>';}],
+        ['Costo', function(r){return '<td class="mono">'+money(r.costo)+'</td>';}]
+      ]);
+
+    if(a.nuevos.length) nuevoGrupo('cnuevos','No están en el inventario',
+      'Se dan de alta sin precio de venta: quedan como «Consultar precio» hasta que se lo pongas.',
+      a.nuevos, false, [
+        ['Código', function(r){return '<td class="mono">'+esc(r.codigo||'')+'</td>';}],
+        ['Producto', function(r){return '<td>'+esc(r.nombre)+'</td>';}],
+        ['Categoría', function(r){return '<td>'+esc(r.categoria||'')+'</td>';}],
+        ['Costo', function(r){return '<td class="mono">'+money(r.costo)+'</td>';}],
+        ['Stock', function(r){return '<td class="mono">'+nf(r.stock)+'</td>';}]
+      ]);
+
+    abrirPaso2();
+  }
+
+  function abrirPaso2(){
+    paso('paso1','listo'); paso('paso2','activo');
+    $('q-rev').value='';
+    pintarGrupos();
+    $('paso2').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  function cerrarPaso2(){
+    analisis=null; G={};
+    paso('paso1','activo'); paso('paso2','apagado');
+    $('grupos').innerHTML=''; $('sum').innerHTML='';
+    $('p1-estado').textContent=''; $('p2-estado').textContent='';
+    $('q-rev').value=''; $('q-info').innerHTML='';
+  }
+
+  $('cancelar').addEventListener('click',cerrarPaso2);
+
+  $('aplicar').addEventListener('click',function(){
+    if(!analisis) return;
+    var b=$('aplicar'); b.disabled=true; b.textContent='Aplicando…';
+    var lista=function(id){ return G[id] ? Array.from(G[id].marcados) : []; };
+    var p;
+    if(tipo==='reporte'){
+      p=Inventario.aplicarAnalisis(analisis,{
+        precios:lista('precios'), nuevos:lista('nuevos'),
+        quitar:lista('faltan'), empleado:empleado
+      }).then(function(r){
+        return 'Listo: '+nf(r.actualizados)+' precio(s), '+nf(r.agregados)+' alta(s)'+
+               (r.quitados?', '+nf(r.quitados)+' baja(s)':'')+'.';
+      });
+    }else{
+      var ok=new Set(lista('cnuevos'));
+      p=Inventario.aplicarConteo(analisis,{
+        codigos:true, altaNuevos:ok.size>0, nuevosSeleccionados:ok
+      }).then(function(r){
+        return 'Listo: '+nf(r.codigos)+' código(s) de barra, '+nf(r.costos)+' costo(s)'+
+               (r.altas?' y '+nf(r.altas)+' alta(s)':'')+'.';
+      });
+    }
+    p.then(function(msg){
+      b.disabled=false; b.textContent='Aplicar lo marcado';
+      toast(msg);
+      cerrarPaso2(); pintarEstado(); pintarProductos();
+      paso('paso3','activo');
+      $('paso3').scrollIntoView({behavior:'smooth',block:'start'});
+    }).catch(function(err){
+      b.disabled=false; b.textContent='Aplicar lo marcado';
+      toast(err.message||'No se pudo aplicar.',true);
+    });
+  });
+
+  $('csv').addEventListener('click',function(){
+    var L=['Grupo;Marcado;ITEM;Producto;Dato1;Dato2'];
+    Object.keys(G).forEach(function(id){
+      var g=G[id];
+      filtradas(g).forEach(function(f){
+        L.push([g.titulo, g.marcados.has(String(f.__k))?'si':'no', f.item||f.codigo||'',
+          f.nombre||'', f.actual!=null?f.actual:(f.costo!=null?f.costo:''),
+          f.nuevo!=null?f.nuevo:(f.precio!=null?f.precio:'')]
+          .map(function(v){var s=String(v==null?'':v);
+            return /[";\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(';'));
+      });
+    });
+    if(L.length<2) return toast('No hay nada que descargar.',true);
+    var blob=new Blob(['﻿'+L.join('\n')],{type:'text/csv;charset=utf-8'});
+    var url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url; a.download='revision.csv'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url);},900);
+    toast('revision.csv descargado.');
+  });
+
+  /* ==================================================================== */
+  /*  PASO 3 — AJUSTAR PRODUCTOS                                          */
+  /* ==================================================================== */
+  var TOPE_PROD=60;
+
+  function productosDe(){
+    var q=$('q-prod').value.trim(), f=$('f-prod').value;
+    if(f==='sinprecio') return Inventario.sinPrecio(q,400);
+    if(f==='bajas')     return Inventario.deBaja(q,400,'todos');
+    if(f==='ofertas'){
+      var pal=palabrasDe(q);
+      return Inventario.promociones({}).filter(function(p){
+        return !q || coincide(p.nombre+' '+p.item+' '+(p.codigo||''), pal); });
+    }
+    if(!q) return [];
+    return Inventario.buscar(q,TOPE_PROD);
+  }
+
+  function pintarProductos(){
+    if(!window.Inventario || !Inventario.disponible()) return;
+    var lista=productosDe(), q=$('q-prod').value.trim(), f=$('f-prod').value;
+    $('q-prod-x').hidden = !q;
+
+    if(!lista.length){
+      $('p-body').innerHTML='';
+      $('p-info').innerHTML = (q||f)
+        ? 'Nada coincide.'
+        : 'Escribe o escanea para buscar un producto, o elige uno de los filtros.';
+      return;
+    }
+    $('p-info').innerHTML='<b>'+nf(lista.length)+'</b> producto(s)'+
+      (lista.length>TOPE_PROD ? ' · se muestran los primeros '+TOPE_PROD : '');
+
+    $('p-body').innerHTML=lista.slice(0,TOPE_PROD).map(function(p){
+      var baja = p.activo===false;
+      var oferta = Inventario.enOferta(p);
+      return '<tr data-item="'+esc(p.item)+'">'+
+        '<td class="mono">'+esc(p.item)+'</td>'+
+        '<td>'+esc(p.nombre)+
+          (baja?' <span class="chip baja">de baja</span>':'')+
+          (oferta?' <span class="chip oferta">−'+Inventario.descuento(p)+'%</span>':'')+'</td>'+
+        '<td><input class="pin" data-campo="precio" data-item="'+esc(p.item)+'" '+
+          'value="'+(Number(p.precio)>0?Number(p.precio).toFixed(2):'')+'" placeholder="0.00" inputmode="decimal"></td>'+
+        '<td><input class="pin txt" data-campo="codigo" data-item="'+esc(p.item)+'" '+
+          'value="'+esc(p.codigo||'')+'" placeholder="sin código"></td>'+
+        '<td class="mono">'+nf(p.existencia)+'</td>'+
+        '<td><span class="acciones">'+
+          (baja
+            ? '<button class="btn b-gh b-sm" data-acc="alta" data-item="'+esc(p.item)+'">Regresar</button>'
+            : '<button class="btn b-dg b-sm" data-acc="baja" data-item="'+esc(p.item)+'">Dar de baja</button>')+
+          (oferta
+            ? '<button class="btn b-gh b-sm" data-acc="quitarpromo" data-item="'+esc(p.item)+'">Quitar oferta</button>'
+            : '<button class="btn b-gh b-sm" data-acc="promo" data-item="'+esc(p.item)+'">Poner oferta</button>')+
+        '</span></td></tr>';
+    }).join('');
+  }
+
+  var relojProd;
+  $('q-prod').addEventListener('input',function(){
+    clearTimeout(relojProd); relojProd=setTimeout(pintarProductos,180);
+  });
+  $('q-prod-x').addEventListener('click',function(){ $('q-prod').value=''; pintarProductos(); });
+  $('f-prod').addEventListener('change',pintarProductos);
+
+  /* El escáner manda el código y un Enter: si hay una sola coincidencia, se
+     deja lista para editar sin tener que tocar nada más. */
+  $('q-prod').addEventListener('keydown',function(e){
+    if(e.key!=='Enter') return;
+    e.preventDefault();
+    var p=Inventario.porCodigo($('q-prod').value.trim());
+    if(p){ $('q-prod').value=p.item; pintarProductos();
+      var c=document.querySelector('#p-body input[data-campo="precio"]');
+      if(c){ c.focus(); c.select(); } }
+    else pintarProductos();
+  });
+
+  $('p-body').addEventListener('change',function(e){
+    var i=e.target.closest('input.pin'); if(!i) return;
+    var item=i.dataset.item, campo=i.dataset.campo, v=i.value.trim();
+    if(campo==='precio'){
+      var n=parseFloat(v.replace(',','.'));
+      if(!isFinite(n)||n<0) { toast('Ese precio no se entiende.',true); return; }
+      Inventario.actualizarPrecio(item,n,empleado,'panel').then(function(ok){
+        if(ok){ toast('Precio guardado: '+money(n)); pintarEstado(); pintarProductos(); }
+      });
+    }else{
+      Inventario.setCodigo(item,v).then(function(){
+        toast(v?'Código guardado.':'Código quitado.'); pintarProductos();
+      }).catch(function(err){ toast(err.message||'No se pudo.',true); pintarProductos(); });
+    }
+  });
+
+  $('p-body').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-acc]'); if(!b) return;
+    var item=b.dataset.item, acc=b.dataset.acc;
+    var p=Inventario.porItem(item); if(!p) return;
+
+    if(acc==='baja'||acc==='alta'){
+      Inventario.setActivo(item, acc==='alta').then(function(){
+        toast(acc==='alta'?'De vuelta en el catálogo.':'Dado de baja: sale del catálogo pero conserva foto e historial.');
+        pintarEstado(); pintarProductos();
+      });
+      return;
+    }
+    if(acc==='quitarpromo'){
+      Inventario.quitarPromo(item,true,empleado).then(function(){
+        toast('Oferta quitada, precio de antes restaurado.'); pintarProductos(); });
+      return;
+    }
+    /* Poner oferta: se pide solo el precio nuevo. El de antes es el de hoy y
+       la fecha, un mes, que es lo que se usa el 90% de las veces. */
+    var actual=Number(p.precio)||0;
+    if(!(actual>0)) return toast('Primero ponle precio a este producto.',true);
+    var v=prompt('Precio de oferta para «'+p.nombre+'»\nHoy vale '+money(actual)+
+                 '\n\nEscribe el precio nuevo:', (actual*0.9).toFixed(2));
+    if(v===null) return;
+    var n=parseFloat(String(v).replace(',','.'));
+    if(!isFinite(n)||!(n>0)) return toast('Ese precio no se entiende.',true);
+    var hasta=new Date(Date.now()+30*864e5).toISOString().slice(0,10);
+    Inventario.setPromo(item,n,actual,hasta,empleado).then(function(){
+      toast('Oferta puesta: '+money(actual)+' → '+money(n)+', hasta el '+hasta+'.');
+      pintarProductos();
+    }).catch(function(err){ toast(err.message||'No se pudo poner la oferta.',true); });
+  });
+
+  /* ==================================================================== */
+  /*  PASO 4 — PUBLICAR                                                   */
+  /* ==================================================================== */
+  function publicar(cuales){
+    var n=0;
+    if(cuales.datos){ Inventario.publicar(); n++; }
+    if(cuales.cat)  setTimeout(function(){ Inventario.publicarCatalogo(); },400);
+    if(cuales.show) setTimeout(function(){ Inventario.publicarShowcase(15); },800);
+    setTimeout(function(){
+      Inventario.marcarPublicado().then(pintarEstado);
+    }, 1200);
+  }
+  $('pub-todo').addEventListener('click',function(){
+    publicar({datos:true,cat:true,show:true});
+    toast('Descargando los tres archivos…');
+  });
+  $('pub-datos').addEventListener('click',function(){ publicar({datos:true}); toast('inventario-data.json descargado.'); });
+  $('pub-cat').addEventListener('click',function(){ publicar({cat:true}); toast('catalogo-data.json descargado.'); });
+  $('pub-show').addEventListener('click',function(){ publicar({show:true}); toast('showcase-data.json descargado.'); });
+
+  /* ==================================================================== */
+  $('refrescar').addEventListener('click',function(){
+    Inventario.sincronizar().then(function(r){
+      pintarEstado(); pintarProductos();
+      toast(r.recibidos ? 'Llegaron '+r.recibidos+' cambio(s) de otros equipos.' : 'Todo al día.');
+    });
+  });
+
+  Inventario.init(['./inventario-data.json']).then(function(){
+    pintarEstado(); pintarProductos();
+  }).catch(function(){
+    $('est-sub').textContent='No se pudo cargar el inventario.';
+  });
+  Inventario.onCambio(function(t){
+    if(t==='sincronizado'||t==='import'||t==='conteo') { pintarEstado(); pintarProductos(); }
+  });
+})();
+</script>
+</body>
+</html>
