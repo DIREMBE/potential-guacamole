@@ -22,6 +22,8 @@ window.FSJ_USUARIOS = [
   { nombre: 'Diego',  rol: 'admin' },
   { nombre: 'Carlos', rol: 'empleado' },
   { nombre: 'Mario',  rol: 'empleado' },
+  { nombre: 'Sergio', rol: 'empleado' },
+  { nombre: 'Gerson', rol: 'empleado' },
 ];
 
 /* Respaldo sin servidor: si necesitas trabajar con el sitio abierto desde una
