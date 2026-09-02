@@ -11,9 +11,10 @@ index.html               Home: showcase de 15 productos (5 a la vez). El menú
 catalogo.html            NUEVO · Catálogo showcase: fotos, precios, búsqueda,
                          armado de cotización y envío por WhatsApp. (Público)
 interno.html             Panel de empleados (entrada con clave personal).
-panel-inventario.html    NUEVO · EL TABLERO. Todo el trabajo del día en una
-                         pantalla: cargar, elegir con buscador, ajustar y
-                         publicar. Es por donde se empieza.
+panel-inventario.html    NUEVO · ÁREA DE EMPLEADOS. Todo el inventario en una
+                         pantalla: cargar, analizar, comprar, ajustar precios,
+                         fotos, historial, ofertas, altas y guardar al sitio.
+                         Es por donde se empieza y casi lo único que hace falta.
 usuarios.js              Solo los NOMBRES y roles. Las claves NO están aquí:
                          viven en Netlify (ver el final de este manual).
 acceso.js                Pantalla de entrada: pide tu nombre y luego TU clave
@@ -253,12 +254,13 @@ reactiva cuando quieras desde la lista de esta pestaña.
 
 ---
 
-## El tablero: todo el día en una pantalla (nuevo)
+## Área de empleados: todo el inventario en una pantalla
 
-`panel-inventario.html` — la primera tarjeta del panel, y la que hay que usar a
-diario. Antes el trabajo estaba repartido en tres ventanas y había que ir y
-volver; ahora es un solo camino de cuatro pasos, con el número a la vista para
-que nadie se pierda.
+`panel-inventario.html` — la primera tarjeta del panel, y la única que hace
+falta a diario. Antes el trabajo estaba repartido en cuatro ventanas y había que
+ir y volver, buscando el mismo producto en cada una; ahora **todo el inventario
+se trabaja aquí**: cargar el archivo, ver los números, revisar errores, decidir
+compras, ajustar precios, fotos, historial, ofertas, bajas y altas, y guardar.
 
 **Arriba, cómo está el inventario**: cuántos productos, cuántos con precio,
 cuántos con existencia esperando precio, cuántos dados de baja y cuántos
@@ -275,10 +277,10 @@ la última que usaste.
 
 | Puerta | Para qué |
 |---|---|
-| **Actualizar con un archivo** | Cargar el Excel y elegir qué cambios entran |
-| **Revisar errores** | Qué viene mal en el reporte, con buscador por producto |
-| **Qué comprar** | El sugerido según movimiento y lo que está parado |
-| **Ajustar y publicar** | Precios, códigos, ofertas, bajas, y los archivos |
+| **Actualizar con un archivo** | Cargar el Excel, elegir qué cambios entran, aplicarlos y guardar |
+| **Analizar el reporte** | Los números del negocio y los errores, con buscador por producto |
+| **Qué comprar** | El sugerido según movimiento, y lo parado con su oferta |
+| **Productos** | Precio, código, foto, historial, ofertas, bajas y altas |
 
 **El archivo se lee UNA vez y sirve para las tres primeras.** Cargas el reporte
 en «Actualizar», te pasas a «Revisar errores» y ya están ahí; te pasas a «Qué
@@ -315,14 +317,45 @@ oferta sin salir de la pantalla. Hay filtros rápidos: *con existencia y sin
 precio*, *dados de baja*, *en oferta*. Todo se comparte con los demás equipos
 al instante.
 
+**El botón «Ficha» abre el producto debajo de su propia fila**: la foto (subirla,
+cambiarla, quitarla), el historial de precio con quién lo tocó y cuándo, y la
+casilla de destacado para la portada. Eso eran dos ventanas más; ahora no se
+pierde ni la búsqueda ni el sitio en la lista. La ficha **no se cierra sola**
+aunque llegue un cambio de otro equipo mientras la tienes abierta.
+
+Los productos con foto llevan una etiqueta **FOTO** en la lista, para ver de un
+vistazo a cuáles les falta.
+
+**Crear un producto que no viene en ningún archivo** está al final del paso 3,
+plegado. Se le pone nombre y precio y queda igual que los demás: entra al
+catálogo si tiene precio.
+
 **Paso 4 · Guardar en el sitio.** Solo después del Excel mensual. Un botón: el
 inventario entero sale hacia el sitio y los demás equipos lo recogen solos. No
 se descarga ni se sube nada. Ahí mismo se lee qué base tiene el sitio ahora
 —cuántos productos, de qué día, quién la guardó.
 
-Las ventanas de antes siguen ahí, enlazadas abajo como **Herramientas aparte**:
-el análisis con el sugerido de compras, administrar productos completo, fotos e
-historial, y las viñetas. Nada se perdió; lo que cambió es por dónde se empieza.
+### Lo que absorbió de las otras ventanas
+
+| Lo que hacías antes en… | Ahora está en |
+|---|---|
+| Análisis de inventario (los números) | **Analizar el reporte → «Qué dice el reporte»** |
+| Análisis de inventario (lo congelado) | **Qué comprar → «Parado · ofertas sugeridas»** |
+| Fotos e historial | **Productos → botón «Ficha»** |
+| Administrar productos (crear uno nuevo) | **Productos → «Crear un producto…»** |
+| Cargar archivos | **Actualizar con un archivo** |
+
+**«Parado · ofertas sugeridas»** es lo que más rinde: lista lo que lleva meses
+sin moverse con el dinero que tiene quieto, lo marcas —con buscador, y «marcar
+los que se ven» alcanza a todos los que coinciden— y **pones todas las ofertas
+de una sola vez**. La sugerida regala la mitad del margen, con tope del 40%, y
+nunca baja del costo. Solo deja marcar lo que de verdad se puede aplicar: si a
+un producto le falta el costo, o el precio del archivo no es un precio de venta
+de verdad, no trae sugerencia y lo dice.
+
+Las cuatro pantallas viejas siguen funcionando y están enlazadas abajo, plegadas
+en **«Pantallas viejas»**, tanto aquí como en el panel interno. Nada se perdió;
+lo que cambió es que ya no hace falta entrar en ellas.
 
 ---
 

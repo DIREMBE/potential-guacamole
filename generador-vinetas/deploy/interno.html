@@ -70,12 +70,12 @@
 
 <main>
   <h1 class="h">Herramientas del personal</h1>
-  <p class="sub">Elige la herramienta que necesitas. Entra con tu clave personal: se pide una sola vez por sesión.</p>
+  <p class="sub">Todo el inventario se trabaja en una sola ventana: <b>Área de empleados</b>. Entra con tu clave personal: se pide una sola vez por sesión.</p>
   <div class="grid">
     <a class="tool" href="panel-inventario.html">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#F15930" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span>
-      <h2>Panel de inventario</h2>
-      <p>Todo el trabajo del día en una sola pantalla: cargar el archivo, elegir qué se aplica con buscador, ajustar precios y ofertas, y publicar. Empieza aquí.</p>
+      <h2>Área de empleados</h2>
+      <p>Todo el trabajo de inventario en una sola pantalla: cargas el archivo, eliges qué se aplica con buscador, analizas errores y compras, ajustas precios, códigos, fotos y ofertas, y publicas. <b>Empieza aquí.</b></p>
       <span class="go">Abrir →</span>
     </a>
     <a class="tool" href="vinetas-precios.html">
@@ -90,25 +90,25 @@
       <p>Convierte la exportación del marcador biométrico en el cuadro semanal de asistencia, listo para pegar en la planilla. La lista de empleados se edita aquí mismo.</p>
       <span class="go">Abrir →</span>
     </a>
-    <a class="tool" href="cargar-archivos.html">
+    <a class="tool" href="cargar-archivos.html" hidden>
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#F15930" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
       <h2>Cargar archivos</h2>
       <p>Sube el reporte de FelTec o la hoja de conteo. Te muestra qué cambiaría —precios, altas, bajas, códigos de barra— y tú decides qué se aplica.</p>
       <span class="go">Abrir →</span>
     </a>
-    <a class="tool" href="administrar-productos.html">
+    <a class="tool" href="administrar-productos.html" hidden>
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#F15930" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 8.4a2 2 0 0 0 0-2.8l-2.2-2.2a2 2 0 0 0-2.8 0L3 16v5h5z"/><line x1="14" y1="5" x2="19" y2="10"/></svg></span>
       <h2>Administrar productos</h2>
       <p>Crear, dar de baja o reactivar. Poner precios a los que vienen en cero y armar promociones con precio tachado y descuento.</p>
       <span class="go">Abrir →</span>
     </a>
-    <a class="tool" href="inventario-admin.html">
+    <a class="tool" href="inventario-admin.html" hidden>
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#F15930" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg></span>
       <h2>Inventario y catálogo</h2>
       <p>Cambia precios (se ven al instante), sube fotos de producto, revisa el historial de cambios y actualiza el inventario revisando discrepancias.</p>
       <span class="go">Abrir →</span>
     </a>
-        <a class="tool" href="analisis-inventario.html">
+        <a class="tool" href="analisis-inventario.html" hidden>
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#F15930" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l3-4 3 3 5-7"/></svg></span>
       <h2>Análisis de inventario</h2>
       <p>Lee el reporte de FelTec y te muestra métricas del negocio y los posibles errores del inventario: existencias imposibles, negativas, productos sin precio y ventas bajo costo.</p>
@@ -127,6 +127,17 @@
       <span class="go">Abrir →</span>
     </a>
   </div>
+
+  <details style="margin-top:28px;color:#98AEC3;font-size:14px">
+    <summary style="cursor:pointer;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#89A3BA">Pantallas viejas del inventario</summary>
+    <p style="line-height:1.6;margin:12px 0 8px">Siguen funcionando igual que antes, pero todo lo que hacían ya está dentro del Área de empleados.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      <a href="analisis-inventario.html" style="color:#F15930">Análisis completo con historial de informes</a> ·
+      <a href="administrar-productos.html" style="color:#F15930">Administrar productos</a> ·
+      <a href="inventario-admin.html" style="color:#F15930">Fotos, historial y destacados</a> ·
+      <a href="cargar-archivos.html" style="color:#F15930">Cargar archivos</a>
+    </div>
+  </details>
 </main>
 
 <footer>Ferretería San José · Corinto, Morazán, El Salvador</footer>

@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Panel de inventario — Ferretería San José</title>
+<title>Área de empleados — Ferretería San José</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/png" href="assets/emblem.png">
 <script src="usuarios.js"></script>
-<script>window.FSJ_ACCESO = { sub: 'Panel de inventario · solo personal' };</script>
+<script>window.FSJ_ACCESO = { sub: 'Área de empleados · solo personal' };</script>
 <script src="acceso.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -149,6 +149,31 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
   border-radius:var(--rl);padding:10px 14px;text-decoration:none;color:var(--s700);font-size:13.5px}
 .avanzado a:hover{border-color:var(--orange);color:var(--orange)}
 @media(max-width:640px){ .pin{width:78px} .pin.txt{width:120px} }
+
+/* --------------------------- ficha del producto --------------------------
+   Todo lo que antes obligaba a cambiar de ventana —foto, historial, destacar—
+   se abre debajo de la fila, sin perder la búsqueda ni el sitio de la lista. */
+tr.ficha-row>td{background:var(--s50);padding:0}
+.ficha{display:grid;grid-template-columns:170px 1fr;gap:18px;padding:16px 10px}
+.ficha .foto{width:170px;height:170px;border:1px solid var(--s200);border-radius:var(--rl);
+  background:#fff center/contain no-repeat;display:flex;align-items:center;justify-content:center;
+  color:var(--s400);font-size:12.5px;text-align:center;padding:8px}
+.ficha h3{font-size:15px;margin-bottom:8px}
+.ficha .dato{font-size:13px;color:var(--s600);margin-bottom:4px}
+.ficha .dato b{color:var(--s900)}
+.ficha table{font-size:13px}
+.ficha .cerrar{margin-left:auto}
+@media(max-width:640px){ .ficha{grid-template-columns:1fr} .ficha .foto{width:100%;height:200px} }
+
+.alta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.alta label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--s500)}
+.alta input,.alta select{height:36px;border:1px solid var(--s300);border-radius:var(--r);
+  padding:0 9px;font-size:14px;background:#fff}
+.alta input:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(240,96,48,.16)}
+details.plegable{border:1px solid var(--s200);border-radius:var(--rl);padding:12px 14px;margin-top:14px;background:#fff}
+details.plegable>summary{cursor:pointer;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;
+  letter-spacing:.03em;font-size:15px;color:var(--s700)}
+details.plegable[open]>summary{margin-bottom:12px}
 </style>
 </head>
 <body>
@@ -157,7 +182,7 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
   <div class="bar-in">
     <a class="brand-link" href="index.html" title="Ir al inicio">
       <img src="assets/emblem.png" alt="Ferretería San José" onerror="this.style.display='none'">
-      <div class="bt"><span class="n">Ferretería San José</span><span class="s">Panel de inventario · interno</span></div>
+      <div class="bt"><span class="n">Ferretería San José</span><span class="s">Área de empleados · inventario</span></div>
     </a>
     <div class="right"><span id="quien">—</span><a href="interno.html">← Panel</a></div>
   </div>
@@ -171,22 +196,22 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
     <button class="flujo on" data-f="archivo">
       <span class="fi">📄</span>
       <b>Actualizar con un archivo</b>
-      <span>Cargas el Excel, eliges qué cambios entran y los aplicas.</span>
+      <span>Cargas el Excel, eliges qué cambios entran, los aplicas y publicas.</span>
     </button>
     <button class="flujo" data-f="errores">
       <span class="fi">🔎</span>
-      <b>Revisar errores</b>
-      <span>Qué viene mal en el reporte, con buscador por producto.</span>
+      <b>Analizar el reporte</b>
+      <span>Métricas del negocio y errores, con buscador por producto.</span>
     </button>
     <button class="flujo" data-f="comprar">
       <span class="fi">🛒</span>
       <b>Qué comprar</b>
-      <span>Sugerido según el movimiento, y qué está parado.</span>
+      <span>Sugerido según el movimiento, y qué está parado con oferta.</span>
     </button>
     <button class="flujo" data-f="ajustar">
       <span class="fi">🧰</span>
-      <b>Ajustar y publicar</b>
-      <span>Precios, códigos, ofertas, bajas — y guardar al sitio.</span>
+      <b>Productos</b>
+      <span>Precio, código, foto, historial, ofertas, bajas y altas.</span>
     </button>
   </div>
 
@@ -201,6 +226,7 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
 
   <!-- =============================== PASO 1 =========================== -->
   <div class="card paso activo" id="paso1" data-flujo="archivo errores comprar">
+
     <div class="card-h"><span class="np">1</span><h2>Cargar el archivo</h2>
       <span class="hint">El reporte de FelTec o la hoja de conteo — se reconoce solo</span>
       <span class="estado" id="p1-estado"></span>
@@ -281,13 +307,31 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
       <div class="note">
         El <b>precio</b> y el <b>código</b> se guardan al salir de la casilla, y se
         comparten con los demás equipos al instante. Cambiar un precio queda en el
-        historial con tu nombre.
+        historial con tu nombre. Con <b>Ficha</b> abres la foto y el historial del
+        producto sin salir de esta lista.
       </div>
+
+      <details class="plegable" id="det-alta">
+        <summary>Crear un producto que no viene en ningún archivo</summary>
+        <div class="alta">
+          <label>Nombre <input type="text" id="a-nombre" placeholder="MARTILLO UÑA 16 OZ TRUPER"></label>
+          <label>Categoría <input type="text" id="a-cat" placeholder="HERRAMIENTA MANUAL"></label>
+          <label>Precio <input type="text" id="a-precio" placeholder="0.00" inputmode="decimal"></label>
+          <label>Existencia <input type="text" id="a-exist" placeholder="0" inputmode="numeric"></label>
+          <label>Unidad <input type="text" id="a-unidad" placeholder="Unidad"></label>
+          <label>Código de barras <input type="text" id="a-codigo" placeholder="opcional · se puede escanear"></label>
+          <label>ITEM <input type="text" id="a-item" placeholder="se pone solo"></label>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn b-pri b-sm" id="a-crear">Crear producto</button>
+          <span class="hint" style="color:var(--s500);font-size:13px">Queda igual que los demás: entra al catálogo si tiene precio.</span>
+        </div>
+      </details>
     </div>
   </div>
 
   <!-- =============================== PASO 4 =========================== -->
-  <div class="card paso" id="paso4" data-flujo="ajustar">
+  <div class="card paso" id="paso4" data-flujo="archivo ajustar">
     <div class="card-h"><span class="np">4</span><h2>Guardar en el sitio</h2>
       <span class="hint">Solo hace falta tras cargar el Excel mensual</span>
       <span class="estado" id="p4-estado"></span>
@@ -321,9 +365,21 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
     </div>
   </div>
 
+  <!-- ===================== RESUMEN DEL REPORTE ========================= -->
+  <div class="card" id="card-metricas" data-flujo="errores">
+    <div class="card-h"><span class="np">2</span><h2>Qué dice el reporte</h2>
+      <span class="hint">El negocio en números, tal como salió de FelTec</span>
+      <span class="estado" id="met-estado"></span>
+    </div>
+    <div class="card-b">
+      <div class="sum" id="an-kpis"></div>
+      <div id="an-cats"><div class="empty">Carga un reporte arriba para ver los números.</div></div>
+    </div>
+  </div>
+
   <!-- ===================== ERRORES DEL REPORTE ========================= -->
   <div class="card" id="card-errores" data-flujo="errores">
-    <div class="card-h"><span class="np">2</span><h2>Errores que trae el reporte</h2>
+    <div class="card-h"><span class="np">3</span><h2>Errores que trae el reporte</h2>
       <span class="hint">Lo que conviene arreglar en FelTec, no aquí</span>
       <span class="estado" id="err-estado"></span>
     </div>
@@ -358,6 +414,13 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
           </select></label>
         <button class="btn b-gh b-sm" id="com-csv" style="margin-left:auto">Descargar pedido (CSV)</button>
       </div>
+      <div class="busca" style="margin-bottom:6px">
+        <span class="lupa">🔍</span>
+        <input type="text" id="q-com" placeholder="¿Entró este producto al pedido? Nombre, ITEM, categoría o marca…"
+               autocomplete="off" aria-label="Buscar dentro del pedido sugerido">
+        <button class="x" id="q-com-x" title="Limpiar" hidden>✕</button>
+      </div>
+      <div class="filtro-info" id="q-com-info"></div>
       <div class="sum" id="com-kpis"></div>
       <div class="note" id="com-nota"></div>
       <div id="com-grupos" style="margin-top:14px">
@@ -365,16 +428,57 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
     </div>
   </div>
 
+  <!-- ==================== PARADO · OFERTAS SUGERIDAS =================== -->
+  <div class="card" id="card-congelado" data-flujo="comprar">
+    <div class="card-h"><span class="np">3</span><h2>Parado · ofertas sugeridas</h2>
+      <span class="hint">Marca los que quieras poner en oferta y se aplican aquí mismo</span>
+      <span class="estado" id="cong-estado"></span>
+    </div>
+    <div class="card-b">
+      <div class="row" style="margin-bottom:6px">
+        <div class="busca">
+          <span class="lupa">🔍</span>
+          <input type="text" id="q-cong" placeholder="¿Está este producto parado? Nombre, ITEM, categoría o marca…"
+                 autocomplete="off" aria-label="Buscar dentro de lo parado">
+          <button class="x" id="q-cong-x" title="Limpiar" hidden>✕</button>
+        </div>
+        <button class="btn b-gh b-sm" id="cong-si">Marcar los que se ven</button>
+        <button class="btn b-gh b-sm" id="cong-no">Desmarcar todo</button>
+      </div>
+      <div class="filtro-info" id="q-cong-info"></div>
+      <div id="cong-lista"><div class="empty">Carga un reporte arriba para ver qué lleva meses sin moverse.</div></div>
+      <div class="row" style="margin-top:14px;border-top:1px solid var(--s100);padding-top:14px">
+        <button class="btn b-pri" id="cong-aplicar" disabled>Poner las ofertas marcadas</button>
+        <span class="hint" id="cong-resumen" style="color:var(--s500);font-size:13px">no hay nada marcado</span>
+      </div>
+      <div class="note">
+        La oferta sugerida regala <b>la mitad del margen</b>, con tope del 40%, y
+        nunca baja del costo. Dura 30 días y se ve en el catálogo con el precio
+        tachado. Si un producto no trae sugerencia, es que falta el costo o el
+        precio del archivo no es un precio de venta de verdad.
+      </div>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-h"><h2>Herramientas aparte</h2>
-      <span class="hint">Lo que no cabe en el paso a paso</span></div>
+      <span class="hint">Otro trabajo, otra pantalla — el inventario entero se hace aquí</span></div>
     <div class="card-b">
       <div class="avanzado">
-        <a href="analisis-inventario.html">📊 Análisis y sugerido de compras</a>
-        <a href="administrar-productos.html">🧰 Administrar productos (todo)</a>
-        <a href="inventario-admin.html">🖼 Fotos e historial</a>
         <a href="vinetas-precios.html">🏷 Viñetas de precio</a>
+        <a href="conversor-marcador.html">⏱ Conversor del marcador</a>
+        <a href="calculadora-fletes.html">🚚 Calculadora de fletes</a>
+        <a href="catalogo.html" target="_blank">🛒 Ver el catálogo público</a>
       </div>
+      <details class="plegable">
+        <summary>Pantallas viejas (siguen funcionando)</summary>
+        <div class="avanzado">
+          <a href="analisis-inventario.html">📊 Análisis completo con historial de informes</a>
+          <a href="administrar-productos.html">🧰 Administrar productos</a>
+          <a href="inventario-admin.html">🖼 Fotos, historial y destacados</a>
+          <a href="cargar-archivos.html">📄 Cargar archivos</a>
+        </div>
+      </details>
     </div>
   </div>
 </div>
@@ -837,7 +941,7 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
       errores=Analisis.detectar(crudo);
       var d=Analisis.diasDelNombre(f.name);
       if(d) $('com-dias').value=d;
-      pintarErrores(); pintarCompras();
+      pintarErrores(); pintarCompras(); pintarMetricas();
       $('err-estado').textContent=nf(errores.reduce(function(a,x){return a+x.lista.length;},0))+' posible(s) error(es)';
     }).catch(function(){
       crudo=null; errores=[];
@@ -845,7 +949,40 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
       $('errores').innerHTML='<div class="empty">Este archivo no se puede analizar (la hoja de conteo no trae movimiento).</div>';
       $('com-grupos').innerHTML='<div class="empty">Hace falta el reporte de FelTec, que trae las salidas.</div>';
       $('com-kpis').innerHTML=''; $('com-nota').innerHTML='';
+      $('an-kpis').innerHTML='';
+      $('an-cats').innerHTML='<div class="empty">Hace falta el reporte de FelTec.</div>';
+      $('cong-lista').innerHTML='<div class="empty">Hace falta el reporte de FelTec, que trae las salidas.</div>';
     });
+  }
+
+  /* ------------------ los números del reporte ------------------------- */
+  function pintarMetricas(){
+    if(!crudo){ return; }
+    var m=Analisis.metricas(crudo);
+    $('met-estado').textContent=nf(m.total)+' filas leídas';
+    $('an-kpis').innerHTML=
+      caja(nf(m.total),'Productos','')+
+      caja(nf(m.conStock),'Con existencia','')+
+      caja(nf(m.sinPrecio),'Sin precio de venta', m.sinPrecio?'w':'o')+
+      caja(Analisis.money0(m.valorCosto),'Valor a costo','n')+
+      caja(Analisis.money0(m.valorVenta),'Valor a venta','o')+
+      caja(Math.round(m.margenMediano)+'%','Margen mediano','')+
+      caja(Analisis.money0(m.vendido),'Salió en el periodo','')+
+      caja(nf(m.sinMovimiento),'Con stock y sin movimiento', m.sinMovimiento?'w':'');
+
+    var cats=Analisis.porCategoria(crudo).slice(0,15);
+    $('an-cats').innerHTML=
+      '<h3 style="font-size:14px;margin:6px 0 8px">Las 15 categorías con más dinero en existencia</h3>'+
+      '<div class="scroll"><table><thead><tr><th>Categoría</th><th>Productos</th>'+
+      '<th>Con stock</th><th>Valor a costo</th><th>Valor a venta</th></tr></thead><tbody>'+
+      cats.map(function(c){
+        return '<tr><td>'+esc(c.cat)+'</td><td class="mono">'+nf(c.n)+'</td>'+
+          '<td class="mono">'+nf(c.stock)+'</td><td class="mono">'+Analisis.money0(c.costo)+'</td>'+
+          '<td class="mono">'+Analisis.money0(c.venta)+'</td></tr>';
+      }).join('')+'</tbody></table></div>'+
+      (m.precioSospechoso ? '<div class="note">Hay <b>'+nf(m.precioSospechoso)+'</b> producto(s) '+
+        'cuyo «precio de venta» en el archivo es el costo+IVA o el doble del costo. '+
+        'No son precios de venta: quedan fuera del margen y no se les sugiere oferta.</div>' : '');
   }
 
   function casaErr(p, pal){
@@ -940,13 +1077,24 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
       'regala la mitad del margen y nunca baja del costo. '+
       '<a href="analisis-inventario.html">Ver el análisis completo →</a>';
 
-    var grupos=Analisis.agrupar(compras,por,function(p){return p.costo;});
+    var qc=$('q-com').value.trim(), palc=palabrasDe(qc);
+    $('q-com-x').hidden=!qc;
+    var vis = palc.length ? compras.filter(function(p){
+      return coincide((p.nombre||'')+' '+(p.item||'')+' '+(p.cat||'')+' '+(p.marca||''), palc);
+    }) : compras;
+    $('q-com-info').innerHTML = palc.length
+      ? (vis.length
+          ? 'Se ven <b>'+nf(vis.length)+'</b> de '+nf(compras.length)+' · buscando «'+esc(qc)+'»'
+          : '<b>«'+esc(qc)+'» no entra al pedido</b>: o no se movió, o le aguanta la existencia.')
+      : '';
+
+    var grupos=Analisis.agrupar(vis,por,function(p){return p.costo;});
     $('com-grupos').innerHTML = grupos.length ? grupos.map(function(g,i){
       var u=g.items.reduce(function(a,p){return a+p.pedir;},0);
-      return '<div class="grupo'+(i===0?' on':'')+'">'+
+      return '<div class="grupo'+(i===0||palc.length?' on':'')+'">'+
         '<div class="grupo-h"><span class="n">'+nf(g.items.length)+'</span>'+
         '<span class="t"><b>'+esc(g.nombre)+'</b><span>'+nf(u)+' unidades · '+Analisis.money0(g.total)+'</span></span>'+
-        '<span style="font-size:13px;color:var(--s500)" class="ch">'+(i===0?'ocultar':'ver')+'</span></div>'+
+        '<span style="font-size:13px;color:var(--s500)" class="ch">'+(i===0||palc.length?'ocultar':'ver')+'</span></div>'+
         '<div class="grupo-b"><div class="scroll"><table><thead><tr>'+
         '<th>ITEM</th><th>Producto</th><th>Salió</th><th>Hay</th><th>Aguanta</th><th>A pedir</th><th>Costo</th>'+
         '</tr></thead><tbody>'+
@@ -957,8 +1105,16 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
             '<td class="mono"><b>'+nf(p.pedir)+'</b></td>'+
             '<td class="mono">'+(p.costo?money(p.costo):'—')+'</td></tr>';
         }).join('')+'</tbody></table></div></div></div>';
-    }).join('') : '<div class="empty">Nada que pedir con estos números.</div>';
+    }).join('') : '<div class="empty">'+(palc.length?'Nada coincide con «'+esc(qc)+'».':'Nada que pedir con estos números.')+'</div>';
+
+    pintarCongelado();
   }
+
+  var relojCom;
+  $('q-com').addEventListener('input',function(){
+    clearTimeout(relojCom); relojCom=setTimeout(pintarCompras,180);
+  });
+  $('q-com-x').addEventListener('click',function(){ $('q-com').value=''; pintarCompras(); });
 
   ['com-dias','com-obj','com-por'].forEach(function(id){
     $(id).addEventListener('change',pintarCompras);
@@ -986,6 +1142,111 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
     toast('pedido-sugerido.csv descargado ('+nf(compras.length)+' productos).');
   });
 
+  /* ------------- lo parado: buscar, marcar y poner la oferta -----------
+     Aquí sí se toca el inventario, así que solo se puede marcar lo que tiene
+     una oferta sugerida y existe en la base de este equipo. Marcar algo que
+     luego no se puede aplicar es peor que no poder marcarlo.                */
+  var congMarcados=new Set(), TOPE_CONG=150;
+
+  function congVisibles(){
+    var q=$('q-cong').value.trim(), pal=palabrasDe(q);
+    if(!pal.length) return congelados;
+    return congelados.filter(function(p){
+      return coincide((p.nombre||'')+' '+(p.item||'')+' '+(p.cat||'')+' '+(p.marca||''), pal);
+    });
+  }
+  function congAplicable(p){
+    return p.pct>0 && !!(window.Inventario && Inventario.disponible() && Inventario.porItem(p.item));
+  }
+
+  function pintarCongelado(){
+    if(!crudo) return;
+    var q=$('q-cong').value.trim(), vis=congVisibles();
+    $('q-cong-x').hidden=!q;
+    var quieto=congelados.reduce(function(a,p){return a+p.dinero;},0);
+    $('cong-estado').textContent=congelados.length
+      ? nf(congelados.length)+' parado(s) · '+Analisis.money0(quieto)+' quietos' : '';
+    $('q-cong-info').innerHTML = q
+      ? (vis.length
+          ? 'Se ven <b>'+nf(vis.length)+'</b> de '+nf(congelados.length)+' · buscando «'+esc(q)+'»'
+          : '<b>«'+esc(q)+'» no está parado</b>: tuvo salidas en el periodo o no tiene existencia.')
+      : '';
+
+    if(!congelados.length){
+      $('cong-lista').innerHTML='<div class="empty">Nada parado en este reporte. Todo se movió.</div>';
+      resumenCong(); return;
+    }
+    if(!vis.length){
+      $('cong-lista').innerHTML='<div class="empty">Ninguno coincide con «'+esc(q)+'».</div>';
+      resumenCong(); return;
+    }
+
+    $('cong-lista').innerHTML=
+      '<div class="scroll"><table><thead><tr><th style="width:34px"></th><th>ITEM</th><th>Producto</th>'+
+      '<th>Hay</th><th>Precio</th><th>Parado</th><th>Oferta sugerida</th></tr></thead><tbody>'+
+      vis.slice(0,TOPE_CONG).map(function(p){
+        var puede=congAplicable(p), k=String(p.item);
+        return '<tr><td>'+(puede
+            ? '<input type="checkbox" class="ckc" data-item="'+esc(k)+'"'+(congMarcados.has(k)?' checked':'')+'>'
+            : '')+'</td>'+
+          '<td class="mono">'+esc(p.item)+'</td><td>'+esc(p.nombre)+'</td>'+
+          '<td class="mono">'+nf(p.exist)+'</td>'+
+          '<td class="mono">'+(p.venta>0?money(p.venta):'—')+'</td>'+
+          '<td class="mono">'+(p.dinero?Analisis.money0(p.dinero):'—')+'</td>'+
+          '<td>'+(p.pct
+            ? '<b class="mono">−'+p.pct+'%</b> <span class="mono">'+money(p.precioOferta)+'</span>'+
+              (puede?'':' <span style="color:var(--s400)">· no está en el inventario de aquí</span>')
+            : '<span style="color:var(--s400)">'+esc(p.motivo||'sin sugerencia')+'</span>')+'</td></tr>';
+      }).join('')+'</tbody></table></div>'+
+      (vis.length>TOPE_CONG
+        ? '<div class="filtro-info">Se muestran '+TOPE_CONG+' de '+nf(vis.length)+
+          ', los que más dinero tienen quieto. «Marcar los que se ven» alcanza a <b>todos</b> los que coinciden.</div>'
+        : '');
+    resumenCong();
+  }
+
+  function resumenCong(){
+    var n=congMarcados.size;
+    $('cong-resumen').textContent = n ? nf(n)+' producto(s) marcado(s)' : 'no hay nada marcado';
+    $('cong-aplicar').disabled = n===0;
+  }
+
+  var relojCong;
+  $('q-cong').addEventListener('input',function(){
+    clearTimeout(relojCong); relojCong=setTimeout(pintarCongelado,180);
+  });
+  $('q-cong-x').addEventListener('click',function(){ $('q-cong').value=''; pintarCongelado(); });
+  $('cong-lista').addEventListener('change',function(e){
+    var c=e.target.closest('input.ckc'); if(!c) return;
+    if(c.checked) congMarcados.add(c.dataset.item); else congMarcados.delete(c.dataset.item);
+    resumenCong();
+  });
+  $('cong-si').addEventListener('click',function(){
+    congVisibles().forEach(function(p){ if(congAplicable(p)) congMarcados.add(String(p.item)); });
+    pintarCongelado();
+  });
+  $('cong-no').addEventListener('click',function(){ congMarcados.clear(); pintarCongelado(); });
+
+  $('cong-aplicar').addEventListener('click',function(){
+    var elegidos=congelados.filter(function(p){ return congMarcados.has(String(p.item)) && congAplicable(p); });
+    if(!elegidos.length) return toast('No hay nada marcado.',true);
+    if(!confirm('Se van a poner '+nf(elegidos.length)+' oferta(s) por 30 días.\n'+
+                'El catálogo las enseña con el precio tachado.\n\n¿Seguimos?')) return;
+    var b=$('cong-aplicar'); b.disabled=true; b.textContent='Poniendo…';
+    var hasta=new Date(Date.now()+30*864e5).toISOString().slice(0,10), hechas=0;
+    elegidos.reduce(function(cad,p){
+      return cad.then(function(){
+        return Inventario.setPromo(p.item,p.precioOferta,p.venta,hasta,empleado)
+          .then(function(){ hechas++; }).catch(function(){});
+      });
+    }, Promise.resolve()).then(function(){
+      b.textContent='Poner las ofertas marcadas';
+      congMarcados.clear();
+      toast(nf(hechas)+' oferta(s) puesta(s) hasta el '+hasta+'.');
+      pintarCongelado(); pintarEstado(); pintarProductos();
+    });
+  });
+
   /* ==================================================================== */
   /*  PASO 3 — AJUSTAR PRODUCTOS                                          */
   /* ==================================================================== */
@@ -1009,6 +1270,14 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
     var lista=productosDe(), q=$('q-prod').value.trim(), f=$('f-prod').value;
     $('q-prod-x').hidden = !q;
 
+    /* Si hay una ficha abierta se apunta cuál, porque al redibujar la tabla se
+       borra con todo lo demás. Y esto se redibuja solo: al destacar, al llegar
+       un cambio de otro equipo... La ficha se abrió para NO tener que ir y
+       volver, así que cerrarse sola sería justo lo que se quería evitar. */
+    var fichaAbierta=null;
+    var fa=$('p-body').querySelector('tr.ficha-row');
+    if(fa) fichaAbierta=fa.dataset.item;
+
     if(!lista.length){
       $('p-body').innerHTML='';
       $('p-info').innerHTML = (q||f)
@@ -1022,17 +1291,20 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
     $('p-body').innerHTML=lista.slice(0,TOPE_PROD).map(function(p){
       var baja = p.activo===false;
       var oferta = Inventario.enOferta(p);
+      var conFoto = Inventario.tieneImagen(p.item);
       return '<tr data-item="'+esc(p.item)+'">'+
         '<td class="mono">'+esc(p.item)+'</td>'+
         '<td>'+esc(p.nombre)+
           (baja?' <span class="chip baja">de baja</span>':'')+
-          (oferta?' <span class="chip oferta">−'+Inventario.descuento(p)+'%</span>':'')+'</td>'+
+          (oferta?' <span class="chip oferta">−'+Inventario.descuento(p)+'%</span>':'')+
+          (conFoto?' <span class="chip" style="background:var(--s100);color:var(--s600)">foto</span>':'')+'</td>'+
         '<td><input class="pin" data-campo="precio" data-item="'+esc(p.item)+'" '+
           'value="'+(Number(p.precio)>0?Number(p.precio).toFixed(2):'')+'" placeholder="0.00" inputmode="decimal"></td>'+
         '<td><input class="pin txt" data-campo="codigo" data-item="'+esc(p.item)+'" '+
           'value="'+esc(p.codigo||'')+'" placeholder="sin código"></td>'+
         '<td class="mono">'+nf(p.existencia)+'</td>'+
         '<td><span class="acciones">'+
+          '<button class="btn b-gh b-sm" data-acc="ficha" data-item="'+esc(p.item)+'">Ficha</button>'+
           (baja
             ? '<button class="btn b-gh b-sm" data-acc="alta" data-item="'+esc(p.item)+'">Regresar</button>'
             : '<button class="btn b-dg b-sm" data-acc="baja" data-item="'+esc(p.item)+'">Dar de baja</button>')+
@@ -1041,6 +1313,11 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
             : '<button class="btn b-gh b-sm" data-acc="promo" data-item="'+esc(p.item)+'">Poner oferta</button>')+
         '</span></td></tr>';
     }).join('');
+
+    /* Y se vuelve a poner donde estaba. Si el producto ya no sale en la lista
+       (cambió el filtro o la búsqueda), `verFicha` no encuentra la fila y no
+       hace nada, que es lo correcto. */
+    if(fichaAbierta) verFicha(fichaAbierta);
   }
 
   var relojProd;
@@ -1083,6 +1360,8 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
     var item=b.dataset.item, acc=b.dataset.acc;
     var p=Inventario.porItem(item); if(!p) return;
 
+    if(acc==='ficha'){ verFicha(item); return; }
+
     if(acc==='baja'||acc==='alta'){
       Inventario.setActivo(item, acc==='alta').then(function(){
         toast(acc==='alta'?'De vuelta en el catálogo.':'Dado de baja: sale del catálogo pero conserva foto e historial.');
@@ -1109,6 +1388,124 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
       toast('Oferta puesta: '+money(actual)+' → '+money(n)+', hasta el '+hasta+'.');
       pintarProductos();
     }).catch(function(err){ toast(err.message||'No se pudo poner la oferta.',true); });
+  });
+
+  /* ------------------- ficha: foto, historial, destacado ---------------
+     Se abre debajo de la fila. Antes esto eran dos ventanas más; el empleado
+     tenía que buscar el mismo producto otra vez en cada una.               */
+  function verFicha(item){
+    var tr=$('p-body').querySelector('tr[data-item="'+String(item).replace(/"/g,'\\"')+'"]');
+    if(!tr) return;
+    var sig=tr.nextElementSibling;
+    if(sig && sig.classList.contains('ficha-row') && sig.dataset.item===String(item)){
+      sig.remove(); return;
+    }
+    var abierta=$('p-body').querySelector('tr.ficha-row');
+    if(abierta) abierta.remove();
+    var fila=document.createElement('tr');
+    fila.className='ficha-row'; fila.dataset.item=String(item);
+    fila.innerHTML='<td colspan="6">'+fichaHTML(item)+'</td>';
+    tr.parentNode.insertBefore(fila, tr.nextSibling);
+  }
+
+  function refrescarFicha(item){
+    var f=$('p-body').querySelector('tr.ficha-row[data-item="'+String(item).replace(/"/g,'\\"')+'"]');
+    if(f) f.innerHTML='<td colspan="6">'+fichaHTML(item)+'</td>';
+  }
+
+  function fichaHTML(item){
+    var p=Inventario.porItem(item);
+    if(!p) return '<div class="empty">Este producto ya no está.</div>';
+    var url=Inventario.getImagen(item);
+    var enServidor=Inventario.fotoEnServidor(item);
+    var hist=Inventario.historial(String(item)).slice(0,8);
+    return '<div class="ficha">'+
+      '<div>'+
+        '<div class="foto" style="'+(url?'background-image:url(\''+url+'\')':'')+'">'+
+          (url?'':'sin foto')+'</div>'+
+        '<div class="row" style="margin-top:8px">'+
+          '<label class="btn b-sec b-sm" style="cursor:pointer">'+(url?'Cambiar foto':'Subir foto')+
+            '<input type="file" accept="image/*" data-foto="'+esc(item)+'" hidden></label>'+
+          (url?'<button class="btn b-dg b-sm" data-fic="quitarfoto" data-item="'+esc(item)+'">Quitar</button>':'')+
+        '</div>'+
+        '<div class="dato" style="margin-top:6px">'+(enServidor?'La foto ya está en el sitio.':(url?'Foto solo en este equipo todavía.':'El catálogo la enseña sin foto.'))+'</div>'+
+      '</div>'+
+      '<div>'+
+        '<div class="row" style="margin-bottom:8px"><h3>'+esc(p.nombre)+'</h3>'+
+          '<button class="btn b-gh b-sm cerrar" data-fic="cerrar" data-item="'+esc(item)+'">Cerrar ficha</button></div>'+
+        '<div class="dato">ITEM <b class="mono">'+esc(p.item)+'</b> · Categoría <b>'+esc(p.categoria||'—')+'</b>'+
+          ' · Unidad <b>'+esc(p.unidad||'—')+'</b>'+(p.marca?' · Marca <b>'+esc(p.marca)+'</b>':'')+'</div>'+
+        '<div class="dato">Precio <b>'+(Number(p.precio)>0?money(p.precio):'sin precio')+'</b>'+
+          (Number(p.costo)>0?' · Costo <b>'+money(p.costo)+'</b>':'')+
+          ' · Existencia <b>'+nf(p.existencia)+'</b></div>'+
+        '<label class="dato" style="display:flex;gap:7px;align-items:center;margin:10px 0">'+
+          '<input type="checkbox" data-fic="destacado" data-item="'+esc(item)+'"'+(p.destacado?' checked':'')+'>'+
+          'Destacado en la portada del sitio</label>'+
+        '<h3 style="margin-top:10px">Historial de precio</h3>'+
+        (hist.length
+          ? '<table><thead><tr><th>Fecha</th><th>Antes</th><th>Después</th><th>Quién</th></tr></thead><tbody>'+
+            hist.map(function(c){
+              var f=new Date(c.fecha);
+              return '<tr><td class="mono">'+(isNaN(f)?esc(c.fecha):f.toLocaleDateString('es-SV',{day:'numeric',month:'short',year:'2-digit'}))+'</td>'+
+                '<td class="mono">'+money(c.anterior)+'</td><td class="mono"><b>'+money(c.nuevo)+'</b></td>'+
+                '<td>'+esc(c.empleado||'—')+(c.origen?' <span style="color:var(--s400)">('+esc(c.origen)+')</span>':'')+'</td></tr>';
+            }).join('')+'</tbody></table>'
+          : '<div class="dato">Sin cambios de precio registrados.</div>')+
+      '</div>'+
+    '</div>';
+  }
+
+  $('p-body').addEventListener('change',function(e){
+    var f=e.target.closest('input[data-foto]');
+    if(f){
+      var item=f.dataset.foto, file=f.files&&f.files[0];
+      if(!file) return;
+      toast('Subiendo la foto…');
+      Inventario.guardarImagen(item,file).then(function(){
+        toast('Foto guardada.'); refrescarFicha(item);
+        var tr=$('p-body').querySelector('tr[data-item="'+String(item).replace(/"/g,'\\"')+'"] td:nth-child(2)');
+        if(tr && tr.innerHTML.indexOf('>foto<')<0) tr.innerHTML+=' <span class="chip" style="background:var(--s100);color:var(--s600)">foto</span>';
+      }).catch(function(err){ toast(err.message||'No se pudo guardar la foto.',true); });
+      return;
+    }
+    var d=e.target.closest('input[data-fic="destacado"]');
+    if(d){
+      Inventario.setDestacado(d.dataset.item, d.checked).then(function(){
+        toast(d.checked?'Queda destacado en la portada.':'Ya no está destacado.');
+      });
+    }
+  });
+
+  $('p-body').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-fic]'); if(!b) return;
+    var item=b.dataset.item;
+    if(b.dataset.fic==='cerrar'){ verFicha(item); return; }
+    if(b.dataset.fic==='quitarfoto'){
+      if(!confirm('¿Quitar la foto de este producto?')) return;
+      Inventario.quitarImagen(item).then(function(){
+        toast('Foto quitada.'); refrescarFicha(item); pintarProductos();
+      });
+    }
+  });
+
+  /* ------------------------- alta de producto -------------------------- */
+  $('a-crear').addEventListener('click',function(){
+    var d={
+      nombre:$('a-nombre').value.trim(), categoria:$('a-cat').value.trim(),
+      precio:parseFloat(String($('a-precio').value).replace(',','.'))||0,
+      existencia:parseFloat(String($('a-exist').value).replace(',','.'))||0,
+      unidad:$('a-unidad').value.trim()||'Unidad',
+      codigo:$('a-codigo').value.trim(), item:$('a-item').value.trim()
+    };
+    if(!d.nombre) return toast('Ponle nombre al producto.',true);
+    var b=$('a-crear'); b.disabled=true;
+    Inventario.altaProducto(d).then(function(p){
+      b.disabled=false;
+      ['a-nombre','a-cat','a-precio','a-exist','a-unidad','a-codigo','a-item'].forEach(function(id){ $(id).value=''; });
+      toast('Creado: '+p.nombre+' (ITEM '+p.item+').');
+      $('q-prod').value=p.item; $('f-prod').value='';
+      pintarEstado(); pintarProductos();
+    }).catch(function(err){ b.disabled=false; toast(err.message||'No se pudo crear.',true); });
   });
 
   /* ==================================================================== */
