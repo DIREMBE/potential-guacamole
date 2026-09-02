@@ -33,6 +33,11 @@
   .h{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:clamp(26px,5vw,38px);letter-spacing:.01em;margin:0 0 6px}
   .sub{color:#98AEC3;font-size:15px;margin:0 0 32px}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+  /* Va ANTES que todo lo demás: `hidden` solo apaga lo que no traiga su propio
+     `display`, y aquí las tarjetas son `display:flex`. Sin esta línea, poner
+     hidden en una tarjeta no la esconde —se queda ahí, y alguien entra por la
+     puerta vieja creyendo que es la nueva. */
+  [hidden]{display:none!important}
   .tool{display:flex;flex-direction:column;gap:14px;background:#102A42;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:26px 24px;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}
   .tool:hover{transform:translateY(-3px);border-color:rgba(241,89,48,.5);box-shadow:0 16px 40px rgba(0,0,0,.4)}
   .tool .ic{width:52px;height:52px;border-radius:12px;background:#0C2036;display:flex;align-items:center;justify-content:center}

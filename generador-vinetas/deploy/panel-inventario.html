@@ -21,6 +21,10 @@
   --r:6px; --rl:10px;
 }
 *{box-sizing:border-box}
+/* `hidden` solo apaga lo que no traiga su propio `display`. Aquí se usa en las
+   equis de los buscadores y en varias tarjetas; basta con que alguien le ponga
+   un `display` a esas clases para que dejen de esconderse. Esto lo zanja. */
+[hidden]{display:none!important}
 body{margin:0;background:var(--s50);color:var(--s900);font-family:'Barlow',system-ui,sans-serif;font-size:15px;-webkit-font-smoothing:antialiased}
 h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.04em;margin:0;line-height:1.05}
 a{color:var(--blue-2)}

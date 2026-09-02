@@ -56,6 +56,20 @@ window.Inventario = (function () {
   function txDone(t) { return new Promise((res, rej) => { t.oncomplete = () => res(); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error); }); }
   function store(name, mode) { return db.transaction(name, mode || 'readonly').objectStore(name); }
 
+  /* Guardar y esperar a que quede GUARDADO DE VERDAD.
+
+     `reqP` avisa en cuanto la petición sale bien, pero en ese momento la
+     transacción todavía no se ha confirmado. Si el navegador cambia de página
+     justo ahí —el empleado pone una oferta y toca otro enlace enseguida—,
+     IndexedDB aborta la transacción y el cambio se pierde sin decir nada.
+     Esperando a `oncomplete` eso no pasa: cuando esto termina, está escrito. */
+  async function guardar(nombre, hacer) {
+    const st = store(nombre, 'readwrite');
+    const r = await reqP(hacer(st));
+    await txDone(st.transaction);
+    return r;
+  }
+
   function openDB() {
     return new Promise((res, rej) => {
       const req = indexedDB.open(DB_NAME, DB_VER);
@@ -107,7 +121,7 @@ window.Inventario = (function () {
     }
   }
 
-  async function saveMeta() { await reqP(store(COLS.meta, 'readwrite').put({ k: 'meta', v: meta })); }
+  async function saveMeta() { await guardar(COLS.meta, (st) => st.put({ k: 'meta', v: meta })); }
 
   /* --------------------- Importar Excel (.xlsx) -------------------------- */
   // Mapea encabezados del reporte FelTec a nuestros campos.
@@ -491,7 +505,7 @@ window.Inventario = (function () {
     // libera el índice del código anterior si otro producto no lo usa
     if (p.codigo && byCodigo.get(p.codigo) === p) byCodigo.delete(p.codigo);
     p.codigo = nuevo;
-    await reqP(store(COLS.productos, 'readwrite').put(p));
+    await guardar(COLS.productos, (st) => st.put(p));
     if (nuevo) byCodigo.set(nuevo, p);
     return true;
   }
@@ -505,12 +519,12 @@ window.Inventario = (function () {
     if (nuevo <= 0 || Math.abs(nuevo - anterior) < 0.0001) return false;
     p.precio = nuevo;
     p.tocadoEn = Date.now();
-    await reqP(store(COLS.productos, 'readwrite').put(p));
+    await guardar(COLS.productos, (st) => st.put(p));
     const entry = {
       item: p.item, nombre: p.nombre, anterior, nuevo,
       fecha: new Date().toISOString(), empleado: empleado || '', origen: origen || 'viñetas',
     };
-    await reqP(store(COLS.cambios, 'readwrite').add(entry));
+    await guardar(COLS.cambios, (st) => st.add(entry));
     cambios.push(entry);
     _editado(p);
     emitir('precio', { item: p.item, nuevo });
@@ -590,7 +604,7 @@ window.Inventario = (function () {
     if (!byItem.get(key)) throw new Error('El producto ya no está en el inventario (ITEM ' + key + ').');
     const data = await _procesarImagen(file);
     try {
-      await reqP(store(COLS.imagenes, 'readwrite').put({ item: key, data, t: Date.now() }));
+      await guardar(COLS.imagenes, (st) => st.put({ item: key, data, t: Date.now() }));
     } catch (e) {
       if (e && /quota/i.test(e.name + ' ' + e.message)) {
         throw new Error('Ya no hay espacio en este navegador para más fotos. Publica las fotos al sitio y luego borra las que no necesites.');
@@ -807,7 +821,7 @@ window.Inventario = (function () {
     if (numOf(p.precio) > 0 && p.activo === false && p.bajaMotivo === 'sin-precio') {
       p.activo = true;
       p.bajaMotivo = '';
-      await reqP(store(COLS.productos, 'readwrite').put(p));
+      await guardar(COLS.productos, (st) => st.put(p));
       emitir('activo', { item: p.item, activo: true });
       _empujar([{ item: p.item, activo: true, bajaMotivo: '' }]);
       return true;
@@ -824,7 +838,7 @@ window.Inventario = (function () {
     p.activoManual = !!activo;
     p.bajaMotivo = activo ? '' : '';
     p.tocadoEn = Date.now();
-    await reqP(store(COLS.productos, 'readwrite').put(p));
+    await guardar(COLS.productos, (st) => st.put(p));
     meta.cambioSinPublicar = Date.now();
     await saveMeta();
     _editado(p);
@@ -877,7 +891,7 @@ window.Inventario = (function () {
       costo: numOf(datos.costo), marca: String(datos.marca || '').trim(),
       codigo: codigo, destacado: false, activo: true, tocadoEn: Date.now(),
     };
-    await reqP(store(COLS.productos, 'readwrite').put(p));
+    await guardar(COLS.productos, (st) => st.put(p));
     meta.cambioSinPublicar = Date.now();
     await saveMeta();
     await loadAll();
@@ -904,7 +918,7 @@ window.Inventario = (function () {
     }
     p.codigo = c;
     p.tocadoEn = Date.now();
-    await reqP(store(COLS.productos, 'readwrite').put(p));
+    await guardar(COLS.productos, (st) => st.put(p));
     meta.cambioSinPublicar = Date.now();
     await saveMeta();
     await loadAll();
@@ -954,18 +968,27 @@ window.Inventario = (function () {
     if (numOf(p.precio) !== oferta) {
       await actualizarPrecio(item, oferta, empleado || '', 'promoción');
     }
-    const q = byItem.get(String(item));
+    /* Aquí NO se vuelve a leer el precio del índice. Entre la línea de arriba
+       y ésta puede haberse recargado la base (init todavía en marcha, o un
+       cambio que llegó de otro equipo), y entonces `byItem` trae objetos
+       nuevos leídos del disco —con el precio de ANTES si la escritura de
+       `actualizarPrecio` aún no se había confirmado cuando se leyeron—.
+       Eso guardaba y compartía la oferta con el precio viejo: promoAntes y
+       precio iguales, o sea ninguna oferta. El precio que debe quedar es
+       `oferta`, que es el que nos pidieron: se pone y punto. */
+    const q = byItem.get(String(item)) || p;
+    q.precio = oferta;
     q.promoAntes = previo;
     q.promoHasta = String(hasta || '').trim();
     q.tocadoEn = Date.now();
-    await reqP(store(COLS.productos, 'readwrite').put(q));
+    await guardar(COLS.productos, (st) => st.put(q));
     meta.cambioSinPublicar = Date.now();
     await saveMeta();
     await loadAll();
     _editado(byItem.get(String(item)));
     emitir('promo', { item: q.item });
-    _empujar([{ item: q.item, precio: numOf(q.precio),
-                promoAntes: q.promoAntes, promoHasta: q.promoHasta }]);
+    _empujar([{ item: q.item, precio: oferta,
+                promoAntes: previo, promoHasta: q.promoHasta }]);
     return true;
   }
 
@@ -977,17 +1000,22 @@ window.Inventario = (function () {
     if (restaurarPrecio && antes > 0) {
       await actualizarPrecio(item, antes, empleado || '', 'fin de promoción');
     }
-    const q = byItem.get(String(item));
+    /* Mismo cuidado que en setPromo: el precio que debe quedar se sabe aquí
+       —el restaurado, o el que ya tenía—, así que no se vuelve a leer de un
+       índice que puede haberse recargado mientras tanto. */
+    const q = byItem.get(String(item)) || p;
+    const queda = (restaurarPrecio && antes > 0) ? antes : numOf(q.precio);
+    q.precio = queda;
     q.promoAntes = 0;
     q.promoHasta = '';
     q.tocadoEn = Date.now();
-    await reqP(store(COLS.productos, 'readwrite').put(q));
+    await guardar(COLS.productos, (st) => st.put(q));
     meta.cambioSinPublicar = Date.now();
     await saveMeta();
     await loadAll();
     _editado(byItem.get(String(item)));
     emitir('promo', { item: q.item });
-    _empujar([{ item: q.item, precio: numOf(q.precio), promoAntes: 0, promoHasta: '' }]);
+    _empujar([{ item: q.item, precio: queda, promoAntes: 0, promoHasta: '' }]);
     return true;
   }
 
@@ -1094,7 +1122,7 @@ window.Inventario = (function () {
         costo: 0, marca: String(o.marca || ''), codigo: String(o.codigo || ''),
         destacado: false, activo: o.activo !== false, tocadoEn: Date.now(),
       };
-      await reqP(store(COLS.productos, 'readwrite').put(p));
+      await guardar(COLS.productos, (st) => st.put(p));
       return true;
     }
 
@@ -1115,7 +1143,7 @@ window.Inventario = (function () {
       toco = true;
     }
     if (!toco) return false;
-    await reqP(store(COLS.productos, 'readwrite').put(p));
+    await guardar(COLS.productos, (st) => st.put(p));
     return true;
   }
 
@@ -1383,7 +1411,7 @@ window.Inventario = (function () {
   }
   async function quitarImagen(item) {
     const key = String(item);
-    await reqP(store(COLS.imagenes, 'readwrite').delete(key));
+    await guardar(COLS.imagenes, (st) => st.delete(key));
     imagenes.delete(key);
     imagenesT.delete(key);
     await _borrarFotoServidor(key);
@@ -1412,7 +1440,7 @@ window.Inventario = (function () {
     if (!p) return false;
     p.destacado = !!valor;
     p.tocadoEn = Date.now();
-    await reqP(store(COLS.productos, 'readwrite').put(p));
+    await guardar(COLS.productos, (st) => st.put(p));
     meta.cambioSinPublicar = Date.now();
     saveMeta();
     _editado(p);
@@ -1430,7 +1458,7 @@ window.Inventario = (function () {
     const p = byItem.get(String(item));
     if (!p) return false;
     p.tocadoEn = Date.now();
-    try { await reqP(store(COLS.productos, 'readwrite').put(p)); } catch (e) { return false; }
+    try { await guardar(COLS.productos, (st) => st.put(p)); } catch (e) { return false; }
     return true;
   }
   // Versión ligera para el catálogo público: agrupa las escrituras.
