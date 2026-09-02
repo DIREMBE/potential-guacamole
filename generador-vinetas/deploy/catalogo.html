@@ -599,7 +599,10 @@ footer.ft{border-top:1px solid var(--line);text-align:center;color:var(--tx-3);f
   if(window.Inventario){
     // Si un empleado cambia un precio o sube una foto, el catálogo se refresca solo.
     Inventario.onCambio(function(){ renderCats(); renderGrid(); renderCart(); });
-    Inventario.init(['./catalogo-data.json','./inventario-data.json']).then(function(){
+    /* `publica:true` = la versión del catálogo de la base guardada en el sitio
+       (sin dados de baja y sin campos internos). Si el sitio no la tuviera, se
+       cae al archivo publicado de siempre. */
+    Inventario.init(['./catalogo-data.json','./inventario-data.json'],{publica:true}).then(function(){
       renderCats(); renderGrid(); renderCart();
       // Búsqueda que viene del inicio  (catalogo.html?q=...)
       var q = params.get('q');

@@ -24,8 +24,10 @@ analisis-inventario.html NUEVO · Analiza el reporte de FelTec: métricas, error
 conversor-marcador.html  NUEVO · Convierte la exportación del marcador
                          biométrico en el cuadro semanal de asistencia.
 netlify.toml             Configuración (necesaria para las fotos automáticas).
-netlify/functions/       Funciones del servidor: entrada de empleados, fotos y
-                         NUEVO · cambios de inventario compartidos.
+netlify/functions/       Funciones del servidor: entrada de empleados, fotos,
+                         cambios de inventario compartidos y NUEVO · la base
+                         del inventario guardada en el sitio (base.mjs), que es
+                         lo que quita el paso de publicar tras el Excel mensual.
 sincronia.js             NUEVO · La línea de arriba de las pantallas internas
                          que dice si los cambios se están compartiendo.
 recuperar-fotos.js       TEMPORAL · Sube al sitio las fotos que se quedaron
@@ -63,11 +65,12 @@ assets/vendor/           NUEVO · React, que antes se bajaba de un servidor
 ## Qué cambió en esta versión
 
 **Lo primero, porque cambia el día a día: se acabó descargar archivos y volver
-a subir el sitio para cada precio.** Cuando Carlos corrige un precio en su
-teléfono, o pone una oferta, o da de baja algo, el cambio sale al momento y lo
-ven los demás equipos y el cliente en el catálogo. Sin publicar, sin subir
-nada. Solo la carga del Excel mensual completo sigue necesitando publicación.
-Está explicado en **Cómo se comparten los cambios**, más abajo.
+a subir el sitio.** Cuando Carlos corrige un precio en su teléfono, o pone una
+oferta, o da de baja algo, el cambio sale al momento y lo ven los demás equipos
+y el cliente en el catálogo. Y **la carga del Excel mensual tampoco necesita ya
+publicar**: se pulsa *Guardar en el sitio* y listo. Los `.json` publicados
+quedan de respaldo, por si el sitio no respondiera. Está explicado en **Cómo se
+comparten los cambios**, más abajo.
 
 Y otras seis, de la más importante a la menos.
 
@@ -312,7 +315,10 @@ oferta sin salir de la pantalla. Hay filtros rápidos: *con existencia y sin
 precio*, *dados de baja*, *en oferta*. Todo se comparte con los demás equipos
 al instante.
 
-**Paso 4 · Publicar.** Los archivos, solo cuando toca.
+**Paso 4 · Guardar en el sitio.** Solo después del Excel mensual. Un botón: el
+inventario entero sale hacia el sitio y los demás equipos lo recogen solos. No
+se descarga ni se sube nada. Ahí mismo se lee qué base tiene el sitio ahora
+—cuántos productos, de qué día, quién la guardó.
 
 Las ventanas de antes siguen ahí, enlazadas abajo como **Herramientas aparte**:
 el análisis con el sugerido de compras, administrar productos completo, fotos e
@@ -558,7 +564,7 @@ el sitio. Ahora los cambios sueltos se comparten solos.
 | **Producto nuevo** creado a mano | **Todos, al instante.** |
 | **Código de barras** corregido | **Todos, al instante.** |
 | **Foto** de producto | **Todos, al instante.** |
-| **Cargar el Excel mensual completo** (miles de filas) | Solo ese equipo → hay que publicar. |
+| **Cargar el Excel mensual completo** (miles de filas) | **Todos**, en cuanto pulses *Guardar en el sitio*. |
 
 Arriba de cada pantalla interna hay una línea que lo dice sin adornos:
 
@@ -574,43 +580,46 @@ tener que recargar.
 
 ### ¿Y entonces cuándo hay que publicar?
 
-Dos casos, nada más:
+**Para el inventario, ya no hay que publicar nunca** — ni siquiera después del
+Excel mensual. Es lo último que cambió, y era lo que faltaba.
 
-1. **Después de cargar el Excel mensual de FelTec.** Son miles de filas: eso se
-   publica, no se sincroniza.
-2. **De vez en cuando, para dejarlo todo asentado.** Los cambios sueltos se van
-   acumulando en el servidor; al publicar entran en el archivo y el servidor se
-   vacía solo. Si nunca publicas, a los 4.000 cambios el sistema avisa y deja de
-   compartir hasta que lo hagas.
+(Queda una sola cosa que sigue siendo un archivo: la tira de **15 productos
+recientes de la portada**, con sus fotitos. Se hace aparte a propósito, para que
+el cliente no tenga que bajarse el catálogo entero solo para ver la portada. Se
+refresca de vez en cuando desde el paso 4 → *Descargar los tres* → subir
+`showcase-data.json`. Si no la refrescas, la portada simplemente enseña
+productos de antes; no se rompe nada.)
 
-Para el día a día —un precio, una oferta, dar de baja algo que ya no se vende—
-**ya no hay que hacer nada.**
+Antes, la carga del mes tocaba miles de filas y eso no cabía como “cambios
+sueltos”: había que descargar dos `.json`, meterlos en la carpeta del sitio y
+volver a subirlo entero. Ahora el propio panel **manda el inventario al sitio**
+y los demás equipos —y el catálogo del cliente— lo recogen solos.
 
-### Publicar (3 pasos)
+### Guardar el inventario en el sitio (1 paso)
 
-1. En **Inventario y catálogo** verás arriba un aviso amarillo:
-   *“Tienes X cambios de precio sin publicar”*. Pulsa **Publicar precios**
-   (o **Publicar todo** si las fotos aún no son automáticas). Si estás en medio
-   de otra cosa, pulsa **Ahora no** y el aviso se quita hasta que recargues.
-2. Se descargan los archivos: `inventario-data.json`, **`catalogo-data.json`**
-   y `showcase-data.json` (y `imagenes-data.json` solo si las fotos no son
-   automáticas).
-3. Cópialos en la carpeta de tu sitio **reemplazando los anteriores** (junto a
-   `index.html`) y súbela a Netlify.
+Después de aplicar el Excel del mes, en el tablero ve a **Ajustar y publicar →
+paso 4** y pulsa **Guardar en el sitio**. Ya está: no se descarga nada, no se
+sube nada.
 
-> **Son dos archivos, no uno.** `catalogo-data.json` es el que baja el cliente
-> en su teléfono: pesa 1 MB en vez de 3 porque solo lleva los 6.316 productos
-> que se le pueden enseñar y solo los datos que se ven en pantalla.
-> `inventario-data.json` es la base del panel y trae los 11.267, incluidos los
-> dados de baja. **Sube siempre los dos**: si subes solo uno, el catálogo y el
-> panel quedan desfasados.
+Mientras se manda verás *“parte 3 de 6”*. Va por partes porque son 11.267
+productos, unos 3 MB, y de un solo golpe no pasa. Tarda unos segundos.
 
-Cuando termines, el aviso amarillo desaparece. Si vuelve a aparecer, es que hay
-cambios nuevos sin publicar.
+> **Si se corta el internet a la mitad, no pasa nada.** El sitio solo cambia de
+> base cuando han llegado **todas** las partes. Hasta ese momento, todo el mundo
+> sigue viendo la base anterior **completa** — nunca media base. Te dirá que no
+> se pudo y vuelves a pulsar.
 
-> Al publicar, el sistema le avisa al servidor que esos cambios ya van dentro
-> del archivo nuevo, y los suelta. Lo que llegue mientras subes el sitio se
-> queda guardado: no se pierde nada por publicar en mal momento.
+Cada equipo la recoge en cuanto entra un empleado, y el cliente en cuanto abre
+el catálogo. En el paso 4 se lee qué base tiene el sitio ahora mismo: cuántos
+productos, de qué día y quién la guardó.
+
+**Los archivos publicados no desaparecen: quedan de respaldo.** Si algún día el
+sitio no respondiera, todo sigue funcionando con ellos, y dentro del paso 4
+sigue estando —plegado— el método antiguo de descargar los tres `.json`.
+
+> El costo de compra **no se manda**. La parte que baja el cliente se sirve sin
+> clave, así que ahí solo van los datos que se le enseñan; la del panel pide la
+> clave del empleado. Ninguna de las dos lleva costos.
 
 ---
 

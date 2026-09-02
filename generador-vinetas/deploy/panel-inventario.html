@@ -288,23 +288,36 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
 
   <!-- =============================== PASO 4 =========================== -->
   <div class="card paso" id="paso4" data-flujo="ajustar">
-    <div class="card-h"><span class="np">4</span><h2>Publicar al sitio</h2>
+    <div class="card-h"><span class="np">4</span><h2>Guardar en el sitio</h2>
       <span class="hint">Solo hace falta tras cargar el Excel mensual</span>
       <span class="estado" id="p4-estado"></span>
     </div>
     <div class="card-b">
       <div class="row">
-        <button class="btn b-pri" id="pub-todo">Publicar todo (descarga los archivos)</button>
-        <button class="btn b-gh b-sm" id="pub-datos">Solo inventario-data.json</button>
-        <button class="btn b-gh b-sm" id="pub-cat">Solo catalogo-data.json</button>
-        <button class="btn b-gh b-sm" id="pub-show">Solo showcase-data.json</button>
+        <button class="btn b-pri" id="pub-sitio">Guardar en el sitio</button>
+        <span class="estado" id="pub-prog"></span>
       </div>
       <div class="note" id="pub-ayuda">
-        Se descargan a tu carpeta de <b>Descargas</b>. Cópialos dentro de la carpeta
-        del sitio <b>reemplazando</b> los anteriores (junto a <code>index.html</code>) y
-        sube la carpeta a Netlify. <b>Sube siempre los dos JSON</b>: uno es la base del
-        panel y el otro el que baja el cliente.
+        Manda el inventario completo al sitio. Los demás equipos y el catálogo del
+        cliente lo recogen solos: <b>no hay que descargar ni subir nada</b>.
+        Mientras se manda, todo el mundo sigue viendo la versión anterior completa;
+        el cambio ocurre de golpe al final.
       </div>
+      <details class="note" id="pub-viejo">
+        <summary>Si el sitio no responde: descargar los archivos (método antiguo)</summary>
+        <div class="row" style="margin-top:8px">
+          <button class="btn b-gh b-sm" id="pub-todo">Descargar los tres</button>
+          <button class="btn b-gh b-sm" id="pub-datos">Solo inventario-data.json</button>
+          <button class="btn b-gh b-sm" id="pub-cat">Solo catalogo-data.json</button>
+          <button class="btn b-gh b-sm" id="pub-show">Solo showcase-data.json</button>
+        </div>
+        <p style="margin:8px 0 0">
+          Se descargan a tu carpeta de <b>Descargas</b>. Cópialos dentro de la carpeta
+          del sitio <b>reemplazando</b> los anteriores (junto a <code>index.html</code>) y
+          sube la carpeta a Netlify. <b>Sube siempre los dos JSON</b>: uno es la base del
+          panel y el otro el que baja el cliente.
+        </p>
+      </details>
     </div>
   </div>
 
@@ -453,7 +466,21 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
       caja(nf(sinP),'Con stock y sin precio', sinP?'w':'') +
       caja(nf(bajas),'Dados de baja','') +
       caja(nf(pend.total),'Sin publicar', pend.total?'d':'o');
-    $('p4-estado').textContent = pend.total ? pend.total+' cambio(s) sin publicar' : 'todo publicado';
+
+    /* Qué base tiene el sitio ahora mismo, y si la de aquí es más nueva. */
+    var b=Inventario.estadoBaseServidor();
+    var txt = pend.total ? pend.total+' cambio(s) sin publicar' : 'todo publicado';
+    if(b.comprobado && !b.disponible){
+      txt='el sitio no responde — usa la descarga de archivos';
+    }else if(b.comprobado && b.hay){
+      var f=new Date(b.generatedAt);
+      txt='en el sitio: '+nf(b.count)+' productos, '+
+          (isNaN(f)?'—':f.toLocaleDateString('es-SV',{day:'numeric',month:'short'}))+
+          (b.por?' ('+b.por+')':'');
+    }else if(b.comprobado){
+      txt='el sitio todavía no tiene la base guardada';
+    }
+    $('p4-estado').textContent = txt;
     $('p3-estado').textContent = sinP ? sinP+' producto(s) esperan precio' : '';
   }
   function caja(v,l,cls){return '<div class="sbox '+(cls||'')+'"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>';}
@@ -1085,8 +1112,46 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
   });
 
   /* ==================================================================== */
-  /*  PASO 4 — PUBLICAR                                                   */
+  /*  PASO 4 — GUARDAR EN EL SITIO                                        */
   /* ==================================================================== */
+  var guardando=false;
+  $('pub-sitio').addEventListener('click',function(){
+    if(guardando) return;
+    var st=Inventario.stats();
+    if(!st.count) return toast('No hay inventario que guardar.',true);
+    if(!confirm('Se va a mandar el inventario completo ('+nf(st.count)+' productos) al sitio.\n'+
+                'Los demás equipos lo verán en cuanto termine.\n\n¿Seguimos?')) return;
+
+    guardando=true;
+    var b=$('pub-sitio'); b.disabled=true; b.textContent='Guardando…';
+    Inventario.guardarBaseEnServidor(function(p){
+      $('pub-prog').textContent = p.fase==='cerrando'
+        ? 'terminando…'
+        : 'parte '+p.parte+' de '+p.partes+' ('+nf(p.enviados)+' de '+nf(p.total)+')';
+    }).then(function(r){
+      if(r.ok){
+        $('pub-prog').textContent='';
+        toast('Guardado en el sitio: '+nf(r.count)+' productos. Ya no hace falta publicar nada.');
+        pintarEstado();
+      }else{
+        $('pub-prog').textContent='';
+        var por={'sin-clave':'Hay que entrar con tu clave de empleado primero.',
+                 'sin-datos':'No hay inventario que guardar.',
+                 'sin-servidor':'El sitio no respondió. Usa la descarga de archivos, abajo.',
+                 'clave':'La clave no sirve para guardar. Vuelve a entrar.',
+                 'rechazado':'El sitio rechazó los datos.',
+                 'incompleta':'Se cortó a la mitad; no se cambió nada. Intenta de nuevo.'};
+        toast(por[r.motivo]||('No se pudo guardar ('+(r.motivo||'red')+'). No se cambió nada en el sitio.'),true);
+        $('pub-viejo').open=true;
+      }
+    }).catch(function(e){
+      $('pub-prog').textContent='';
+      toast(e.message||'No se pudo guardar.',true);
+    }).then(function(){
+      guardando=false; b.disabled=false; b.textContent='Guardar en el sitio';
+    });
+  });
+
   function publicar(cuales){
     var n=0;
     if(cuales.datos){ Inventario.publicar(); n++; }

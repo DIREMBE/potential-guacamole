@@ -374,9 +374,15 @@ window.Inventario = (function () {
              compartidos: paraCompartir.length <= INV_MAX_DE_GOLPE ? paraCompartir.length : 0 };
   }
 
-  /* ------------------- Cargar base publicada (JSON) ---------------------- */
-  async function importarBaseline(data) {
+  /* ------------------- Cargar base publicada (JSON) ----------------------
+     `op.parcial` es para la base del CLIENTE, que solo trae lo que se enseña:
+     faltan los ~4.900 dados de baja. En el equipo de un empleado el catálogo y
+     el panel comparten la misma base local, así que abrir el catálogo NO puede
+     llevarse por delante lo que el panel necesita. Con `parcial` lo que no
+     viene se queda como está, en vez de borrarse.                           */
+  async function importarBaseline(data, op) {
     if (!data || !Array.isArray(data.productos)) return 0;
+    const parcial = !!(op && op.parcial);
 
     /* Lo que este equipo ya tenía. Cargar la base publicada NO puede borrar el
        trabajo hecho aquí: códigos de barra asignados, destacados, si el
@@ -395,7 +401,7 @@ window.Inventario = (function () {
     }
 
     const st = store(COLS.productos, 'readwrite');
-    st.clear();
+    if (!parcial) st.clear();
     let count = 0, preciosConservados = 0;
     for (const p of data.productos) {
       const item = String(p.item).trim();
@@ -435,6 +441,10 @@ window.Inventario = (function () {
     }
     meta.lastUpload = data.generatedAt || new Date().toISOString();
     meta.baselineAt = data.generatedAt || null;
+    /* Si lo que se cargó fue la base del cliente, este equipo NO tiene la base
+       completa aunque la fecha diga que está al día. El panel lo mira para
+       volver a pedir la entera en vez de creerse actualizado. */
+    meta.baselineParcial = parcial;
     meta.count = count;
     await saveMeta();
     await loadAll();
@@ -1266,18 +1276,30 @@ window.Inventario = (function () {
   }
 
   /* Recoger ahora mismo lo que hayan hecho los demás (botón "actualizar"). */
-  async function sincronizar() {
+  async function sincronizar(opciones) {
+    const op = opciones || {};
     await _mandarPendiente();      // primero lo de uno, para no pisarlo luego
     await _reintentarCola();
+
+    /* ¿Subieron una base nueva desde otro equipo? Va ANTES de los cambios
+       sueltos, porque esos se aplican encima de ella. Al abrir la pantalla
+       puede que todavía no hubiera clave; ahora normalmente ya la hay. */
+    let base = 0;
+    if (op.base !== false) {
+      try { base = await _bajarBaseServidor({ publica: !!op.publica }); } catch (e) { base = 0; }
+    }
     const n = await _bajarCambiosServidor();
-    return { recibidos: n, estado: estadoSincronizacion() };
+    return { recibidos: n, base, estado: estadoSincronizacion() };
   }
 
   /* ==================== FOTOS EN EL SERVIDOR (automático) ================
      Si el sitio tiene la función de fotos (Netlify Blobs), las fotos se suben
      solas y se ven en todos los dispositivos sin publicar ni resubir nada.
      Si no está disponible, todo sigue funcionando con el método manual.       */
-  function setClaveServidor(c) { claveServidor = String(c || ''); }
+  function setClaveServidor(c) {
+    claveServidor = String(c || '');
+    _reintentarBaseConClave();     // ya se puede pedir la base entera del sitio
+  }
   function servidorDisponible() { return servidorActivo; }
 
   /* ---------------------- Clave para subir fotos -------------------------
@@ -1293,6 +1315,7 @@ window.Inventario = (function () {
       if (claveFotos) localStorage.setItem(LS_CLAVE_FOTOS, claveFotos);
       else localStorage.removeItem(LS_CLAVE_FOTOS);
     } catch (e) {}
+    _reintentarBaseConClave();
     return claveFotos;
   }
   function getClaveFotos() { return claveFotos; }
@@ -1514,6 +1537,201 @@ window.Inventario = (function () {
     return data.count;
   }
 
+  /* ================= LA BASE, GUARDADA EN EL SITIO ======================
+     Los cambios sueltos (un precio, una oferta) ya se comparten solos. Lo
+     que seguía atando a los archivos era la carga del Excel mensual: toca
+     miles de productos y obligaba a descargar dos .json y volver a subir el
+     sitio entero.
+
+     Con esto la base entera se guarda en el sitio (/api/base) y los demás
+     equipos la recogen solos. Los .json publicados se quedan de respaldo: si
+     el servidor no estuviera, todo sigue funcionando con ellos.
+
+     Va POR PARTES porque son 11.267 productos (unos 3 MB) y de un golpe no
+     pasa. El servidor solo la da por buena cuando llegaron TODAS: si se corta
+     el internet a la mitad, no queda una base coja, simplemente no cambia
+     nada y se vuelve a intentar.                                          */
+  const API_BASE = '/api/base';
+  const BASE_POR_PARTE = 2000;
+  let baseEstado = { comprobado: false, disponible: false, hay: false,
+                     generatedAt: '', por: '', count: 0, error: '' };
+
+  function estadoBaseServidor() { return Object.assign({}, baseEstado); }
+
+  async function _metaBaseServidor() {
+    try {
+      const r = await fetch(API_BASE, { cache: 'no-store' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      const d = await r.json();
+      baseEstado = {
+        comprobado: true, disponible: d.disponible !== false,
+        hay: !!d.hay, generatedAt: d.generatedAt || '', por: d.por || '',
+        count: d.count || 0, partes: d.partes || 0, subida: d.subida || '', error: '',
+      };
+      return baseEstado.disponible ? d : null;
+    } catch (e) {
+      baseEstado = Object.assign({}, baseEstado, { comprobado: true, disponible: false, error: 'red' });
+      return null;
+    }
+  }
+
+  /* Trae la base del sitio y la deja como base de este equipo.
+     `publica` = la versión del cliente (sin dados de baja, sin campos
+     internos); es la única que se puede pedir sin clave.                   */
+  let _bajandoBase = null;          // una a la vez: reescribe la base entera
+  let _baseFaltaClave = false;      // se saltó porque todavía no había clave
+  let _arranque = null;             // lo que está haciendo init()
+
+  async function _bajarBaseServidor(opciones) {
+    if (_bajandoBase) { try { await _bajandoBase; } catch (e) {} }
+    _bajandoBase = _bajarBaseServidorYa(opciones || {});
+    try { return await _bajandoBase; } finally { _bajandoBase = null; }
+  }
+
+  /* Al abrir una pantalla del panel todavía no hay clave: el empleado no ha
+     escrito la suya. Sin clave no se puede pedir la base del panel, así que se
+     carga el archivo publicado y queda apuntado que faltó. En cuanto entra, se
+     vuelve a intentar y se queda con la del sitio si es más nueva. */
+  function _reintentarBaseConClave() {
+    if (!_baseFaltaClave || !_claveEnvio()) return;
+    _baseFaltaClave = false;
+    Promise.resolve(_arranque).catch(() => {})
+      .then(() => _bajarBaseServidor())
+      .then((n) => { if (n) emitir('sincronizado', { origen: 'base', count: n }); })
+      .catch(() => { _baseFaltaClave = true; });
+  }
+
+  async function _bajarBaseServidorYa(opciones) {
+    const op = opciones || {};
+    const d = op.meta || await _metaBaseServidor();
+    if (!d || !d.hay) return 0;
+
+    const nueva = d.generatedAt || '';
+    /* Si aquí solo está la base del cliente (le faltan los dados de baja), el
+       panel pide la completa aunque la fecha diga que está al día. */
+    const cojo = !op.publica && !!meta.baselineParcial;
+    if (!op.forzar && !cojo && productos.length && !(nueva && nueva > (meta.baselineAt || ''))) return 0;
+
+    const clave = _claveEnvio();
+    const full = !op.publica && !!clave;
+    /* Sin clave no se puede pedir la base del panel, y la del cliente no
+       sirve para el panel: le faltan los dados de baja. Mejor quedarse con el
+       archivo publicado que cargar media base — y volver por ella cuando el
+       empleado entre. */
+    if (!full && !op.publica) { _baseFaltaClave = true; return 0; }
+
+    const partes = full ? (d.partes || 0) : (d.partesCatalogo || d.partes || 0);
+    if (!partes) return 0;
+
+    const todos = [];
+    for (let i = 0; i < partes; i++) {
+      const cab = full ? { 'x-fsj-clave': clave } : undefined;
+      const r = await fetch(API_BASE + '?parte=' + i + (full ? '&full=1' : ''), { headers: cab });
+      if (!r.ok) throw new Error('no llegó la parte ' + i + ' (' + r.status + ')');
+      const t = await r.json();
+      if (!t.ok || !Array.isArray(t.productos)) throw new Error('parte ' + i + ' vino mal');
+      for (const p of t.productos) todos.push(p);
+      if (typeof op.onPaso === 'function') op.onPaso({ parte: i + 1, partes, recibidos: todos.length });
+    }
+    if (!todos.length) return 0;
+
+    const n = await importarBaseline({ generatedAt: nueva, count: todos.length, productos: todos },
+                                      { parcial: !full });
+    emitir('base-del-servidor', { count: n, generatedAt: nueva, por: d.por || '' });
+    return n;
+  }
+
+  function _marcaDeSubida() {
+    return 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  async function _postBase(cuerpo, intentos) {
+    let ultimo = null;
+    for (let i = 0; i < (intentos || 3); i++) {
+      try {
+        const r = await fetch(API_BASE, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(cuerpo),
+        });
+        const d = await r.json().catch(() => null);
+        if (r.ok && d && d.ok) return d;
+        /* Clave mala o trozo rechazado: reintentar no arregla nada. */
+        if (r.status === 401 || r.status === 400 || r.status === 413) {
+          const e = new Error((d && d.error) || ('http ' + r.status));
+          e.motivo = r.status === 401 ? 'clave' : 'rechazado';
+          throw e;
+        }
+        ultimo = new Error((d && d.error) || ('http ' + r.status));
+        ultimo.motivo = r.status === 409 ? 'incompleta' : 'servidor';
+      } catch (e) {
+        if (e.motivo === 'clave' || e.motivo === 'rechazado') throw e;
+        ultimo = e;
+        if (!ultimo.motivo) ultimo.motivo = 'red';
+      }
+      await new Promise((res) => setTimeout(res, 600 * (i + 1)));
+    }
+    throw ultimo || new Error('no se pudo guardar');
+  }
+
+  /* Sube la base entera. Devuelve { ok, count, partes } o { ok:false, motivo }.
+     Mientras sube, los demás siguen viendo la base anterior COMPLETA; solo al
+     final se cambia, de golpe.                                             */
+  async function guardarBaseEnServidor(onPaso) {
+    if (!_claveEnvio()) return { ok: false, motivo: 'sin-clave' };
+    if (!productos.length) return { ok: false, motivo: 'sin-datos' };
+
+    const d = await _metaBaseServidor();
+    if (!baseEstado.disponible && !d) return { ok: false, motivo: 'sin-servidor' };
+
+    const lista = productos.map((p) => ({
+      item: p.item, nombre: p.nombre, categoria: p.categoria,
+      unidad: p.unidad, existencia: p.existencia, precio: p.precio, codigo: p.codigo || '',
+      marca: p.marca || '',
+      promoAntes: p.promoAntes || 0, promoHasta: p.promoHasta || '',
+      destacado: !!p.destacado, activo: p.activo !== false,
+      bajaMotivo: p.bajaMotivo || '', activoManual: !!p.activoManual,
+      tocadoEn: p.tocadoEn || 0,
+    }));
+    /* El costo de compra NO va: la parte del catálogo se sirve sin clave. */
+
+    const subida = _marcaDeSubida();
+    const generatedAt = new Date().toISOString();
+    const partes = Math.ceil(lista.length / BASE_POR_PARTE);
+    let countCatalogo = 0;
+
+    try {
+      for (let i = 0; i < partes; i++) {
+        if (typeof onPaso === 'function') {
+          onPaso({ fase: 'subiendo', parte: i + 1, partes, enviados: i * BASE_POR_PARTE, total: lista.length });
+        }
+        const r = await _postBase({
+          clave: _claveEnvio(), subida, parte: i,
+          productos: lista.slice(i * BASE_POR_PARTE, (i + 1) * BASE_POR_PARTE),
+        });
+        countCatalogo += r.delCatalogo || 0;
+      }
+      if (typeof onPaso === 'function') onPaso({ fase: 'cerrando', parte: partes, partes, enviados: lista.length, total: lista.length });
+      const fin = await _postBase({
+        clave: _claveEnvio(), subida, cerrar: true, partes,
+        count: lista.length, countCatalogo, generatedAt,
+      });
+
+      meta.baselineAt = generatedAt;
+      await saveMeta();
+      /* Los cambios sueltos anteriores ya están dentro de esta base: sobran
+         en el servidor. `marcarPublicado` los borra y apaga el aviso de
+         "pendiente de publicar". */
+      await marcarPublicado();
+      await _metaBaseServidor();
+      return { ok: true, count: lista.length, countCatalogo, partes, subida, meta: fin.meta };
+    } catch (e) {
+      /* No se llamó a `cerrar` (o falló): el sitio sigue con la base de antes,
+         entera. No hay nada que deshacer. */
+      return { ok: false, motivo: e.motivo || 'red', error: String(e.message || e) };
+    }
+  }
+
   /* Genera showcase-data.json: los 15 productos más recientes (modificados o
      vistos) con miniaturas pequeñas, para que la página de inicio cargue
      rápido sin descargar todo el inventario.                               */
@@ -1675,20 +1893,46 @@ window.Inventario = (function () {
   }
 
   /* ------------------------------- Init ---------------------------------- */
-  async function init(baselineUrls) {
+  function init(baselineUrls, opciones) {
+    /* Se guarda en marcha: si el empleado entra mientras esto todavía carga,
+       la base del sitio se pide DESPUÉS, no encima. */
+    _arranque = _init(baselineUrls, opciones);
+    return _arranque;
+  }
+
+  async function _init(baselineUrls, opciones) {
+    const op = opciones || {};
     await openDB();
     await loadAll();
+
+    /* Primero, la base guardada EN EL SITIO: es la que puede ser más nueva
+       que los archivos publicados, porque no hace falta publicar para
+       cambiarla. Si no está disponible se sigue con los .json de siempre. */
+    let delServidor = 0;
+    if (op.baseServidor !== false) {
+      try { delServidor = await _bajarBaseServidor({ publica: !!op.publica }); }
+      catch (e) { delServidor = 0; }
+    }
+
     // Carga la base publicada del sitio si no hay datos locales, o si la base
     // publicada es más nueva que la que ya tenemos (actualización automática).
-    const urls = baselineUrls || ['./inventario-data.json', '../inventario-data.json'];
+    const urls = delServidor ? [] : (baselineUrls || ['./inventario-data.json', '../inventario-data.json']);
     for (const url of urls) {
       try {
         const r = await fetch(url, { cache: 'no-store' });
         if (!r.ok) continue;
         const d = await r.json();
         const baseAt = d.generatedAt || '';
+        /* `parcial` cuando lo que se está cargando es el archivo del cliente:
+           no trae los dados de baja, y borrarlos aquí dejaría al panel sin
+           ellos hasta el próximo Excel. */
+        const parcial = !!op.publica && /catalogo-data\.json$/.test(url);
+        /* Ojo: aquí NO se fuerza nada. El archivo publicado es viejo por
+           definición; volver a cargarlo "por si acaso" pisaría las ofertas y
+           los precios que se acaban de tocar en este equipo. Solo la base del
+           sitio, que sí está al día, se pide de más. */
         if (!productos.length || (baseAt && baseAt > (meta.baselineAt || ''))) {
-          await importarBaseline(d);
+          await importarBaseline(d, { parcial });
         }
         break;
       } catch (e) { /* no disponible */ }
@@ -1739,6 +1983,7 @@ window.Inventario = (function () {
     setClaveServidor, servidorDisponible, fotoEnServidor,
     sincronizar, estadoSincronizacion,
     setClaveFotos, getClaveFotos, tieneClaveFotos, ultimoErrorServidor,
+    guardarBaseEnServidor, estadoBaseServidor, bajarBaseServidor: _bajarBaseServidor,
     setDestacado, historial, catalogo, categorias, sinPrecio, recientes, tocar, marcarVisto,
     analizarConteo, aplicarConteo, setActivo, deBaja, altaProducto, setCodigo,
     setPromo, quitarPromo, promociones, enOferta, descuento,
