@@ -101,7 +101,10 @@ function quienEs(clave) {
 
    `costo` NO está y no debe estar. Es lo que pagamos nosotros; el sitio es
    público y esto se sirve sin clave.                                        */
-const NUMEROS = ['precio', 'promoAntes', 'existencia'];
+/* `etiquetaEn`/`etiquetaPrecio`: cuándo se imprimió la etiqueta y con qué
+   precio. Se comparten para no reimprimir en un equipo lo que ya se imprimió
+   en otro. No son datos del cliente: la parte pública no los sirve. */
+const NUMEROS = ['precio', 'promoAntes', 'existencia', 'etiquetaEn', 'etiquetaPrecio'];
 const TEXTOS = ['promoHasta', 'codigo', 'bajaMotivo', 'nombre', 'categoria', 'unidad', 'marca'];
 const SINO = ['activo', 'activoManual', 'destacado', 'alta'];
 
@@ -114,7 +117,16 @@ function limpiarCambio(c) {
   for (const k of NUMEROS) {
     if (c[k] === undefined) continue;
     const n = Number(c[k]);
-    if (!isFinite(n) || n < 0 || n > 1e7) continue;
+    if (!isFinite(n) || n < 0) continue;
+    /* `etiquetaEn` es una fecha en milisegundos: 1,7 billones. El tope de los
+       precios y existencias (10 millones) la tiraría en silencio, así que
+       lleva el suyo y se guarda entera, sin decimales. */
+    if (k === 'etiquetaEn') {
+      if (n > 4e12) continue;                 // más allá del año 2096: basura
+      out[k] = Math.round(n);
+      continue;
+    }
+    if (n > 1e7) continue;
     out[k] = Math.round(n * 100) / 100;
   }
   for (const k of TEXTOS) {

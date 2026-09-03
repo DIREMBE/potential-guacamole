@@ -293,10 +293,16 @@ window.Analisis = (function () {
     return lista;
   }
 
+  /* `por`: 'cat' | 'marca' | 'prov'. El proveedor no viene en el reporte de
+     FelTec —no trae esa columna—, así que lo pone quien llama, en `p.prov`,
+     a partir de la tabla marca→proveedor. Si no lo puso, todos caen en el
+     mismo saco y se ve enseguida que falta asignarlos. */
   function agrupar(lista, por, sumar){
     var g = {};
     lista.forEach(function(p){
-      var k = por === 'marca' ? p.marca : p.cat;
+      var k = por === 'marca' ? p.marca
+            : por === 'prov'  ? (p.prov || '(sin proveedor asignado)')
+            : p.cat;
       if(!g[k]) g[k] = { nombre:k, items:[], total:0 };
       g[k].items.push(p);
       g[k].total += sumar(p);

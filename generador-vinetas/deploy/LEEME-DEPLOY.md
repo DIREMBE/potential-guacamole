@@ -11,7 +11,7 @@ index.html               Home: showcase de 15 productos (5 a la vez). El menú
 catalogo.html            NUEVO · Catálogo showcase: fotos, precios, búsqueda,
                          armado de cotización y envío por WhatsApp. (Público)
 interno.html             Panel de empleados (entrada con clave personal).
-panel-inventario.html    NUEVO · ÁREA DE EMPLEADOS. Todo el inventario en una
+panel-inventario.html    NUEVO · ANÁLISIS DE INVENTARIO. Todo el inventario en una
                          pantalla: cargar, analizar, comprar, ajustar precios,
                          fotos, historial, ofertas, altas y guardar al sitio.
                          Es por donde se empieza y casi lo único que hace falta.
@@ -254,7 +254,7 @@ reactiva cuando quieras desde la lista de esta pestaña.
 
 ---
 
-## Área de empleados: todo el inventario en una pantalla
+## Análisis de inventario: todo el inventario en una pantalla
 
 `panel-inventario.html` — la primera tarjeta del panel, y la única que hace
 falta a diario. Antes el trabajo estaba repartido en cuatro ventanas y había que
@@ -345,6 +345,26 @@ se descarga ni se sube nada. Ahí mismo se lee qué base tiene el sitio ahora
 | Administrar productos (crear uno nuevo) | **Productos → «Crear un producto…»** |
 | Cargar archivos | **Actualizar con un archivo** |
 
+### Armar el pedido de verdad
+
+El sugerido dice qué pedir; ahora se convierte en **un pedido que se manda**.
+Marcas lo que entra —con el buscador, y «marcar los que se ven» alcanza a todos
+los que coinciden— y pulsas **Armar pedido**. Sale una hoja por grupo, con las
+cantidades editables: escribes encima y el total se recalcula; poner **cero**
+saca ese producto. De ahí se descarga en CSV (todo junto o **un archivo por
+grupo**, para mandarle a cada quien lo suyo) o se imprime.
+
+**Se parte por categoría, por marca o por proveedor.** Lo de proveedor tiene
+truco: el reporte de FelTec **no trae esa columna** —trae ITEM, producto,
+categoría, existencias y precios, nada más—. Así que se arma aquí: en *«Quién le
+vende cada marca»* le pones a cada marca quién se la vende, y con eso el pedido
+se parte por proveedor. Se escribe una vez y queda; lo que no tenga proveedor
+asignado cae en un grupo aparte, bien visible, para que no se pase por alto.
+
+> Esa tabla **vive en el equipo donde la escribiste**, no en el sitio. Con
+> «Descargar la tabla» y «Cargar una tabla» la pasas a los demás. Si la quieres
+> compartida de verdad, como los precios, es un añadido pequeño — pídemelo.
+
 **«Parado · ofertas sugeridas»** es lo que más rinde: lista lo que lleva meses
 sin moverse con el dinero que tiene quieto, lo marcas —con buscador, y «marcar
 los que se ven» alcanza a todos los que coinciden— y **pones todas las ofertas
@@ -356,6 +376,31 @@ de verdad, no trae sugerencia y lo dice.
 Las cuatro pantallas viejas siguen funcionando y están enlazadas abajo, plegadas
 en **«Pantallas viejas»**, tanto aquí como en el panel interno. Nada se perdió;
 lo que cambió es que ya no hace falta entrar en ellas.
+
+---
+
+## Las viñetas se acuerdan de lo que ya imprimiste (nuevo)
+
+El problema nunca fue imprimir, era **saber a qué le falta etiqueta**. Un
+producto puede estar en la góndola con un precio viejo pegado y no se descubre
+hasta que un cliente reclama en caja.
+
+Ahora, al imprimir (o exportar a PDF/PNG), el sistema **apunta con qué precio
+salió cada etiqueta**. Con eso sabe dos cosas:
+
+- **«Sin etiqueta»** (ámbar): a ese producto nunca se le imprimió una.
+- **«Precio cambió»** (rojo): la etiqueta pegada dice un precio y hoy vale otro.
+  Esta es la grave: en la góndola dice una cosa y en caja se cobra otra.
+
+En *Viñetas de precio* hay una sección **«Qué le falta etiqueta»** con las dos
+listas, buscador y un filtro para ver solo las desfasadas. Marcas y pulsas
+**«Agregar los marcados a la hoja»**: se llenan solos, se imprimen, y salen de
+la lista. En la tabla de productos, cada fila que venga del inventario lleva su
+aviso al lado del nombre.
+
+Se comparte entre equipos igual que los precios: si Carlos imprimió la etiqueta
+de un producto, a Diego ya no le aparece pendiente. Solo cuenta lo que viene del
+inventario — un producto escrito a mano no tiene ITEM al que colgarle nada.
 
 ---
 

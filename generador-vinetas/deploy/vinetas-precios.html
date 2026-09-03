@@ -76,6 +76,12 @@ button{font-family:inherit}
 .card-head h2{font-size:18px}
 .card-head .hint{font-size:12.5px; color:var(--slate-500); font-family:var(--font-body); text-transform:none; letter-spacing:0}
 .card-body{padding:16px 18px}
+/* Aviso de etiqueta: chiquito, al lado del nombre. Rojo = lo que está mal
+   pegado (dice un precio y se cobra otro); ámbar = nunca se etiquetó. */
+.et-chip{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:999px;
+  font-size:11px;font-weight:700;letter-spacing:.02em;vertical-align:middle;white-space:nowrap}
+.et-nunca{background:#FEF3C7;color:#92400E}
+.et-vieja{background:#FEE2E2;color:#991B1B}
 
 /* ---------- Barra de configuración ---------- */
 .config{display:flex; flex-wrap:wrap; gap:16px 22px; align-items:flex-end}
@@ -362,6 +368,40 @@ table.productos input.err{border-color:var(--danger); background:var(--danger-bg
             <button class="btn btn-ghost btn-sm" id="btn-demo">Cargar ejemplo</button>
             <button class="btn btn-danger-ghost btn-sm" id="btn-clear" style="margin-left:auto">Limpiar todo</button>
           </div>
+        </div>
+      </section>
+
+      <!-- ================= QUÉ LE FALTA ETIQUETA ===================== -->
+      <section class="card" id="card-etiquetas">
+        <div class="card-head">
+          <h2>Qué le falta etiqueta</h2>
+          <span class="hint" id="et-resumen">—</span>
+        </div>
+        <div class="card-body">
+          <p class="inv-stats" style="margin-top:0">
+            Al imprimir se apunta con qué precio salió cada etiqueta. Aquí aparece
+            lo que <b>nunca se ha etiquetado</b> y aquello cuyo <b>precio cambió</b>
+            desde la última impresión — que es lo peligroso: en la góndola hay un
+            precio y en caja cobra otro.
+          </p>
+          <div class="inv-search-row">
+            <div class="catalog-search" style="flex:1">
+              <input id="et-buscar" type="text" autocomplete="off"
+                     placeholder="Buscar dentro de lo que falta (nombre, ITEM o código)…">
+            </div>
+            <select id="et-filtro" class="scan-input" style="max-width:230px">
+              <option value="todos">Todo lo que falta</option>
+              <option value="desfasada">Solo precio cambiado</option>
+              <option value="nunca">Solo nunca etiquetados</option>
+            </select>
+          </div>
+          <div class="btn-row" style="margin:12px 0">
+            <button class="btn btn-primary btn-sm" id="et-agregar" disabled>Agregar los marcados a la hoja</button>
+            <button class="btn btn-ghost btn-sm" id="et-todos">Marcar los que se ven</button>
+            <button class="btn btn-ghost btn-sm" id="et-ninguno">Desmarcar</button>
+            <span class="hint" id="et-marcados" style="margin-left:auto">nada marcado</span>
+          </div>
+          <div class="table-scroll" id="et-lista"></div>
         </div>
       </section>
 
@@ -968,7 +1008,7 @@ table.productos input.err{border-color:var(--danger); background:var(--danger-bg
       const bc = makeBars(p.codigo, p.tipo || state.opts.tipo);
       const codErr = p.codigo && !bc.ok ? ' err' : '';
       tr.innerHTML = `
-        <td class="col-nombre"><input data-k="nombre" type="text" value="${esc(p.nombre)}" placeholder="Ej. Martillo 16 oz"></td>
+        <td class="col-nombre"><input data-k="nombre" type="text" value="${esc(p.nombre)}" placeholder="Ej. Martillo 16 oz">${etiquetaChip(p)}</td>
         <td class="col-codigo"><input data-k="codigo" class="mono${codErr}" type="text" value="${esc(p.codigo)}" placeholder="Ej. 7501234567890"></td>
         <td class="col-tipo">
           <select data-k="tipo">
@@ -1102,6 +1142,7 @@ table.productos input.err{border-color:var(--danger); background:var(--danger-bg
     if (!labels.length) doc.text('Sin productos', 20, 20);
     doc.save('vinetas-ferreteria-san-jose.pdf');
     toast('PDF generado.');
+    apuntarImpresas();
   }
 
   async function exportPNG() {
@@ -1130,6 +1171,7 @@ table.productos input.err{border-color:var(--danger); background:var(--danger-bg
       await new Promise((r) => setTimeout(r, 250));   // evita bloqueo de descargas
     }
     toast(pages.length > 1 ? `${pages.length} imágenes PNG generadas.` : 'PNG generado (300 DPI).');
+    apuntarImpresas();
   }
 
   function doPrint() {
@@ -1141,6 +1183,119 @@ table.productos input.err{border-color:var(--danger); background:var(--danger-bg
     const clear = () => { mount.innerHTML = ''; window.removeEventListener('afterprint', clear); };
     window.addEventListener('afterprint', clear);
     setTimeout(() => window.print(), 80);
+    apuntarImpresas();
+  }
+
+  /* ================= LO QUE YA SE IMPRIMIÓ ==============================
+     Sin esto, saber a qué le falta etiqueta es memoria de cada quien. Al
+     imprimir (o exportar) se apunta con qué precio salió cada una; después,
+     comparando con el precio de hoy, se sabe si la que está pegada sirve.
+
+     Solo cuenta lo que vino del inventario: un producto escrito a mano no
+     tiene ITEM al que colgarle nada.                                     */
+  function apuntarImpresas() {
+    if (!window.Inventario || !Inventario.marcarEtiqueta) return;
+    const items = state.products.map((p) => p.item).filter(Boolean);
+    if (!items.length) return;
+    Inventario.marcarEtiqueta(items).then((n) => {
+      if (n) { renderEtiquetas(); renderEditor(); }
+    }).catch(() => {});
+  }
+
+  const ET = { marcados: new Set(), TOPE: 150 };
+
+  function etiquetaChip(p) {
+    if (!p.item || !window.Inventario || !Inventario.estadoEtiqueta) return '';
+    const prod = Inventario.porItem(p.item);
+    if (!prod) return '';
+    const e = Inventario.estadoEtiqueta(prod);
+    if (e.estado === 'ok') return '';
+    return e.estado === 'nunca'
+      ? '<span class="et-chip et-nunca" title="Nunca se le ha impreso etiqueta">sin etiqueta</span>'
+      : '<span class="et-chip et-vieja" title="La etiqueta pegada dice US$' + (e.precio || 0).toFixed(2) +
+        ' y hoy vale US$' + (e.ahora || 0).toFixed(2) + '">precio cambió</span>';
+  }
+
+  function faltantes() {
+    if (!window.Inventario || !Inventario.sinEtiqueta || !Inventario.disponible()) return [];
+    return Inventario.sinEtiqueta($('et-buscar').value.trim(), 1000, $('et-filtro').value);
+  }
+
+  function renderEtiquetas() {
+    const cont = $('et-lista'); if (!cont) return;
+    if (!window.Inventario || !Inventario.disponible()) {
+      cont.innerHTML = '<p class="inv-stats">Carga el inventario para ver a qué le falta etiqueta.</p>';
+      $('et-resumen').textContent = 'sin inventario';
+      return;
+    }
+    const todos = Inventario.sinEtiqueta('', 100000, 'todos');
+    const nunca = todos.filter((p) => p._etiqueta.estado === 'nunca').length;
+    const viejas = todos.length - nunca;
+    $('et-resumen').textContent = viejas
+      ? viejas.toLocaleString('es-SV') + ' con el precio cambiado · ' + nunca.toLocaleString('es-SV') + ' nunca etiquetados'
+      : nunca.toLocaleString('es-SV') + ' nunca etiquetados';
+
+    const lista = faltantes();
+    if (!lista.length) {
+      cont.innerHTML = '<p class="inv-stats">' +
+        (todos.length ? 'Nada coincide con la búsqueda.' : 'Todo lo que tiene precio está etiquetado al día. ✓') +
+        '</p>';
+      resumenEt(); return;
+    }
+    cont.innerHTML = '<table class="productos"><thead><tr>' +
+      '<th style="width:34px"></th><th>ITEM</th><th>Producto</th><th>Precio</th>' +
+      '<th>Etiqueta pegada</th><th>Hay</th></tr></thead><tbody>' +
+      lista.slice(0, ET.TOPE).map((p) => {
+        const e = p._etiqueta, k = String(p.item);
+        return '<tr><td><input type="checkbox" class="cke" data-item="' + esc(k) + '"' +
+            (ET.marcados.has(k) ? ' checked' : '') + '></td>' +
+          '<td class="mono">' + esc(p.item) + '</td><td>' + esc(p.nombre) + '</td>' +
+          '<td class="mono">US$' + Number(p.precio || 0).toFixed(2) + '</td>' +
+          '<td>' + (e.estado === 'nunca'
+            ? '<span class="et-chip et-nunca">nunca</span>'
+            : '<span class="et-chip et-vieja">decía US$' + Number(e.precio || 0).toFixed(2) + '</span>') + '</td>' +
+          '<td class="mono">' + Number(p.existencia || 0).toLocaleString('es-SV') + '</td></tr>';
+      }).join('') + '</tbody></table>' +
+      (lista.length > ET.TOPE
+        ? '<p class="inv-stats">Se muestran ' + ET.TOPE + ' de ' + lista.length.toLocaleString('es-SV') +
+          '. «Marcar los que se ven» alcanza a <b>todos</b> los que coinciden.</p>'
+        : '');
+    resumenEt();
+  }
+
+  function resumenEt() {
+    const n = ET.marcados.size;
+    $('et-marcados').textContent = n ? n.toLocaleString('es-SV') + ' marcado(s)' : 'nada marcado';
+    $('et-agregar').disabled = n === 0;
+  }
+
+  function wireEtiquetas() {
+    if (!$('et-lista')) return;
+    let reloj;
+    $('et-buscar').addEventListener('input', () => {
+      clearTimeout(reloj); reloj = setTimeout(renderEtiquetas, 180);
+    });
+    $('et-filtro').addEventListener('change', renderEtiquetas);
+    $('et-lista').addEventListener('change', (e) => {
+      const c = e.target.closest('input.cke'); if (!c) return;
+      if (c.checked) ET.marcados.add(c.dataset.item); else ET.marcados.delete(c.dataset.item);
+      resumenEt();
+    });
+    $('et-todos').addEventListener('click', () => {
+      faltantes().forEach((p) => ET.marcados.add(String(p.item)));
+      renderEtiquetas();
+    });
+    $('et-ninguno').addEventListener('click', () => { ET.marcados.clear(); renderEtiquetas(); });
+    $('et-agregar').addEventListener('click', () => {
+      let n = 0;
+      ET.marcados.forEach((it) => {
+        const prod = Inventario.porItem(it);
+        if (prod) { pickInventoryProduct(prod); n++; }
+      });
+      ET.marcados.clear();
+      renderEtiquetas();
+      toast(n ? n + ' producto(s) agregados a la hoja.' : 'No se pudo agregar ninguno.', !n);
+    });
   }
 
   /* ======================================================================
@@ -1153,6 +1308,14 @@ table.productos input.err{border-color:var(--danger); background:var(--danger-bg
     setupInvSearch();
     setupScan();
     wireInvPanel();
+    wireEtiquetas();
+    renderEtiquetas();
+    /* Si otro equipo imprime, o cambia un precio, esta lista deja de ser
+       cierta. Se vuelve a dibujar cuando llega algo. */
+    if (Inventario.onCambio) Inventario.onCambio((t) => {
+      if (t === 'sincronizado' || t === 'precio' || t === 'promo' ||
+          t === 'import' || t === 'etiqueta') { renderEtiquetas(); renderEditor(); }
+    });
   }
 
   function renderInvStats() {

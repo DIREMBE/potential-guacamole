@@ -88,7 +88,7 @@ function quienEs(clave) {
 /* ------------------------- Qué se deja guardar --------------------------
    Lista blanca, igual que en los cambios sueltos. El COSTO DE COMPRA no
    está y no debe estar: la parte del catálogo se sirve sin clave.          */
-const NUMEROS = ['precio', 'promoAntes', 'existencia', 'tocadoEn'];
+const NUMEROS = ['precio', 'promoAntes', 'existencia', 'tocadoEn', 'etiquetaEn', 'etiquetaPrecio'];
 const TEXTOS = ['nombre', 'categoria', 'unidad', 'codigo', 'marca', 'promoHasta', 'bajaMotivo'];
 const SINO = ['activo', 'destacado', 'activoManual'];
 
@@ -99,7 +99,7 @@ function limpiar(p) {
   const o = { item };
   for (const k of NUMEROS) {
     const n = Number(p[k]);
-    if (isFinite(n) && n >= 0 && n < 1e13) o[k] = k === 'tocadoEn' ? Math.round(n) : Math.round(n * 100) / 100;
+    if (isFinite(n) && n >= 0 && n < 1e13) o[k] = (k === 'tocadoEn' || k === 'etiquetaEn') ? Math.round(n) : Math.round(n * 100) / 100;
   }
   for (const k of TEXTOS) if (p[k] != null) o[k] = String(p[k]).slice(0, 200);
   for (const k of SINO) if (p[k] !== undefined) o[k] = !!p[k];

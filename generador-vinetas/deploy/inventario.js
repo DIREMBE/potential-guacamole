@@ -446,6 +446,10 @@ window.Inventario = (function () {
         promoAntes: p.promoAntes !== undefined ? numOf(p.promoAntes) : (ant ? numOf(ant.promoAntes) : 0),
         promoHasta: p.promoHasta !== undefined ? String(p.promoHasta || '') : (ant ? String(ant.promoHasta || '') : ''),
         tocadoEn: Number(p.tocadoEn) || (ant ? Number(ant.tocadoEn) || 0 : 0),
+        /* Lo que ya se imprimió aquí no se pierde por cargar una base nueva:
+           si la que llega no lo trae, se conserva lo de este equipo. */
+        etiquetaEn: Number(p.etiquetaEn) || (ant ? Number(ant.etiquetaEn) || 0 : 0),
+        etiquetaPrecio: Number(p.etiquetaPrecio) || (ant ? Number(ant.etiquetaPrecio) || 0 : 0),
       });
       count++;
     }
@@ -1472,6 +1476,122 @@ window.Inventario = (function () {
     }, 400);
   }
 
+  /* ============ ETIQUETAS: QUÉ SE IMPRIMIÓ Y CON QUÉ PRECIO =============
+     El problema de verdad no es imprimir, es saber a QUÉ le falta etiqueta.
+     Un producto puede estar en la góndola con un precio viejo pegado y nadie
+     se entera hasta que un cliente reclama en caja.
+
+     Se guardan dos cosas por producto: cuándo se imprimió su etiqueta y con
+     qué precio salió. Comparando ese precio con el de hoy se sabe si la que
+     está pegada sirve o hay que cambiarla.                                 */
+  function estadoEtiqueta(p) {
+    if (!p) return { estado: 'nunca', desde: 0, precio: 0 };
+    const cuando = Number(p.etiquetaEn) || 0;
+    if (!cuando) return { estado: 'nunca', desde: 0, precio: 0 };
+    const impreso = numOf(p.etiquetaPrecio);
+    const ahora = numOf(p.precio);
+    /* Se comparan en centavos: 3.4 y 3.40 son el mismo precio. */
+    if (Math.round(impreso * 100) !== Math.round(ahora * 100)) {
+      return { estado: 'desfasada', desde: cuando, precio: impreso, ahora: ahora };
+    }
+    return { estado: 'ok', desde: cuando, precio: impreso };
+  }
+
+  /* Se llama al imprimir o exportar: deja constancia de con qué precio salió
+     cada etiqueta. Si se imprime y no se marca, esto no sirve de nada. */
+  async function marcarEtiqueta(items) {
+    const lista = Array.isArray(items) ? items : [items];
+    const tocados = [], paraCompartir = [];
+    for (const it of lista) {
+      const p = byItem.get(String(it && it.item != null ? it.item : it));
+      if (!p) continue;
+      p.etiquetaEn = Date.now();
+      p.etiquetaPrecio = numOf(p.precio);
+      await guardar(COLS.productos, (st) => st.put(p));
+      tocados.push(p.item);
+      paraCompartir.push({ item: p.item, etiquetaEn: p.etiquetaEn, etiquetaPrecio: p.etiquetaPrecio });
+    }
+    if (paraCompartir.length) {
+      await loadAll();
+      /* Se comparte para que no se reimprima en otro equipo lo que aquí ya se
+         imprimió. Si el servidor todavía no conoce estos campos, los descarta
+         y no pasa nada: cada equipo conserva los suyos. */
+      _empujar(paraCompartir);
+      emitir('etiqueta', { items: tocados });
+    }
+    return tocados.length;
+  }
+
+  /* A qué le falta etiqueta. `motivo`: 'nunca' | 'desfasada' | 'todos'. */
+  function sinEtiqueta(q, limite, motivo) {
+    const cual = motivo || 'todos';
+    const texto = String(q || '').trim();
+    const out = [];
+    for (const p of productos) {
+      if (p.activo === false) continue;
+      if (!(numOf(p.precio) > 0)) continue;          // sin precio no hay etiqueta que poner
+      const e = estadoEtiqueta(p);
+      if (e.estado === 'ok') continue;
+      if (cual !== 'todos' && e.estado !== cual) continue;
+      out.push(Object.assign({}, p, { _etiqueta: e }));
+    }
+    const lista = texto ? _filtrarTexto(out, texto) : out;
+    /* Primero las desfasadas: esas están MAL pegadas, no solo ausentes. */
+    lista.sort((a, b) => {
+      if (a._etiqueta.estado !== b._etiqueta.estado) return a._etiqueta.estado === 'desfasada' ? -1 : 1;
+      return numOf(b.existencia) - numOf(a.existencia);
+    });
+    return lista.slice(0, limite || 200);
+  }
+
+  function _filtrarTexto(lista, q) {
+    const pal = _sinAcentos(q).toLowerCase().split(/\s+/).filter(Boolean);
+    if (!pal.length) return lista;
+    return lista.filter((p) => {
+      const t = _sinAcentos((p.nombre || '') + ' ' + p.item + ' ' + (p.categoria || '') +
+                            ' ' + (p.codigo || '') + ' ' + (p.marca || '')).toLowerCase();
+      return pal.every((x) => t.indexOf(x) >= 0);
+    });
+  }
+
+  /* ==================== PROVEEDORES (por marca) =========================
+     El reporte de FelTec no trae proveedor: trae ITEM, producto, categoría,
+     existencias y precios, y nada más. Pero en la práctica cada marca se le
+     compra a alguien, así que el pedido se puede partir por proveedor con
+     una tabla marca -> proveedor que se llena una vez y se corrige cuando
+     cambia. Vive en este equipo; se puede exportar e importar.            */
+  function proveedores() { return Object.assign({}, meta.proveedores || {}); }
+
+  async function setProveedorDeMarca(marca, proveedor) {
+    const m = upper(marca);
+    if (!m) return false;
+    const mapa = Object.assign({}, meta.proveedores || {});
+    const v = String(proveedor || '').trim();
+    if (v) mapa[m] = v; else delete mapa[m];
+    meta.proveedores = mapa;
+    await saveMeta();
+    emitir('proveedores', { marca: m, proveedor: v });
+    return true;
+  }
+
+  async function setProveedores(mapa) {
+    const limpio = {};
+    for (const k of Object.keys(mapa || {})) {
+      const m = upper(k), v = String(mapa[k] || '').trim();
+      if (m && v) limpio[m] = v;
+    }
+    meta.proveedores = limpio;
+    await saveMeta();
+    emitir('proveedores', { total: Object.keys(limpio).length });
+    return Object.keys(limpio).length;
+  }
+
+  const SIN_PROVEEDOR = '(sin proveedor asignado)';
+  function proveedorDeMarca(marca) {
+    const m = upper(marca);
+    return (meta.proveedores && meta.proveedores[m]) || SIN_PROVEEDOR;
+  }
+
   // Los N productos más recientes (modificados o vistos) para el showcase.
   function recientes(n) {
     const lim = n || 15;
@@ -1534,6 +1654,7 @@ window.Inventario = (function () {
         destacado: !!p.destacado, activo: p.activo !== false,
         bajaMotivo: p.bajaMotivo || '', activoManual: !!p.activoManual,
         tocadoEn: p.tocadoEn || 0,
+        etiquetaEn: p.etiquetaEn || 0, etiquetaPrecio: p.etiquetaPrecio || 0,
       })),
     };
     _download('inventario-data.json', JSON.stringify(data), 'application/json');
@@ -1720,6 +1841,7 @@ window.Inventario = (function () {
       destacado: !!p.destacado, activo: p.activo !== false,
       bajaMotivo: p.bajaMotivo || '', activoManual: !!p.activoManual,
       tocadoEn: p.tocadoEn || 0,
+      etiquetaEn: p.etiquetaEn || 0, etiquetaPrecio: p.etiquetaPrecio || 0,
     }));
     /* El costo de compra NO va: la parte del catálogo se sirve sin clave. */
 
@@ -2012,6 +2134,8 @@ window.Inventario = (function () {
     sincronizar, estadoSincronizacion,
     setClaveFotos, getClaveFotos, tieneClaveFotos, ultimoErrorServidor,
     guardarBaseEnServidor, estadoBaseServidor, bajarBaseServidor: _bajarBaseServidor,
+    estadoEtiqueta, marcarEtiqueta, sinEtiqueta,
+    proveedores, setProveedorDeMarca, setProveedores, proveedorDeMarca, SIN_PROVEEDOR,
     setDestacado, historial, catalogo, categorias, sinPrecio, recientes, tocar, marcarVisto,
     analizarConteo, aplicarConteo, setActivo, deBaja, altaProducto, setCodigo,
     setPromo, quitarPromo, promociones, enOferta, descuento,
