@@ -470,6 +470,35 @@ window.Inventario = (function () {
   }
 
   /* ----------------------------- Búsqueda -------------------------------- */
+  /* ================== CÓMO SE BUSCA (una sola regla) ====================
+     Una palabra coincide si aparece al PRINCIPIO de alguna palabra del
+     texto, no metida en cualquier parte.
+
+     Con la regla de antes —«que esté contenido»— buscar la marca LANCO
+     sacaba los cientos de artículos con BLANCO en el nombre, y buscar una
+     tuerca «M6» sacaba todo lo que llevara un 6 pegado a algo. Se ignoran
+     los acentos, así que «cañeria» encuentra «CAÑERÍA».                  */
+  function palabrasDe(q) {
+    return _sinAcentos(String(q || '').toLowerCase()).split(/\s+/).filter(Boolean);
+  }
+
+  function _empiezaPalabra(texto, t) {
+    let i = texto.indexOf(t);
+    while (i >= 0) {
+      if (i === 0 || !/[a-z0-9]/.test(texto.charAt(i - 1))) return true;
+      i = texto.indexOf(t, i + 1);
+    }
+    return false;
+  }
+
+  /* `texto` puede venir con acentos y mayúsculas: se normaliza aquí. */
+  function coincideTexto(texto, palabras) {
+    if (!palabras || !palabras.length) return true;
+    const t = _sinAcentos(String(texto || '').toLowerCase());
+    for (const p of palabras) if (!_empiezaPalabra(t, p)) return false;
+    return true;
+  }
+
   function buscar(q, limite) {
     q = String(q || '').trim();
     if (q.length < 2) return [];
@@ -481,16 +510,28 @@ window.Inventario = (function () {
     // coincidencia exacta por código o ITEM primero
     add(byCodigo.get(normCod(q)));
     add(byItem.get(q));
-    // tokens (todas las palabras deben aparecer en el nombre)
-    const toks = ql.split(/\s+/).filter(Boolean);
+    /* Todas las palabras tienen que aparecer, pero al PRINCIPIO de alguna
+       palabra del nombre, no en cualquier parte.
+
+       Antes bastaba con que la letras estuvieran metidas en medio, y eso
+       hacía que buscar la marca «LANCO» sacara los cientos de artículos que
+       llevan «BLANCO» en el nombre. Con inicio de palabra, LANCO trae LANCO
+       y BLANCO trae BLANCO. Se ignoran los acentos: «cañeria» encuentra
+       «CAÑERÍA».                                                          */
+    const toks = palabrasDe(ql);
+    const sueltos = [];          // los que solo coinciden metidos en medio
     for (const p of productos) {
-      if (res.length >= lim) break;
       if (seen.has(p.item)) continue;
-      const nom = p.nombre.toLowerCase();
-      const okNombre = toks.every((t) => nom.includes(t));
-      const okCod = p.codigo && p.codigo.toLowerCase().includes(ql);
-      if (okNombre || okCod || String(p.item) === q) add(p);
+      const nom = _sinAcentos(p.nombre.toLowerCase());
+      const cod = (p.codigo || '').toLowerCase();
+      if (String(p.item) === q || (cod && cod.includes(ql))) { add(p); continue; }
+      if (coincideTexto(nom, toks)) { if (res.length < lim) add(p); }
+      else if (sueltos.length < lim && toks.every((t) => nom.includes(t))) sueltos.push(p);
+      if (res.length >= lim) break;
     }
+    /* Si por inicio de palabra no salió nada, se aflojan las reglas antes que
+       decirle a alguien que su producto no existe. */
+    if (!res.length) for (const p of sueltos) add(p);
     return res.slice(0, lim);
   }
 
@@ -912,6 +953,23 @@ window.Inventario = (function () {
 
   /* Cambiar el código de barras de un producto a mano (por si el escáner da
      otro distinto al del archivo). */
+  /* La marca escrita a mano. El reporte de FelTec no trae columna de marca
+     —se deduce del nombre—, pero deducir falla con nombres raros, así que se
+     puede corregir. Se comparte como cualquier otro cambio. */
+  async function setMarca(item, marca) {
+    const p = byItem.get(String(item));
+    if (!p) return false;
+    const m = String(marca || '').trim().slice(0, 60);
+    if (String(p.marca || '') === m) return true;
+    p.marca = m;
+    p.tocadoEn = Date.now();
+    await guardar(COLS.productos, (st) => st.put(p));
+    _editado(p);
+    emitir('marca', { item: p.item, marca: m });
+    _empujar([{ item: p.item, marca: m }]);
+    return true;
+  }
+
   async function setCodigo(item, codigo) {
     const p = byItem.get(String(item));
     if (!p) return false;
@@ -1130,8 +1188,16 @@ window.Inventario = (function () {
       return true;
     }
 
-    // un cambio de aquí más nuevo manda sobre el del servidor
-    if (cuando && cuando <= (p.editadoEn || 0)) return false;
+    /* Aquí había una comparación entre DOS RELOJES DISTINTOS: `cuando` es la
+       hora del servidor (la pone él al guardar) y `editadoEn` la de este
+       equipo. Un teléfono con el reloj atrasado unos minutos hacía que un
+       cambio viejo pareciera más nuevo y pisara el que se acababa de hacer:
+       el precio se corregía, y al rato volvía solo al anterior.
+
+       La regla correcta no necesita relojes. Lo que el servidor tiene ES la
+       verdad —es donde se juntan todos los equipos—, salvo por lo que aquí
+       todavía no se ha mandado. Eso, y solo eso, manda sobre lo que baja. */
+    if (_tengoSinMandar(o.item)) return false;
 
     let toco = false;
     for (const k of INV_CAMPOS) {
@@ -1183,6 +1249,14 @@ window.Inventario = (function () {
      que sobrevive al cierre del navegador y se reintenta al volver a abrir.
      Nunca se pierde: en el peor caso queda como antes, para publicar a mano. */
   function _colaGuardada() { return Array.isArray(meta.colaEnvio) ? meta.colaEnvio : []; }
+
+  /* ¿Hay algo de este producto que todavía no ha salido de aquí? Puede estar
+     esperando el envío agrupado o en la cola de lo que no se pudo mandar. */
+  function _tengoSinMandar(item) {
+    const k = String(item);
+    if (_porMandar.has(k)) return true;
+    return _colaGuardada().some((c) => String(c.item) === k);
+  }
 
   async function _encolar(lista) {
     const cola = _colaGuardada();
@@ -1546,13 +1620,11 @@ window.Inventario = (function () {
   }
 
   function _filtrarTexto(lista, q) {
-    const pal = _sinAcentos(q).toLowerCase().split(/\s+/).filter(Boolean);
+    const pal = palabrasDe(q);
     if (!pal.length) return lista;
-    return lista.filter((p) => {
-      const t = _sinAcentos((p.nombre || '') + ' ' + p.item + ' ' + (p.categoria || '') +
-                            ' ' + (p.codigo || '') + ' ' + (p.marca || '')).toLowerCase();
-      return pal.every((x) => t.indexOf(x) >= 0);
-    });
+    return lista.filter((p) => coincideTexto(
+      (p.nombre || '') + ' ' + p.item + ' ' + (p.categoria || '') +
+      ' ' + (p.codigo || '') + ' ' + (p.marca || ''), pal));
   }
 
   /* ==================== PROVEEDORES (por marca) =========================
@@ -2073,11 +2145,10 @@ window.Inventario = (function () {
     if (opts.soloDestacados) list = list.filter((p) => p.destacado);
     const q = String(opts.q || '').trim().toLowerCase();
     if (q) {
-      const toks = q.split(/\s+/).filter(Boolean);
-      list = list.filter((p) => {
-        const n = p.nombre.toLowerCase();
-        return toks.every((t) => n.includes(t)) || String(p.item) === q || (p.codigo || '').toLowerCase() === q;
-      });
+      const toks = palabrasDe(q);
+      list = list.filter((p) =>
+        coincideTexto(p.nombre + ' ' + (p.marca || ''), toks) ||
+        String(p.item) === q || (p.codigo || '').toLowerCase() === q);
     }
     /* OJO: tieneImagen(), no imagenes.has(). La mayoría de las fotos están
        en el sitio (Netlify) y este equipo solo conoce la lista, no el
@@ -2104,13 +2175,13 @@ window.Inventario = (function () {
   function sinPrecio(q, limite) {
     const lim = limite || 200;
     const ql = String(q || '').trim().toLowerCase();
-    const toks = ql.split(/\s+/).filter(Boolean);
+    const toks = palabrasDe(ql);
     const list = productos.filter((p) => {
       if (numOf(p.precio) > 0) return false;
       if (numOf(p.existencia) <= 0) return false;
       if (!toks.length) return true;
-      const n = p.nombre.toLowerCase();
-      return toks.every((t) => n.includes(t)) || String(p.item) === ql || (p.codigo || '').toLowerCase() === ql;
+      return coincideTexto(p.nombre + ' ' + (p.marca || ''), toks) ||
+             String(p.item) === ql || (p.codigo || '').toLowerCase() === ql;
     });
     // primero los que ya tienen foto o destacado (ya se están mostrando al cliente)
     list.sort((a, b) => {
@@ -2228,11 +2299,13 @@ window.Inventario = (function () {
     setClaveServidor, servidorDisponible, fotoEnServidor,
     sincronizar, estadoSincronizacion,
     setClaveFotos, getClaveFotos, tieneClaveFotos, ultimoErrorServidor,
+    palabrasDe, coincideTexto,
     guardarBaseEnServidor, estadoBaseServidor, bajarBaseServidor: _bajarBaseServidor,
     estadoEtiqueta, marcarEtiqueta, sinEtiqueta,
     proveedores, setProveedorDeMarca, setProveedores, proveedorDeMarca, SIN_PROVEEDOR,
     estadoProveedores, bajarProveedores: _bajarProveedores,
     setDestacado, historial, catalogo, categorias, sinPrecio, recientes, tocar, marcarVisto,
+    setMarca,
     analizarConteo, aplicarConteo, setActivo, deBaja, altaProducto, setCodigo,
     setPromo, quitarPromo, promociones, enOferta, descuento,
     publicar, publicarCatalogo, publicarImagenes, publicarShowcase, exportarCambios, limpiarCambios,

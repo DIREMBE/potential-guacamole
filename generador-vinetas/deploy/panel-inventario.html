@@ -301,13 +301,18 @@ details.plegable[open]>summary{margin-bottom:12px}
           <option value="sinprecio">Con existencia y sin precio</option>
           <option value="bajas">Dados de baja</option>
           <option value="ofertas">En oferta</option>
+          <option value="sinmarca">Sin marca puesta</option>
+        </select>
+        <select id="f-marca" class="btn b-gh b-sm" style="padding-right:26px" aria-label="Filtrar por marca">
+          <option value="">Cualquier marca</option>
         </select>
       </div>
       <div class="filtro-info" id="p-info"></div>
       <div class="scroll"><table>
-        <thead><tr><th>ITEM</th><th>Producto</th><th>Precio</th><th>Código de barras</th>
+        <thead><tr><th>ITEM</th><th>Producto</th><th>Marca</th><th>Precio</th><th>Código de barras</th>
           <th>Existencia</th><th></th></tr></thead>
         <tbody id="p-body"></tbody></table></div>
+      <datalist id="marcas-conocidas"></datalist>
       <div class="note">
         El <b>precio</b> y el <b>código</b> se guardan al salir de la casilla, y se
         comparten con los demás equipos al instante. Cambiar un precio queda en el
@@ -1519,21 +1524,91 @@ details.plegable[open]>summary{margin-bottom:12px}
   /* ==================================================================== */
   var TOPE_PROD=60;
 
+  /* La marca del producto. Si nadie la ha escrito a mano, se deduce del
+     nombre —«MARTILLO 16OZ TRUPER» es TRUPER— para no dejar la columna
+     vacía en 11.000 productos. Lo escrito a mano siempre manda. */
+  function marcaDe(p){
+    if(p && p.marca) return String(p.marca).trim();
+    return (window.Analisis && Analisis.marcaDe) ? (Analisis.marcaDe(p&&p.nombre)||'') : '';
+  }
+
   function productosDe(){
-    var q=$('q-prod').value.trim(), f=$('f-prod').value;
-    if(f==='sinprecio') return Inventario.sinPrecio(q,400);
-    if(f==='bajas')     return Inventario.deBaja(q,400,'todos');
-    if(f==='ofertas'){
+    var q=$('q-prod').value.trim(), f=$('f-prod').value, m=$('f-marca').value;
+    var lista;
+    if(f==='sinprecio') lista=Inventario.sinPrecio(q,400);
+    else if(f==='bajas') lista=Inventario.deBaja(q,400,'todos');
+    else if(f==='ofertas'){
       var pal=palabrasDe(q);
-      return Inventario.promociones({}).filter(function(p){
+      lista=Inventario.promociones({}).filter(function(p){
         return !q || coincide(p.nombre+' '+p.item+' '+(p.codigo||''), pal); });
     }
-    if(!q) return [];
-    return Inventario.buscar(q,TOPE_PROD);
+    else if(f==='sinmarca'){
+      /* Los que no tienen marca ni se le puede deducir: son los que hay que
+         completar para que el filtro por marca sirva de algo. */
+      var pal2=palabrasDe(q);
+      lista=Inventario.catalogo({}).filter(function(p){
+        if(marcaDe(p)) return false;
+        return !q || coincide(p.nombre+' '+p.item+' '+(p.codigo||''), pal2);
+      }).slice(0,400);
+    }
+    else if(m && !q){
+      /* Se puede pedir una marca sin escribir nada: es el caso de «enséñame
+         todo lo de LANCO», que antes era imposible. */
+      lista=Inventario.catalogo({}).filter(function(p){
+        return marcaDe(p).toUpperCase()===m; }).slice(0,400);
+    }
+    else if(!q) lista=[];
+    else lista=Inventario.buscar(q,TOPE_PROD);
+
+    if(m) lista=lista.filter(function(p){ return marcaDe(p).toUpperCase()===m; });
+    return lista;
   }
+
+  /* Las marcas que hay de verdad en el inventario, para el desplegable y
+     para sugerir al escribir. Se calcula una vez, no en cada tecla. */
+  var _marcasCache=null;
+  function marcasConocidas(){
+    if(_marcasCache) return _marcasCache;
+    if(!window.Inventario || !Inventario.disponible()) return [];
+    var m={};
+    Inventario.catalogo({}).forEach(function(p){ var x=marcaDe(p); if(x) m[x.toUpperCase()]=true; });
+    _marcasCache=Object.keys(m).sort();
+    return _marcasCache;
+  }
+  function pintarMarcas(){
+    var sel=$('f-marca'); if(!sel) return;
+    var antes=sel.value, lista=marcasConocidas();
+    sel.innerHTML='<option value="">Cualquier marca</option>'+
+      lista.map(function(x){ return '<option value="'+esc(x)+'">'+esc(x)+'</option>'; }).join('');
+    sel.value=antes;
+    var dl=$('marcas-conocidas');
+    if(dl) dl.innerHTML=lista.map(function(x){ return '<option value="'+esc(x)+'">'; }).join('');
+  }
+  $('f-marca').addEventListener('change',pintarProductos);
+
+  /* Mientras alguien está escribiendo en la tabla, NO se redibuja.
+
+     La tabla se rehace sola cuando llega un cambio de otro equipo, y al
+     rehacerla desaparece la casilla que se estaba usando —con el cursor y,
+     según el momento, con lo tecleado—. Se apunta que hace falta redibujar y
+     se hace en cuanto la persona sale de la casilla. */
+  var _redibujarDespues=false;
+  function escribiendoEnLaTabla(){
+    var a=document.activeElement;
+    return !!(a && a.tagName==='INPUT' && a.closest && a.closest('#p-body'));
+  }
+  document.addEventListener('focusout',function(e){
+    if(!_redibujarDespues) return;
+    if(!e.target.closest || !e.target.closest('#p-body')) return;
+    setTimeout(function(){
+      if(escribiendoEnLaTabla()) return;      // pasó a otra casilla: sigue escribiendo
+      _redibujarDespues=false; pintarProductos();
+    },80);
+  });
 
   function pintarProductos(){
     if(!window.Inventario || !Inventario.disponible()) return;
+    if(escribiendoEnLaTabla()){ _redibujarDespues=true; return; }
     var lista=productosDe(), q=$('q-prod').value.trim(), f=$('f-prod').value;
     $('q-prod-x').hidden = !q;
 
@@ -1565,6 +1640,9 @@ details.plegable[open]>summary{margin-bottom:12px}
           (baja?' <span class="chip baja">de baja</span>':'')+
           (oferta?' <span class="chip oferta">−'+Inventario.descuento(p)+'%</span>':'')+
           (conFoto?' <span class="chip" style="background:var(--s100);color:var(--s600)">foto</span>':'')+'</td>'+
+        '<td><input class="pin txt" data-campo="marca" data-item="'+esc(p.item)+'" '+
+          'style="min-width:110px" list="marcas-conocidas" '+
+          'value="'+esc(p.marca||'')+'" placeholder="'+esc(marcaDe(p)||'sin marca')+'"></td>'+
         '<td><input class="pin" data-campo="precio" data-item="'+esc(p.item)+'" '+
           'value="'+(Number(p.precio)>0?Number(p.precio).toFixed(2):'')+'" placeholder="0.00" inputmode="decimal"></td>'+
         '<td><input class="pin txt" data-campo="codigo" data-item="'+esc(p.item)+'" '+
@@ -1613,8 +1691,25 @@ details.plegable[open]>summary{margin-bottom:12px}
       var n=parseFloat(v.replace(',','.'));
       if(!isFinite(n)||n<0) { toast('Ese precio no se entiende.',true); return; }
       Inventario.actualizarPrecio(item,n,empleado,'panel').then(function(ok){
-        if(ok){ toast('Precio guardado: '+money(n)); pintarEstado(); pintarProductos(); }
+        if(ok){ toast('Precio guardado: '+money(n)); pintarEstado(); pintarProductos(); return; }
+        /* Antes, si no se guardaba, aquí NO pasaba nada: ni mensaje ni nada.
+           La casilla seguía enseñando lo tecleado y el empleado se iba
+           creyendo que había quedado. Eso es lo que se veía como «a veces no
+           se actualizan». Ahora siempre dice qué pasó. */
+        var p=Inventario.porItem(item);
+        if(n<=0){ toast('Un precio de US$0 no se guarda. Si ya no se vende, usa «Dar de baja».',true); }
+        else if(p && Math.abs(Number(p.precio)-n)<0.005){ toast('Ese ya era el precio.'); }
+        else { toast('No se pudo guardar ese precio. Vuelve a intentarlo.',true); }
+        pintarProductos();
+      }).catch(function(err){
+        toast(err&&err.message?err.message:'No se pudo guardar ese precio.',true);
+        pintarProductos();
       });
+    }else if(campo==='marca'){
+      Inventario.setMarca(item,v).then(function(){
+        _marcasCache=null; pintarMarcas();
+        toast(v?'Marca guardada: '+v:'Marca quitada.');
+      }).catch(function(err){ toast(err.message||'No se pudo guardar la marca.',true); });
     }else{
       Inventario.setCodigo(item,v).then(function(){
         toast(v?'Código guardado.':'Código quitado.'); pintarProductos();
@@ -1671,13 +1766,13 @@ details.plegable[open]>summary{margin-bottom:12px}
     if(abierta) abierta.remove();
     var fila=document.createElement('tr');
     fila.className='ficha-row'; fila.dataset.item=String(item);
-    fila.innerHTML='<td colspan="6">'+fichaHTML(item)+'</td>';
+    fila.innerHTML='<td colspan="7">'+fichaHTML(item)+'</td>';
     tr.parentNode.insertBefore(fila, tr.nextSibling);
   }
 
   function refrescarFicha(item){
     var f=$('p-body').querySelector('tr.ficha-row[data-item="'+String(item).replace(/"/g,'\\"')+'"]');
-    if(f) f.innerHTML='<td colspan="6">'+fichaHTML(item)+'</td>';
+    if(f) f.innerHTML='<td colspan="7">'+fichaHTML(item)+'</td>';
   }
 
   function fichaHTML(item){
@@ -1845,7 +1940,7 @@ details.plegable[open]>summary{margin-bottom:12px}
   catch(e){ verFlujo('archivo'); }
 
   Inventario.init(['./inventario-data.json']).then(function(){
-    pintarEstado(); pintarProductos();
+    pintarMarcas(); pintarEstado(); pintarProductos();
   }).catch(function(){
     $('est-sub').textContent='No se pudo cargar el inventario.';
   });
