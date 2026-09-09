@@ -471,6 +471,28 @@ de verdad.
 
 ## Conversor del marcador (nuevo)
 
+> **La hora de almuerzo ya se descuenta.** Un día completo trae **cuatro**
+> marcas: entra, sale a almorzar, regresa, se retira. Antes se tomaban solo la
+> primera y la última, así que la hora de almuerzo se pagaba como trabajada.
+>
+> Si un día **no trae las cuatro**, no se inventa nada: se cuenta entero, la
+> fila lo dice (*«1 sin almuerzo»*), las casillas vacías quedan en ámbar y sale
+> en Incidencias explicando qué se hizo. Descontar una hora que nadie marcó
+> sería peor que contarla de más.
+>
+> Cuando hay más de cuatro marcas, el almuerzo es **el hueco más largo del
+> medio** — no se supone que sea la segunda marca, porque hay días con marcas
+> repetidas.
+>
+> **El cuadro se acomoda a tu planilla.** Arrastra el nombre de un empleado o
+> la cabecera de un día y quedan en ese orden; al mover a alguien se mueven
+> **todas sus horas**, no solo el nombre. Ese orden **se guarda en el sitio**:
+> a todos los equipos les sale igual, y la exportación —tanto el Excel como el
+> bloque para pegar— respeta el mismo orden. La casilla *«Ver las columnas de
+> almuerzo»* las esconde si prefieres el cuadro angosto; las horas se calculan
+> igual, con el almuerzo descontado.
+
+
 `conversor-marcador.html` — convierte la exportación del marcador biométrico
 (NGL_001.TXT) en el cuadro semanal de asistencia, listo para pegar en la planilla.
 Entra con tu nombre y clave, como las demás pantallas internas.

@@ -27,12 +27,24 @@
      POST   /api/config              -> { clave, proveedores:{...}, reemplazar:true }
      DELETE /api/config              -> { clave }   deja la tabla vacía
 
+     GET    /api/config?que=marcador -> { datos:{...} }
+     POST   /api/config              -> { clave, que:'marcador', datos:{...} }
+
+   La segunda forma guarda una seccion cualquiera de ajustes tal cual. Hoy la
+   usa el conversor del marcador: el orden de los empleados y de los dias del
+   cuadro, para que la tabla salga igual en todos los equipos y calce con la
+   planilla. No se mezcla: la edita una persona a la vez y es pequena.
+
    La variable de Netlify es la misma de siempre: FSJ_USUARIOS.
    ========================================================================== */
 import { getStore } from '@netlify/blobs';
 
 const STORE = 'fsj-config';
 const LLAVE = 'proveedores';
+/* Que secciones se dejan guardar. Lista cerrada a proposito: esto no es un
+   almacen libre donde cualquiera con clave meta lo que quiera. */
+const SECCIONES = ['marcador'];
+const MAX_SECCION = 60 * 1024;      // 60 KB por seccion, de sobra
 const MAX_MARCAS = 2000;        // tope de cordura
 const MAX_LARGO = 80;           // lo que cabe en un nombre de proveedor
 
@@ -120,6 +132,17 @@ export default async (req) => {
       return json({ ok: false, disponible: false, error: 'sin claves configuradas' }, 503);
     }
     if (!claveOk(clave)) return json({ ok: false, error: 'hace falta la clave' }, 401);
+
+    const que = new URL(req.url).searchParams.get('que');
+    if (que) {
+      if (SECCIONES.indexOf(que) < 0) return json({ ok: false, error: 'seccion desconocida' }, 400);
+      let s = null;
+      try { s = await store.get('s/' + que, { type: 'json' }); } catch (e) {}
+      return json({ ok: true, disponible: true, que,
+                    datos: (s && s.datos) || null,
+                    actualizado: (s && s.actualizado) || '', por: (s && s.por) || '' });
+    }
+
     const d = await leer(store);
     return json({ ok: true, disponible: true, proveedores: d.proveedores,
                   actualizado: d.actualizado || '', por: d.por || '',
@@ -147,6 +170,22 @@ export default async (req) => {
   if (req.method === 'DELETE') {
     await store.setJSON(LLAVE, { proveedores: {}, actualizado: new Date().toISOString(), por: quienEs(c) });
     return json({ ok: true, proveedores: {}, count: 0 });
+  }
+
+  /* ---------------------- GUARDAR UNA SECCION --------------------------- */
+  if (datos && datos.que) {
+    if (SECCIONES.indexOf(datos.que) < 0) return json({ ok: false, error: 'seccion desconocida' }, 400);
+    const cuerpo = datos.datos;
+    if (!cuerpo || typeof cuerpo !== 'object') return json({ ok: false, error: 'no vienen datos' }, 400);
+    const texto = JSON.stringify(cuerpo);
+    if (texto.length > MAX_SECCION) {
+      return json({ ok: false, error: 'demasiado grande', maximo: MAX_SECCION }, 413);
+    }
+    const guardado = { datos: cuerpo, actualizado: new Date().toISOString(), por: quienEs(c) };
+    try { await store.setJSON('s/' + datos.que, guardado); }
+    catch (e) { return json({ ok: false, error: 'no se pudo guardar' }, 500); }
+    return json({ ok: true, que: datos.que, datos: cuerpo,
+                  actualizado: guardado.actualizado, por: guardado.por });
   }
 
   /* ------------------------------ GUARDAR ------------------------------- */

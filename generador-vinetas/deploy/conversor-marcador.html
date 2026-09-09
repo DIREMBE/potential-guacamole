@@ -195,6 +195,15 @@ thead .emp{background:var(--surface-2); z-index:3}
 /* grid day groups */
 .daygrp{border-left:1px solid var(--line)}
 th.day{text-align:center; border-left:1px solid var(--line)}
+/* Lo que se puede arrastrar se nota, y adónde va también. */
+.arrastrable{cursor:grab}
+.arrastrable:active{cursor:grabbing}
+th.day.arrastrable:hover{background:rgba(241,89,48,.12)}
+tr.arrastrable:hover td.emp{background:rgba(241,89,48,.08)}
+.dropaqui{outline:2px dashed #F15930; outline-offset:-2px}
+/* Casilla de almuerzo vacía en un día que sí tiene horas: se está pagando
+   esa hora. Se marca en ámbar, no en rojo: no es un error, es un aviso. */
+input.t.sinalm{background:rgba(245,158,11,.14); border-color:rgba(245,158,11,.45)}
 th.day .dow{display:block; font-size:12.5px; color:var(--ink)}
 th.day .dt{display:block; font-family:"IBM Plex Mono",monospace; font-size:10.5px;
   color:var(--faint); letter-spacing:0; font-weight:400}
@@ -384,7 +393,19 @@ h3.sec{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; lett
     </div>
 
     <section class="panel" id="p-grid" role="tabpanel">
-      <div class="note">Las celdas se llenaron con la <b>primera</b> y la <b>última</b> marca de cada día. Podés corregir cualquier hora aquí antes de exportar — los totales se recalculan solos. Formato <b>HH:MM</b>.</div>
+      <div class="note">Cada día tiene <b>cuatro</b> horas: entra, sale a almorzar,
+        regresa y se retira. La hora de almuerzo <b>no se cuenta como trabajada</b>.
+        Si un día no trae las cuatro marcas, se cuenta entero y queda señalado
+        —no se descuenta una hora que nadie marcó—. Podés corregir cualquier hora
+        aquí antes de exportar; los totales se recalculan solos. Formato <b>HH:MM</b>.
+        <br><b>Arrastra</b> el nombre de un empleado o la cabecera de un día para
+        dejar el cuadro igual que tu planilla: ese orden se guarda para todos.</div>
+      <div class="note" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+        <label style="display:flex;gap:7px;align-items:center;cursor:pointer">
+          <input type="checkbox" id="verAlm" checked> Ver las columnas de almuerzo</label>
+        <button class="btn" id="ordenReset" type="button">Volver al orden de siempre</button>
+        <span id="ordenEstado" style="color:var(--muted);font-size:12.5px"></span>
+      </div>
       <div class="scroller"><table id="grid"></table></div>
     </section>
 
@@ -467,6 +488,7 @@ function guardarEmpleados(){
 
 /* La lista viva. Se puede agregar, renombrar, mover y quitar gente. */
 let EMPLEADOS = cargarEmpleados();
+cargarOrdenLocal();   // el orden del cuadro, tal como quedó en este equipo
 const nEmpleados = function(){ return EMPLEADOS.length; };
 
 // Mapeo inicial: EnNo del marcador -> N° de empleado (1..14). null = sin asignar.
@@ -492,6 +514,83 @@ const SEM1_UTC   = Date.UTC(2026,0,3);
 const FILA_BASE  = 7;
 const PASO_FILA  = 19;
 const DIAS = ["SÁB","DOM","LUN","MAR","MIÉ","JUE","VIE"];
+
+/* ---------------- EL CUADRO SE ACOMODA A LA PLANILLA -------------------
+   La planilla anual manda: el orden de los empleados y el de los días se
+   arrastran hasta que calcen, y ese orden se guarda EN EL SITIO para que a
+   todos les salga igual. Si el sitio no responde se sigue trabajando con lo
+   que haya en el equipo.                                                  */
+const ETIQ = { ent:"Entrada", alm:"Sale a almorzar", reg:"Regresa", sal:"Salida" };
+const LS_ORDEN = 'fsj-marcador-orden';
+let ORDEN = { dias:[0,1,2,3,4,5,6], verAlmuerzo:true };
+
+function camposDia(){ return ORDEN.verAlmuerzo ? ["ent","alm","reg","sal"] : ["ent","sal"]; }
+function ordenDias(){
+  const d = (ORDEN.dias||[]).filter((x)=>x>=0&&x<7);
+  for(let i=0;i<7;i++) if(d.indexOf(i)<0) d.push(i);
+  return d.slice(0,7);
+}
+
+function cargarOrdenLocal(){
+  try{
+    const g=JSON.parse(localStorage.getItem(LS_ORDEN)||'null');
+    if(g && Array.isArray(g.dias)) ORDEN=Object.assign(ORDEN,g);
+  }catch(e){}
+}
+function guardarOrdenLocal(){
+  try{ localStorage.setItem(LS_ORDEN, JSON.stringify(ORDEN)); }catch(e){}
+}
+
+/* El orden y la lista de empleados viajan juntos: son lo que define cómo
+   sale el cuadro. */
+let ordenEstado = { comprobado:false, compartido:false, por:'', actualizado:'' };
+function claveDeSesion(){
+  try{
+    const u = window.FSJAuth && FSJAuth.usuario && FSJAuth.usuario();
+    return (u && u.pin) || '';
+  }catch(e){ return ''; }
+}
+
+async function bajarOrden(){
+  const clave=claveDeSesion(); if(!clave) return false;
+  try{
+    const r=await fetch('/api/config?que=marcador',{headers:{'x-fsj-clave':clave},cache:'no-store'});
+    if(!r.ok) throw new Error('http '+r.status);
+    const d=await r.json();
+    if(!d || !d.ok) throw new Error('respuesta rara');
+    if(d.datos){
+      if(Array.isArray(d.datos.dias)) ORDEN.dias=d.datos.dias;
+      if(typeof d.datos.verAlmuerzo==='boolean') ORDEN.verAlmuerzo=d.datos.verAlmuerzo;
+      if(Array.isArray(d.datos.empleados) && d.datos.empleados.length){
+        EMPLEADOS=d.datos.empleados.slice();
+        guardarEmpleados();
+      }
+      guardarOrdenLocal();
+    }
+    ordenEstado={comprobado:true,compartido:true,por:d.por||'',actualizado:d.actualizado||''};
+    return true;
+  }catch(e){
+    ordenEstado=Object.assign({},ordenEstado,{comprobado:true,compartido:false});
+    return false;
+  }
+}
+
+async function subirOrden(){
+  guardarOrdenLocal();
+  const clave=claveDeSesion(); if(!clave){ ordenEstado.compartido=false; return false; }
+  try{
+    const r=await fetch('/api/config',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({clave, que:'marcador',
+        datos:{dias:ORDEN.dias, verAlmuerzo:ORDEN.verAlmuerzo, empleados:EMPLEADOS}})});
+    const d=await r.json().catch(()=>null);
+    if(!r.ok || !d || !d.ok) throw new Error((d&&d.error)||('http '+r.status));
+    ordenEstado={comprobado:true,compartido:true,por:d.por||'',actualizado:d.actualizado||''};
+    return true;
+  }catch(e){
+    ordenEstado=Object.assign({},ordenEstado,{comprobado:true,compartido:false});
+    return false;
+  }
+}
 
 /* ============================================================
    2. ESTADO
@@ -634,8 +733,29 @@ function procesar(){
       nEmp, empleado: nEmp ? EMPLEADOS[nEmp-1] : null,
       marcas:ded.map(r=>hhmm(r.sec)), brutas:arr.length,
       ent: ded.length ? hhmm(ded[0].sec) : null,
-      sal: ded.length>1 ? hhmm(ded[ded.length-1].sec) : null
+      sal: ded.length>1 ? hhmm(ded[ded.length-1].sec) : null,
+      alm:null, reg:null, almuerzoIncompleto:false
     };
+
+    /* EL ALMUERZO. Todos tienen una hora, así que un día completo trae
+       CUATRO marcas: entra, sale a almorzar, vuelve, se retira. Antes se
+       tomaban solo la primera y la última, y esa hora se pagaba como
+       trabajada.
+
+       Con cuatro o más, el almuerzo es el hueco más grande de en medio —no
+       se asume que sea la segunda marca, porque hay días con marcas de más—.
+       Con menos, NO se inventa: se calcula el día entero y se avisa, que es
+       mejor que descontar una hora que nadie marcó. */
+    if(ded.length>=4){
+      let mejor=-1, hueco=-1;
+      for(let i=1;i<ded.length-2;i++){
+        const g=ded[i+1].sec-ded[i].sec;
+        if(g>hueco){ hueco=g; mejor=i; }
+      }
+      if(mejor>=0){ reg.alm=hhmm(ded[mejor].sec); reg.reg=hhmm(ded[mejor+1].sec); }
+    }else if(ded.length>=2){
+      reg.almuerzoIncompleto=true;
+    }
 
     const quien = "EnNo "+reg.enNo+(reg.usuario?" · "+reg.usuario:"");
     if(!nEmp){
@@ -646,9 +766,15 @@ function procesar(){
       inc.push({t:"warn", tipo:"Una sola marca en el día", quien, det:reg.dia+" · "+reg.ent,
         fix:"Falta la entrada o la salida. Completala a mano en el cuadro."});
     }
-    if(ded.length>2){
-      inc.push({t:"warn", tipo:"Más de dos marcas en el día", quien, det:reg.dia+" · "+reg.marcas.join("  "),
-        fix:"Se tomó la primera y la última. Revisá si hubo salida a almuerzo."});
+    if(ded.length===2 || ded.length===3){
+      inc.push({t:"warn", tipo:"Almuerzo sin marcar", quien,
+        det:reg.dia+" · "+reg.marcas.join("  ")+" ("+ded.length+" marcas)",
+        fix:"El día se cuenta ENTERO, sin descontar la hora de almuerzo. "+
+            "Si de verdad almorzó, escribí las horas de almuerzo en el cuadro."});
+    }
+    if(ded.length>4){
+      inc.push({t:"warn", tipo:"Más de cuatro marcas en el día", quien, det:reg.dia+" · "+reg.marcas.join("  "),
+        fix:"Se tomó la primera, la última y el hueco más largo como almuerzo. Revisá que cuadre."});
     }
     regs.push(reg);
   }
@@ -669,6 +795,8 @@ function sembrarCeldas(){
   for(const r of S.registros){
     if(r.sem!==S.semana || !r.nEmp) continue;
     if(r.ent) S.celdas.set(r.nEmp+"|"+r.dow+"|ent", r.ent);
+    if(r.alm) S.celdas.set(r.nEmp+"|"+r.dow+"|alm", r.alm);
+    if(r.reg) S.celdas.set(r.nEmp+"|"+r.dow+"|reg", r.reg);
     if(r.sal) S.celdas.set(r.nEmp+"|"+r.dow+"|sal", r.sal);
   }
   // reaplica ediciones manuales (incluye los borrados a propósito)
@@ -682,20 +810,36 @@ function sembrarCeldas(){
 /* ============================================================
    5. CÁLCULOS (espejo de las fórmulas del libro)
    ============================================================ */
+/* Las horas de un día. Con el almuerzo marcado son dos tramos —de la
+   entrada a la salida a almorzar, y del regreso a la salida— y esa hora no
+   se paga. Sin marcar, se cuenta el día entero y el día queda señalado: no
+   se descuenta una hora que nadie registró. */
+function horasDelDia(nEmp, d){
+  const e=secDe(S.celdas.get(nEmp+"|"+d+"|ent"));
+  const s=secDe(S.celdas.get(nEmp+"|"+d+"|sal"));
+  if(e==null || s==null || s<=e) return {horas:0, hay:e!=null, sinAlmuerzo:false};
+  const a=secDe(S.celdas.get(nEmp+"|"+d+"|alm"));
+  const r=secDe(S.celdas.get(nEmp+"|"+d+"|reg"));
+  if(a!=null && r!=null && a>e && r>a && s>r){
+    return {horas:((a-e)+(s-r))/3600, hay:true, sinAlmuerzo:false};
+  }
+  return {horas:(s-e)/3600, hay:true, sinAlmuerzo:true};
+}
+
 function filaCalc(nEmp){
-  let horas=0, diasLV=0, diasSD=0, extra=0;
+  let horas=0, diasLV=0, diasSD=0, extra=0, sinAlm=0;
   for(let d=0; d<7; d++){
     const e=secDe(S.celdas.get(nEmp+"|"+d+"|ent"));
-    const s=secDe(S.celdas.get(nEmp+"|"+d+"|sal"));
     const finde = d<2;
     if(e!=null) (finde? diasSD++ : diasLV++);
-    if(e!=null && s!=null && s>e){
-      const h=(s-e)/3600;
-      horas+=h;
-      extra += Math.max(0, h - (finde?HRS_ORD_SD:HRS_ORD_LV));
+    const x=horasDelDia(nEmp,d);
+    if(x.horas>0){
+      horas+=x.horas;
+      extra += Math.max(0, x.horas - (finde?HRS_ORD_SD:HRS_ORD_LV));
+      if(x.sinAlmuerzo) sinAlm++;
     }
   }
-  return {horas, diasLV, diasSD, extra};
+  return {horas, diasLV, diasSD, extra, sinAlm};
 }
 
 /* ============================================================
@@ -745,32 +889,51 @@ function renderSelSemana(){
 
 function renderGrid(){
   if(S.semana==null){ $("#grid").innerHTML=""; return; }
+  const campos=camposDia(), dias=ordenDias(), ancho=campos.length;
   let h='<thead><tr><th class="emp" rowspan="2">Empleado</th>';
-  for(let d=0; d<7; d++){
+  for(const d of dias){
     const dt=fechaDeSemDia(S.semana,d);
-    h+='<th class="day" colspan="2"><span class="dow">'+DIAS[d]+'</span><span class="dt">'+fmtDia(dt)+'</span></th>';
+    /* Las cabeceras de los días se arrastran para dejar el cuadro en el
+       mismo orden que la planilla. */
+    h+='<th class="day arrastrable" colspan="'+ancho+'" draggable="true" data-dia="'+d+'" '
+     + 'title="Arrastra para mover este día"><span class="dow">'+DIAS[d]+'</span>'
+     + '<span class="dt">'+fmtDia(dt)+'</span></th>';
   }
   h+='<th class="num tot" rowspan="2">Hrs<br>semana</th><th class="num tot" rowspan="2">Días<br>L–V</th>'
    + '<th class="num tot" rowspan="2">Días<br>S–D</th><th class="num tot" rowspan="2">Hrs<br>extra</th></tr><tr>';
-  for(let d=0; d<7; d++) h+='<th class="sub daygrp">Ent</th><th class="sub">Sal</th>';
+  for(let k=0;k<dias.length;k++)
+    for(const campo of campos)
+      h+='<th class="sub'+(campo==="ent"?" daygrp":"")+'">'+
+         (campo==="ent"?"Ent":campo==="alm"?"Alm":campo==="reg"?"Reg":"Sal")+'</th>';
   h+='</tr></thead><tbody>';
 
   const T={horas:0,diasLV:0,diasSD:0,extra:0};
   for(let i=1;i<=nEmpleados();i++){
     const c=filaCalc(i);
     T.horas+=c.horas; T.diasLV+=c.diasLV; T.diasSD+=c.diasSD; T.extra+=c.extra;
-    h+='<tr><td class="emp"><span class="rownum">'+pad(i)+'</span> '+esc(EMPLEADOS[i-1])+'</td>';
-    for(let d=0; d<7; d++){
-      for(const campo of ["ent","sal"]){
+    h+='<tr draggable="true" class="arrastrable" data-emp="'+i+'">'
+     + '<td class="emp" title="Arrastra para cambiar el orden"><span class="rownum">'+pad(i)+'</span> '
+     + esc(EMPLEADOS[i-1])
+     + (c.sinAlm?' <span class="pill warn" title="'+c.sinAlm+' día(s) sin almuerzo marcado: '+
+        'se cuentan enteros">'+c.sinAlm+' sin almuerzo</span>':'')+'</td>';
+    for(const d of ordenDias()){
+      const x=horasDelDia(i,d);
+      for(const campo of camposDia()){
         const key=i+"|"+d+"|"+campo;
         const v=S.celdas.get(key)||"";
-        const otro=S.celdas.get(i+"|"+d+"|"+(campo==="ent"?"sal":"ent"))||"";
+        const ent=S.celdas.get(i+"|"+d+"|ent")||"";
+        const sal=S.celdas.get(i+"|"+d+"|sal")||"";
         let cls="t"+(campo==="ent"?" daygrp":"");
         if(v && !secDe(v)) cls+=" bad";
-        else if(v && !otro) cls+=" solo";
+        else if(v && campo==="ent" && !sal) cls+=" solo";
+        else if(v && campo==="sal" && !ent) cls+=" solo";
         else if(v) cls+=" filled";
+        /* Un día con horas pero sin almuerzo marcado se señala: se está
+           contando la hora del almuerzo como trabajada. */
+        if(!v && (campo==="alm"||campo==="reg") && x.sinAlmuerzo && x.horas>0) cls+=" sinalm";
         h+='<td'+(campo==="ent"?' class="daygrp"':'')+'><input class="'+cls+'" data-k="'+key+'" value="'+esc(v)+'" '
-         + 'placeholder="--:--" inputmode="numeric" maxlength="5" aria-label="'+DIAS[d]+' '+campo+' '+esc(EMPLEADOS[i-1])+'"></td>';
+         + 'placeholder="'+(campo==="alm"||campo==="reg"?"·":"--:--")+'" inputmode="numeric" maxlength="5" '
+         + 'title="'+ETIQ[campo]+'" aria-label="'+DIAS[d]+' '+ETIQ[campo]+' '+esc(EMPLEADOS[i-1])+'"></td>';
       }
     }
     h+='<td class="num tot">'+(c.horas?c.horas.toFixed(2):"—")+'</td>'
@@ -778,10 +941,144 @@ function renderGrid(){
      + '<td class="num tot">'+(c.diasSD||"—")+'</td>'
      + '<td class="num tot">'+(c.extra?c.extra.toFixed(2):"—")+'</td></tr>';
   }
-  h+='</tbody><tfoot><tr><td class="emp">Totales</td><td colspan="14"></td>'
+  h+='</tbody><tfoot><tr><td class="emp">Totales</td><td colspan="'+(dias.length*ancho)+'"></td>'
    + '<td class="num">'+T.horas.toFixed(2)+'</td><td class="num">'+T.diasLV+'</td>'
    + '<td class="num">'+T.diasSD+'</td><td class="num">'+T.extra.toFixed(2)+'</td></tr></tfoot>';
   $("#grid").innerHTML=h;
+  engancharArrastre();
+  engancharOrden();
+  pintarOrdenEstado();
+}
+
+/* ---------------------- ARRASTRAR PARA REORDENAR ----------------------
+   Un solo par de manejadores en la tabla, no uno por fila: la tabla se
+   redibuja entera cada dos por tres y engancharlos en cada celda dejaría
+   manejadores viejos por todas partes.                                   */
+let _arr = null;      // qué se está arrastrando: {tipo:'emp'|'dia', valor}
+
+function engancharArrastre(){
+  const g=$("#grid"); if(!g || g._arrastreListo) return;
+  g._arrastreListo=true;
+
+  g.addEventListener('dragstart',(e)=>{
+    const th=e.target.closest && e.target.closest('th[data-dia]');
+    const tr=e.target.closest && e.target.closest('tr[data-emp]');
+    if(th) _arr={tipo:'dia', valor:+th.dataset.dia};
+    else if(tr) _arr={tipo:'emp', valor:+tr.dataset.emp};
+    else return;
+    try{ e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',''); }catch(_){}
+  });
+
+  g.addEventListener('dragover',(e)=>{
+    if(!_arr) return;
+    const destino = _arr.tipo==='dia'
+      ? (e.target.closest && e.target.closest('th[data-dia]'))
+      : (e.target.closest && e.target.closest('tr[data-emp]'));
+    if(!destino) return;
+    e.preventDefault();
+    try{ e.dataTransfer.dropEffect='move'; }catch(_){}
+    g.querySelectorAll('.dropaqui').forEach((x)=>x.classList.remove('dropaqui'));
+    destino.classList.add('dropaqui');
+  });
+
+  g.addEventListener('drop',(e)=>{
+    if(!_arr) return;
+    e.preventDefault();
+    g.querySelectorAll('.dropaqui').forEach((x)=>x.classList.remove('dropaqui'));
+    if(_arr.tipo==='dia'){
+      const th=e.target.closest && e.target.closest('th[data-dia]');
+      if(th) moverDia(_arr.valor, +th.dataset.dia);
+    }else{
+      const tr=e.target.closest && e.target.closest('tr[data-emp]');
+      if(tr) moverEmpleado(_arr.valor, +tr.dataset.emp);
+    }
+    _arr=null;
+  });
+
+  g.addEventListener('dragend',()=>{
+    _arr=null;
+    g.querySelectorAll('.dropaqui').forEach((x)=>x.classList.remove('dropaqui'));
+  });
+}
+
+function moverDia(de, a){
+  if(de===a) return;
+  const d=ordenDias();
+  const i=d.indexOf(de), j=d.indexOf(a);
+  if(i<0||j<0) return;
+  d.splice(j,0,d.splice(i,1)[0]);
+  ORDEN.dias=d;
+  subirOrden().then(render);
+  render();
+}
+
+/* Mover un empleado mueve su FILA, y con ella todo lo escrito: las celdas
+   están guardadas por número de fila, así que hay que renumerarlas o el
+   cuadro quedaría con las horas de otra persona. */
+function moverEmpleado(de, a){
+  if(de===a) return;
+  const n=nEmpleados();
+  if(de<1||de>n||a<1||a>n) return;
+
+  const lista=EMPLEADOS.slice();
+  lista.splice(a-1, 0, lista.splice(de-1,1)[0]);
+
+  /* De dónde viene ahora cada fila: destino -> origen. */
+  const orden=[]; for(let k=1;k<=n;k++) orden.push(k);
+  orden.splice(a-1, 0, orden.splice(de-1,1)[0]);
+
+  const nuevas=new Map();
+  for(const [k,v] of S.celdas){
+    const manual = k.startsWith('m|');
+    const cuerpo = manual ? k.slice(2) : k;
+    const p = cuerpo.split('|');
+    const viejo = +p[0];
+    const nuevo = orden.indexOf(viejo) + 1;
+    if(!nuevo){ nuevas.set(k,v); continue; }
+    nuevas.set((manual?'m|':'')+nuevo+'|'+p[1]+'|'+p[2], v);
+  }
+  /* Y el mapeo usuario-del-marcador -> empleado, que también va por número. */
+  const mapeo={};
+  for(const k of Object.keys(S.mapeo)){
+    const nuevo = orden.indexOf(S.mapeo[k]) + 1;
+    mapeo[k] = nuevo || S.mapeo[k];
+  }
+  for(const r of S.registros){ if(r.nEmp){ const x=orden.indexOf(r.nEmp)+1; if(x) r.nEmp=x; } }
+
+  EMPLEADOS=lista; S.celdas=nuevas; S.mapeo=mapeo;
+  guardarEmpleados();
+  subirOrden().then(render);
+  render();
+}
+
+function pintarOrdenEstado(){
+  const e=document.getElementById('ordenEstado'); if(!e) return;
+  if(!ordenEstado.comprobado){ e.textContent=''; return; }
+  e.innerHTML = ordenEstado.compartido
+    ? 'El orden se guarda para todos los equipos.' +
+      (ordenEstado.por?' Último cambio: '+ordenEstado.por+'.':'')
+    : '<b>Solo en este equipo</b> — el sitio no respondió; vuelve a intentarlo al entrar.';
+}
+
+function engancharOrden(){
+  const chk=document.getElementById('verAlm');
+  if(chk && !chk._listo){
+    chk._listo=true;
+    chk.addEventListener('change',function(){
+      ORDEN.verAlmuerzo=chk.checked;
+      subirOrden().then(pintarOrdenEstado);
+      render();
+    });
+  }
+  const btn=document.getElementById('ordenReset');
+  if(btn && !btn._listo){
+    btn._listo=true;
+    btn.addEventListener('click',function(){
+      ORDEN.dias=[0,1,2,3,4,5,6];
+      subirOrden().then(pintarOrdenEstado);
+      render();
+    });
+  }
 }
 
 function renderMarcas(){
@@ -836,13 +1133,11 @@ function renderMapeo(){
    7. EXPORTACIÓN
    ============================================================ */
 function bloqueTSV(){
-  const filas=[];
+  /* El mismo orden que el cuadro: es lo que se pega en la planilla. */
+  const campos=camposDia(), dias=ordenDias(), filas=[];
   for(let i=1;i<=nEmpleados();i++){
     const f=[];
-    for(let d=0; d<7; d++){
-      f.push(S.celdas.get(i+"|"+d+"|ent")||"");
-      f.push(S.celdas.get(i+"|"+d+"|sal")||"");
-    }
+    for(const d of dias) for(const campo of campos) f.push(S.celdas.get(i+"|"+d+"|"+campo)||"");
     filas.push(f.join("\t"));
   }
   return filas.join("\n");
@@ -860,10 +1155,16 @@ function exportarXLSX(){
   const sem=pad(S.semana), rango=rangoSemana(S.semana), fila=filaExcel(S.semana);
 
   /* --- Hoja 1: bloque listo para pegar --- */
+  /* Sale en el MISMO orden en que quedó el cuadro —días y empleados—, que es
+     justo lo que permite pegarlo en la planilla sin acomodar nada. */
+  const campos=camposDia(), dias=ordenDias();
+  const rot={ent:"ENT",alm:"ALM",reg:"REG",sal:"SAL"};
   const enc1=["N°","NOMBRE"], enc2=["",""];
-  for(let d=0; d<7; d++){
+  for(const d of dias){
     const dt=fechaDeSemDia(S.semana,d);
-    enc1.push(DIAS[d]+" "+fmtDia(dt), ""); enc2.push("ENT","SAL");
+    enc1.push(DIAS[d]+" "+fmtDia(dt));
+    for(let k=1;k<campos.length;k++) enc1.push("");
+    for(const campo of campos) enc2.push(rot[campo]);
   }
   const aoa=[
     ["SEMANA "+sem+"  –  "+rango+"  –  Pegar el rango C:P en la fila "+fila+" de «📅 Asistencia Anual»"],
@@ -871,7 +1172,7 @@ function exportarXLSX(){
   ];
   for(let i=1;i<=nEmpleados();i++){
     const f=[i, EMPLEADOS[i-1]];
-    for(let d=0; d<7; d++){ f.push(S.celdas.get(i+"|"+d+"|ent")||"", S.celdas.get(i+"|"+d+"|sal")||""); }
+    for(const d of dias) for(const campo of campos) f.push(S.celdas.get(i+"|"+d+"|"+campo)||"");
     aoa.push(f);
   }
   const ws1=XLSX.utils.aoa_to_sheet(aoa);
@@ -1165,6 +1466,13 @@ pintarEmpleados();
     u = u || (window.FSJAuth && FSJAuth.usuario && FSJAuth.usuario());
     var e = document.getElementById('quien');
     if(u && e) e.textContent = 'Empleado: ' + u.nombre;
+    /* Hasta que no entra no hay clave, y el orden del cuadro pide clave
+       incluso para leerse. Se recoge aquí. */
+    if(u) bajarOrden().then(function(){
+      var chk=document.getElementById('verAlm');
+      if(chk) chk.checked = ORDEN.verAlmuerzo !== false;
+      pintarOrdenEstado(); render();
+    });
   };
   window.__fsjTrasLogin();
 </script>
