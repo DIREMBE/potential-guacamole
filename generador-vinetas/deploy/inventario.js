@@ -1321,6 +1321,7 @@ window.Inventario = (function () {
       try { base = await _bajarBaseServidor({ publica: !!op.publica }); } catch (e) { base = 0; }
     }
     const n = await _bajarCambiosServidor();
+    await _bajarProveedores().catch(() => {});
     return { recibidos: n, base, estado: estadoSincronizacion() };
   }
 
@@ -1558,18 +1559,106 @@ window.Inventario = (function () {
      El reporte de FelTec no trae proveedor: trae ITEM, producto, categoría,
      existencias y precios, y nada más. Pero en la práctica cada marca se le
      compra a alguien, así que el pedido se puede partir por proveedor con
-     una tabla marca -> proveedor que se llena una vez y se corrige cuando
-     cambia. Vive en este equipo; se puede exportar e importar.            */
+     una tabla marca -> proveedor.
+
+     La tabla NO es de cada equipo, es de la ferretería: si Diego le pone
+     proveedor a TRUPER, Carlos tiene que verlo. Vive en el sitio
+     (/api/config) y aquí se guarda una copia para poder trabajar aunque no
+     haya internet. Al escribir se manda SOLO lo que cambió, para que dos
+     personas asignando marcas distintas a la vez no se borren una a otra. */
+  const API_CONFIG = '/api/config';
+  let provEstado = { comprobado: false, compartida: false, actualizado: '', por: '' };
+
   function proveedores() { return Object.assign({}, meta.proveedores || {}); }
+  function estadoProveedores() {
+    return Object.assign({}, provEstado,
+      { pendientes: Object.keys(meta.provPendientes || {}).length });
+  }
+
+  function _provPendientes() { return Object.assign({}, meta.provPendientes || {}); }
+
+  /* Lo que se asignó sin internet. Si al bajar la tabla del sitio se pisara
+     sin más, ese trabajo se perdería en silencio: se vuelve a poner encima y
+     se reintenta mandarlo. */
+  async function _mandarPendientesProv() {
+    const pend = _provPendientes();
+    if (!Object.keys(pend).length) return true;
+    const ok = await _mandarProveedores({ cambios: pend }, true);
+    if (ok) { meta.provPendientes = {}; await saveMeta(); }
+    return ok;
+  }
+
+  async function _bajarProveedores() {
+    const clave = _claveEnvio();
+    if (!clave) return false;
+    try {
+      const r = await fetch(API_CONFIG, { headers: { 'x-fsj-clave': clave }, cache: 'no-store' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      const d = await r.json();
+      if (!d || !d.ok) throw new Error('respuesta rara');
+
+      const delSitio = d.proveedores || {};
+      const pend = _provPendientes();
+      /* Lo pendiente manda sobre lo del sitio: es más nuevo, todavía no ha
+         llegado. Lo demás viene tal cual del sitio. */
+      for (const m of Object.keys(pend)) {
+        if (pend[m]) delSitio[m] = pend[m]; else delete delSitio[m];
+      }
+      meta.proveedores = delSitio;
+      provEstado = { comprobado: true, compartida: true,
+                     actualizado: d.actualizado || '', por: d.por || '' };
+      await saveMeta();
+      await _mandarPendientesProv();
+      emitir('proveedores', { total: Object.keys(meta.proveedores).length, delSitio: true });
+      return true;
+    } catch (e) {
+      provEstado = Object.assign({}, provEstado, { comprobado: true, compartida: false });
+      return false;
+    }
+  }
+
+  async function _mandarProveedores(cuerpo, sinReencolar) {
+    const clave = _claveEnvio();
+    if (!clave) return false;
+    try {
+      const r = await fetch(API_CONFIG, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(Object.assign({ clave }, cuerpo)),
+      });
+      const d = await r.json().catch(() => null);
+      if (!r.ok || !d || !d.ok) throw new Error((d && d.error) || ('http ' + r.status));
+      /* Se toma lo que devolvió el servidor, no lo que mandamos: si otro
+         equipo asignó algo mientras tanto, viene incluido. */
+      meta.proveedores = d.proveedores || {};
+      provEstado = { comprobado: true, compartida: true,
+                     actualizado: d.actualizado || '', por: d.por || '' };
+      await saveMeta();
+      return true;
+    } catch (e) {
+      provEstado = Object.assign({}, provEstado, { comprobado: true, compartida: false });
+      /* No llegó: se apunta para reintentarlo. `sinReencolar` es para el
+         propio reintento, que si no se estaría reencolando a sí mismo. */
+      if (!sinReencolar && cuerpo && cuerpo.cambios) {
+        meta.provPendientes = Object.assign(_provPendientes(), cuerpo.cambios);
+        await saveMeta();
+      }
+      return false;
+    }
+  }
 
   async function setProveedorDeMarca(marca, proveedor) {
     const m = upper(marca);
     if (!m) return false;
-    const mapa = Object.assign({}, meta.proveedores || {});
     const v = String(proveedor || '').trim();
+    /* Primero aquí, para que la pantalla responda al momento; después al
+       sitio. Si el sitio no está, queda guardado en el equipo igual. */
+    const mapa = Object.assign({}, meta.proveedores || {});
     if (v) mapa[m] = v; else delete mapa[m];
     meta.proveedores = mapa;
     await saveMeta();
+    const cambios = {}; cambios[m] = v;
+    await _mandarProveedores({ cambios });
     emitir('proveedores', { marca: m, proveedor: v });
     return true;
   }
@@ -1582,6 +1671,8 @@ window.Inventario = (function () {
     }
     meta.proveedores = limpio;
     await saveMeta();
+    /* Cargar un archivo sí reemplaza la tabla entera: es lo que se pidió. */
+    await _mandarProveedores({ reemplazar: true, proveedores: limpio });
     emitir('proveedores', { total: Object.keys(limpio).length });
     return Object.keys(limpio).length;
   }
@@ -1742,7 +1833,11 @@ window.Inventario = (function () {
      carga el archivo publicado y queda apuntado que faltó. En cuanto entra, se
      vuelve a intentar y se queda con la del sitio si es más nueva. */
   function _reintentarBaseConClave() {
-    if (!_baseFaltaClave || !_claveEnvio()) return;
+    if (!_claveEnvio()) return;
+    /* La tabla de proveedores también necesita clave hasta para leerse, así
+       que se recoge en este mismo momento: cuando el empleado entra. */
+    Promise.resolve(_arranque).catch(() => {}).then(() => _bajarProveedores()).catch(() => {});
+    if (!_baseFaltaClave) return;
     _baseFaltaClave = false;
     Promise.resolve(_arranque).catch(() => {})
       .then(() => _bajarBaseServidor())
@@ -2136,6 +2231,7 @@ window.Inventario = (function () {
     guardarBaseEnServidor, estadoBaseServidor, bajarBaseServidor: _bajarBaseServidor,
     estadoEtiqueta, marcarEtiqueta, sinEtiqueta,
     proveedores, setProveedorDeMarca, setProveedores, proveedorDeMarca, SIN_PROVEEDOR,
+    estadoProveedores, bajarProveedores: _bajarProveedores,
     setDestacado, historial, catalogo, categorias, sinPrecio, recientes, tocar, marcarVisto,
     analizarConteo, aplicarConteo, setActivo, deBaja, altaProducto, setCodigo,
     setPromo, quitarPromo, promociones, enOferta, descuento,

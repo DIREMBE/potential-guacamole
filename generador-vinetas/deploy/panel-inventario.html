@@ -444,14 +444,16 @@ details.plegable[open]>summary{margin-bottom:12px}
         <p style="margin:0 0 10px;font-size:13.5px;color:var(--s600)">
           El reporte de FelTec no trae proveedor, así que se arma aquí: a cada marca
           se le pone quién se la vende y el pedido se puede partir por proveedor.
-          Se escribe una vez y queda. <b>Vive en este equipo</b>; con «Descargar» y
-          «Cargar» lo pasas a los demás.
+          Se escribe una vez y <b>la ven todos los equipos</b> — no hace falta pasarla.
+          <span id="prov-estado"></span>
         </p>
         <div id="prov-lista"><div class="empty">Carga un reporte para ver las marcas.</div></div>
         <div class="row" style="margin-top:12px">
-          <button class="btn b-gh b-sm" id="prov-bajar">Descargar la tabla</button>
-          <label class="btn b-gh b-sm" style="cursor:pointer">Cargar una tabla
+          <button class="btn b-gh b-sm" id="prov-bajar">Descargar una copia</button>
+          <label class="btn b-gh b-sm" style="cursor:pointer">Cargar de un archivo
             <input type="file" id="prov-subir" accept="application/json,.json" hidden></label>
+          <span class="hint" style="color:var(--s500);font-size:12.5px">
+            Cargar un archivo <b>reemplaza la tabla de todos</b>.</span>
         </div>
       </details>
     </div>
@@ -1317,6 +1319,21 @@ details.plegable[open]>summary{margin-bottom:12px}
   /* ------------------- Quién le vende cada marca ----------------------- */
   function pintarProveedores(){
     if(!compras.length){ return; }
+
+    /* Que se vea si de verdad se está compartiendo o si esto se quedó en
+       este equipo: decir «la ven todos» cuando no es cierto es peor que no
+       decir nada. */
+    var e=Inventario.estadoProveedores();
+    $('prov-estado').innerHTML = !e.comprobado ? ''
+      : e.compartida
+        ? '<b style="color:var(--ok,#15803D)">Compartida.</b>' +
+          (e.actualizado ? ' Última vez: '+new Date(e.actualizado).toLocaleDateString('es-SV',
+            {day:'numeric',month:'short'})+(e.por?' ('+esc(e.por)+')':'')+'.' : '')
+        : '<b style="color:var(--w,#B45309)">Ahora mismo solo en este equipo</b>' +
+          ' — el sitio no respondió' +
+          (e.pendientes ? '; '+nf(e.pendientes)+' marca(s) esperando salir' : '') +
+          '. Se manda sola al actualizar.';
+
     var marcas={};
     compras.forEach(function(p){ marcas[p.marca||'(sin marca)']=true; });
     var lista=Object.keys(marcas).sort();

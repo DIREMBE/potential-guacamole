@@ -26,9 +26,11 @@ conversor-marcador.html  NUEVO · Convierte la exportación del marcador
                          biométrico en el cuadro semanal de asistencia.
 netlify.toml             Configuración (necesaria para las fotos automáticas).
 netlify/functions/       Funciones del servidor: entrada de empleados, fotos,
-                         cambios de inventario compartidos y NUEVO · la base
-                         del inventario guardada en el sitio (base.mjs), que es
-                         lo que quita el paso de publicar tras el Excel mensual.
+                         cambios de inventario compartidos, la base del
+                         inventario guardada en el sitio (base.mjs) —lo que
+                         quita el paso de publicar tras el Excel mensual— y
+                         NUEVO · config.mjs, los ajustes que comparten todos
+                         los equipos (hoy: quién le vende cada marca).
 sincronia.js             NUEVO · La línea de arriba de las pantallas internas
                          que dice si los cambios se están compartiendo.
 recuperar-fotos.js       TEMPORAL · Sube al sitio las fotos que se quedaron
@@ -361,9 +363,22 @@ vende cada marca»* le pones a cada marca quién se la vende, y con eso el pedid
 se parte por proveedor. Se escribe una vez y queda; lo que no tenga proveedor
 asignado cae en un grupo aparte, bien visible, para que no se pase por alto.
 
-> Esa tabla **vive en el equipo donde la escribiste**, no en el sitio. Con
-> «Descargar la tabla» y «Cargar una tabla» la pasas a los demás. Si la quieres
-> compartida de verdad, como los precios, es un añadido pequeño — pídemelo.
+**Esa tabla la ven todos los equipos.** No es de cada quien, es de la
+ferretería: si Diego le pone proveedor a TRUPER, Carlos lo ve al entrar. Vive en
+el sitio, y cada equipo guarda una copia para poder trabajar aunque se caiga el
+internet — lo que asignes sin conexión queda apuntado y sale solo al actualizar.
+Arriba del todo dice si está compartida o si de momento se quedó en tu equipo.
+
+Se manda **solo lo que cambiaste**, no la tabla entera, para que dos personas
+asignando marcas distintas al mismo tiempo no se borren una a la otra.
+
+> A quién le compramos es información del negocio: para leer esa tabla **hace
+> falta la clave**, igual que para escribirla. El catálogo del cliente no la
+> toca.
+>
+> «Descargar una copia» te la baja como archivo, y «Cargar de un archivo»
+> **reemplaza la de todos** — eso sí es a propósito, para cuando la armes
+> aparte en una hoja de cálculo.
 
 **«Parado · ofertas sugeridas»** es lo que más rinde: lista lo que lleva meses
 sin moverse con el dinero que tiene quieto, lo marcas —con buscador, y «marcar
