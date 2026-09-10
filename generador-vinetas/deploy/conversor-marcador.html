@@ -474,6 +474,18 @@ const EMPLEADOS_INICIALES = [
 ];
 
 const LS_EMPLEADOS = 'fsj-marcador-empleados';
+const LS_MAPEO = 'fsj-marcador-mapeo';
+
+function cargarMapeo(){
+  try{
+    var g = JSON.parse(localStorage.getItem(LS_MAPEO) || 'null');
+    if(g && typeof g === 'object') return Object.assign({}, MAPEO_DEFECTO, g);
+  }catch(e){}
+  return Object.assign({}, MAPEO_DEFECTO);
+}
+function guardarMapeo(){
+  try{ localStorage.setItem(LS_MAPEO, JSON.stringify(S.mapeo)); }catch(e){}
+}
 
 function cargarEmpleados(){
   try{
@@ -504,6 +516,70 @@ const MAPEO_DEFECTO = {
   9:7,     // marcosr -> RUBIO HERNANDEZ, MARCOS ANTONIO
   10:9     // sergiov -> VILLATORO HERNANDEZ, SERGIO JAVIER
 };
+
+/* ------------- RECONOCER A QUIÉN ES CADA USUARIO DEL MARCADOR ----------
+   La tabla de arriba es la que había el primer día; en cuanto entra alguien
+   nuevo —Elvin, por ejemplo— su usuario no está y aparece en blanco, con sus
+   marcas sin ir a ninguna parte.
+
+   Pero el marcador nombra a la gente siempre igual: NOMBRE + la inicial de un
+   apellido. «misaelv» es MISAEL de VILLATORO, «mariod» es MARIO de DÍAZ,
+   «elvins» es ELVIN de SORTO. Con eso se puede adivinar sin tabla.
+
+   Se adivina solo cuando hay UNA respuesta posible. Si dos empleados
+   encajaran, se deja sin asignar: es mejor que te pida asignarlo a que le
+   ponga las horas de otro.                                                */
+function sinTildes(t){
+  var x=String(t==null?"":t).toUpperCase();
+  if(x.normalize) x=x.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  return x.replace(/[^A-Z0-9]/g," ").replace(/\s+/g," ").trim();
+}
+
+/* "SORTO CANALES, ELVIN ORLANDO" -> {apellidos:[SORTO,CANALES], nombres:[ELVIN,ORLANDO]} */
+function partirNombre(completo){
+  var t=String(completo||"");
+  var i=t.indexOf(",");
+  var ap = i>=0 ? t.slice(0,i) : "";
+  var no = i>=0 ? t.slice(i+1) : t;
+  return { apellidos: sinTildes(ap).split(" ").filter(Boolean),
+           nombres:   sinTildes(no).split(" ").filter(Boolean) };
+}
+
+function adivinarEmpleado(usuario){
+  var u=sinTildes(usuario).replace(/ /g,"");
+  if(u.length<3) return null;
+  var encajan=[];
+  for(var i=0;i<EMPLEADOS.length;i++){
+    var p=partirNombre(EMPLEADOS[i]);
+    var todos=p.nombres.concat(p.apellidos);
+    var vale=false;
+    for(var n=0;n<p.nombres.length && !vale;n++){
+      var nom=p.nombres[n];
+      if(u===nom){ vale=true; break; }                       // "gerson"
+      if(u.indexOf(nom)!==0) continue;                        // tiene que empezar por el nombre
+      var resto=u.slice(nom.length);
+      if(!resto) { vale=true; break; }
+      /* Lo que sobra es el principio de OTRA de sus palabras: "elvin"+"s" de
+         SORTO, "ronal"+"i" de ISAAC. Hay gente en la lista sin apellido, así
+         que se miran todas, no solo los apellidos. */
+      for(var a=0;a<todos.length && !vale;a++){
+        if(todos[a]!==nom && todos[a].indexOf(resto)===0) vale=true;
+      }
+    }
+    /* Y al revés, por si el usuario es apellido+inicial. */
+    if(!vale) for(var a2=0;a2<p.apellidos.length && !vale;a2++){
+      var ape=p.apellidos[a2];
+      if(u.indexOf(ape)!==0) continue;
+      var resto2=u.slice(ape.length);
+      if(!resto2){ vale=true; break; }
+      for(var n2=0;n2<todos.length && !vale;n2++){
+        if(todos[n2]!==ape && todos[n2].indexOf(resto2)===0) vale=true;
+      }
+    }
+    if(vale) encajan.push(i+1);
+  }
+  return encajan.length===1 ? encajan[0] : null;
+}
 
 // Config espejo de la hoja "⚙️ Configuración"
 const HRS_ORD_LV = 9;    // B11
@@ -565,6 +641,12 @@ async function bajarOrden(){
         EMPLEADOS=d.datos.empleados.slice();
         guardarEmpleados();
       }
+      /* Quién es cada usuario del marcador también es de la ferretería, no de
+         un equipo: si Diego asigna a Elvin, Carlos no tiene que repetirlo. */
+      if(d.datos.mapeo && typeof d.datos.mapeo==='object' && typeof S!=='undefined'){
+        S.mapeo=Object.assign({}, MAPEO_DEFECTO, d.datos.mapeo);
+        guardarMapeo();
+      }
       guardarOrdenLocal();
     }
     ordenEstado={comprobado:true,compartido:true,por:d.por||'',actualizado:d.actualizado||''};
@@ -581,7 +663,8 @@ async function subirOrden(){
   try{
     const r=await fetch('/api/config',{method:'POST',headers:{'content-type':'application/json'},
       body:JSON.stringify({clave, que:'marcador',
-        datos:{dias:ORDEN.dias, verAlmuerzo:ORDEN.verAlmuerzo, empleados:EMPLEADOS}})});
+        datos:{dias:ORDEN.dias, verAlmuerzo:ORDEN.verAlmuerzo, empleados:EMPLEADOS,
+               mapeo:(typeof S!=='undefined' && S.mapeo) ? S.mapeo : null}})});
     const d=await r.json().catch(()=>null);
     if(!r.ok || !d || !d.ok) throw new Error((d&&d.error)||('http '+r.status));
     ordenEstado={comprobado:true,compartido:true,por:d.por||'',actualizado:d.actualizado||''};
@@ -600,7 +683,10 @@ const S = {
   registros:[],        // un objeto por empleado+día
   incidencias:[],
   usuarios:new Map(),  // enNo -> {enNo, nombre, dias}
-  mapeo:Object.assign({}, MAPEO_DEFECTO),
+  /* El mapeo usuario-del-marcador -> empleado se guarda: antes vivía solo en
+     memoria y al recargar volvía a la tabla fija, así que asignar a alguien
+     nuevo no servía de nada. */
+  mapeo:cargarMapeo(),
   semanas:[],
   semana:null,
   celdas:new Map(),    // "nEmp|dia|ent|sal" -> "HH:MM"
@@ -718,13 +804,22 @@ function procesar(){
     grupos.get(k).push(r);
   }
 
-  const regs=[];
+  const regs=[], adivinados=[];
   for(const arr of grupos.values()){
     arr.sort((a,b)=>a.sec-b.sec);
     const ded=[];
     for(const r of arr){ if(!ded.length || r.sec-ded[ded.length-1].sec >= dedupeMin*60) ded.push(r); }
 
     const p0=arr[0];
+    /* Sin asignar todavía: se intenta adivinar por el nombre del usuario. Si
+       sale, queda asignado de verdad —se guarda— y no vuelve a preguntarse. */
+    if(S.mapeo[p0.enNo]==null){
+      const adivinado = adivinarEmpleado(p0.nombre);
+      if(adivinado && !Object.values(S.mapeo).includes(adivinado)){
+        S.mapeo[p0.enNo]=adivinado;
+        adivinados.push({usuario:p0.nombre, enNo:p0.enNo, emp:adivinado});
+      }
+    }
     const nEmp = S.mapeo[p0.enNo] ?? null;
     const reg={
       enNo:p0.enNo, usuario:p0.nombre, dia:p0.dia,
@@ -777,6 +872,18 @@ function procesar(){
         fix:"Se tomó la primera, la última y el hueco más largo como almuerzo. Revisá que cuadre."});
     }
     regs.push(reg);
+  }
+
+  if(adivinados.length){
+    guardarMapeo(); subirOrden();
+    const vistos={};
+    for(const a of adivinados){
+      if(vistos[a.enNo]) continue; vistos[a.enNo]=1;
+      inc.push({t:"warn", tipo:"Usuario reconocido solo", quien:"EnNo "+a.enNo+" · "+a.usuario,
+        det:"Se asignó a "+pad(a.emp)+" · "+EMPLEADOS[a.emp-1],
+        fix:"Se adivinó por el nombre del usuario. Si no es esa persona, "+
+            "cámbialo en «Usuarios del marcador» — queda guardado."});
+    }
   }
 
   regs.sort((a,b)=> a.sem-b.sem || a.dow-b.dow || (a.nEmp||99)-(b.nEmp||99));
@@ -1283,7 +1390,11 @@ $("#mapGrid").addEventListener("change", e=>{
   const sel=e.target; if(sel.tagName!=="SELECT") return;
   const en=+sel.dataset.en, v=sel.value?+sel.value:null;
   for(const [k,val] of Object.entries(S.mapeo)) if(val===v && +k!==en) S.mapeo[k]=null;
-  S.mapeo[en]=v; S.celdas=new Map(); procesar(); render();
+  S.mapeo[en]=v;
+  guardarMapeo();                 // que no se pierda al recargar
+  subirOrden();                   // y que lo vean los demás equipos
+  S.celdas=new Map(); procesar(); render();
+  toast(v?"Asignado a "+EMPLEADOS[v-1]+".":"Sin asignar.");
 });
 $("#btnMapSave").addEventListener("click", ()=>{
   const data={ ferreteria:"San José", version:1, generado:new Date().toISOString(),
@@ -1376,6 +1487,7 @@ function pintarEmpleados(){
    del marcador y los totales dependen del número de cada empleado. */
 function empleadosCambiaron(){
   guardarEmpleados();
+  subirOrden();          // la lista es de la ferretería, no de este equipo
   pintarEmpleados();
   S.celdas = new Map();
   procesar();

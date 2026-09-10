@@ -158,6 +158,9 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
    Todo lo que antes obligaba a cambiar de ventana —foto, historial, destacar—
    se abre debajo de la fila, sin perder la búsqueda ni el sitio de la lista. */
 tr.ficha-row>td{background:var(--s50);padding:0}
+/* Que se vea que esto se guarda solo, sin tener que buscarlo. */
+.fic-estado{font-size:12.5px;color:var(--s500);white-space:nowrap}
+.fic-estado.ok{color:#15803D;font-weight:700}
 .ficha{display:grid;grid-template-columns:170px 1fr;gap:18px;padding:16px 10px}
 .ficha .foto{width:170px;height:170px;border:1px solid var(--s200);border-radius:var(--rl);
   background:#fff center/contain no-repeat;display:flex;align-items:center;justify-content:center;
@@ -223,7 +226,8 @@ details.plegable[open]>summary{margin-bottom:12px}
   <div class="card">
     <div class="card-h"><h2>Cómo está el inventario</h2>
       <span class="hint" id="est-sub">Cargando…</span>
-      <button class="btn b-gh b-sm" id="refrescar" style="margin-left:auto">Actualizar</button>
+      <button class="btn b-gh b-sm" id="refrescar" style="margin-left:auto"
+              title="Trae lo que hayan cambiado los demás equipos. Lo tuyo se guarda solo.">Traer cambios</button>
     </div>
     <div class="card-b"><div class="sum" id="est-kpis"></div></div>
   </div>
@@ -318,6 +322,9 @@ details.plegable[open]>summary{margin-bottom:12px}
         comparten con los demás equipos al instante. Cambiar un precio queda en el
         historial con tu nombre. Con <b>Ficha</b> abres la foto y el historial del
         producto sin salir de esta lista.
+        <br><b>No hay que pulsar nada para guardar</b>: al salir de la casilla —o
+        con Enter— ya quedó guardado y compartido. El botón «Traer cambios» de
+        arriba no guarda, <b>trae</b> lo que hayan hecho los demás.
       </div>
 
       <details class="plegable" id="det-alta">
@@ -341,8 +348,8 @@ details.plegable[open]>summary{margin-bottom:12px}
 
   <!-- =============================== PASO 4 =========================== -->
   <div class="card paso" id="paso4" data-flujo="archivo ajustar">
-    <div class="card-h"><span class="np">4</span><h2>Guardar en el sitio</h2>
-      <span class="hint">Solo hace falta tras cargar el Excel mensual</span>
+    <div class="card-h"><span class="np">4</span><h2>Guardar el inventario completo</h2>
+      <span class="hint">Solo tras cargar el Excel mensual — los cambios sueltos NO lo necesitan</span>
       <span class="estado" id="p4-estado"></span>
     </div>
     <div class="card-b">
@@ -351,10 +358,15 @@ details.plegable[open]>summary{margin-bottom:12px}
         <span class="estado" id="pub-prog"></span>
       </div>
       <div class="note" id="pub-ayuda">
-        Manda el inventario completo al sitio. Los demás equipos y el catálogo del
-        cliente lo recogen solos: <b>no hay que descargar ni subir nada</b>.
-        Mientras se manda, todo el mundo sigue viendo la versión anterior completa;
-        el cambio ocurre de golpe al final.
+        <b>Esto es para después de cargar el Excel de FelTec</b>, cuando cambiaron
+        miles de productos de un golpe. Manda el inventario entero al sitio y los
+        demás equipos lo recogen solos, sin descargar ni subir nada. Mientras se
+        manda, todo el mundo sigue viendo la versión anterior completa; el cambio
+        ocurre de golpe al final.
+        <br><br>
+        <b>Si solo corregiste un precio, un código o una ficha, no pulses esto:
+        eso ya se guardó y ya lo vieron los demás</b> en cuanto saliste de la
+        casilla.
       </div>
       <details class="note" id="pub-viejo">
         <summary>Si el sitio no responde: descargar los archivos (método antiguo)</summary>
@@ -1775,6 +1787,16 @@ details.plegable[open]>summary{margin-bottom:12px}
     if(f) f.innerHTML='<td colspan="7">'+fichaHTML(item)+'</td>';
   }
 
+  /* El aviso de guardado tiene que sobrevivir a que se redibuje la tabla:
+     si no, se enseña un instante y desaparece, que es justo lo contrario de
+     lo que hace falta. */
+  var _guardadas={};
+  function reciénGuardada(item){ return (_guardadas[String(item)]||0) > Date.now(); }
+  function marcarGuardada(item){
+    _guardadas[String(item)] = Date.now() + 2500;
+    setTimeout(function(){ refrescarFicha(item); }, 2600);
+  }
+
   function fichaHTML(item){
     var p=Inventario.porItem(item);
     if(!p) return '<div class="empty">Este producto ya no está.</div>';
@@ -1794,7 +1816,12 @@ details.plegable[open]>summary{margin-bottom:12px}
       '</div>'+
       '<div>'+
         '<div class="row" style="margin-bottom:8px"><h3>'+esc(p.nombre)+'</h3>'+
-          '<button class="btn b-gh b-sm cerrar" data-fic="cerrar" data-item="'+esc(item)+'">Cerrar ficha</button></div>'+
+          '<span class="cerrar" style="display:flex;gap:8px;align-items:center">'+
+            '<span class="fic-estado'+(reciénGuardada(item)?' ok':'')+'" id="fic-estado-'+esc(item)+'">'+
+              (reciénGuardada(item)?'Guardado ✓':'Se guarda solo')+'</span>'+
+            '<button class="btn b-pri b-sm" data-fic="guardar" data-item="'+esc(item)+'">Guardar ficha</button>'+
+            '<button class="btn b-gh b-sm" data-fic="cerrar" data-item="'+esc(item)+'">Cerrar</button>'+
+          '</span></div>'+
         '<div class="dato">ITEM <b class="mono">'+esc(p.item)+'</b> · Categoría <b>'+esc(p.categoria||'—')+'</b>'+
           ' · Unidad <b>'+esc(p.unidad||'—')+'</b>'+(p.marca?' · Marca <b>'+esc(p.marca)+'</b>':'')+'</div>'+
         '<div class="dato">Precio <b>'+(Number(p.precio)>0?money(p.precio):'sin precio')+'</b>'+
@@ -1842,6 +1869,21 @@ details.plegable[open]>summary{margin-bottom:12px}
     var b=e.target.closest('button[data-fic]'); if(!b) return;
     var item=b.dataset.item;
     if(b.dataset.fic==='cerrar'){ verFicha(item); return; }
+    if(b.dataset.fic==='guardar'){
+      /* Lo de esta pantalla se guarda al salir de cada casilla, así que el
+         botón no "envía" nada: obliga a soltar la casilla que esté a medio
+         escribir y confirma. Está aquí porque hace falta VERLO, no porque
+         haga falta pulsarlo. */
+      var a=document.activeElement;
+      if(a && a.blur && a.closest && a.closest('#p-body')) a.blur();
+      setTimeout(function(){
+        marcarGuardada(item);
+        var e=$('fic-estado-'+item);
+        if(e){ e.textContent='Guardado ✓'; e.classList.add('ok'); }
+        toast('Ficha guardada y compartida con los demás equipos.');
+      },120);
+      return;
+    }
     if(b.dataset.fic==='quitarfoto'){
       if(!confirm('¿Quitar la foto de este producto?')) return;
       Inventario.quitarImagen(item).then(function(){

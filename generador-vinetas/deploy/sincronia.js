@@ -81,7 +81,7 @@
       clase = 'sync-no';
       texto = '<b>' + e.pendientes + ' cambio' + (e.pendientes === 1 ? '' : 's') +
               ' sin mandar.</b> Suele ser el internet. Se reintenta solo; también ' +
-              'puedes pulsar Actualizar.';
+              'puedes pulsar Traer cambios.';
     } else {
       clase = 'sync-ok';
       var extra = e.enServidor
@@ -96,7 +96,10 @@
 
     caja.className = 'sync-caja ' + clase;
     caja.innerHTML = '<span class="pt"></span><span class="tx">' + texto + '</span>' +
-      '<button type="button" class="btn-sync">Actualizar</button>';
+      /* Se llamaba «Actualizar» y la gente creía que era el botón de guardar.
+         No guarda nada: trae lo que hayan cambiado los demás. */
+      '<button type="button" class="btn-sync" title="Trae lo que hayan cambiado ' +
+      'los demás equipos. Lo tuyo se guarda solo.">Traer cambios</button>';
 
     var btn = caja.querySelector('.btn-sync');
     btn.addEventListener('click', function () {

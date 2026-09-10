@@ -332,7 +332,14 @@ vistazo a cuáles les falta.
 plegado. Se le pone nombre y precio y queda igual que los demás: entra al
 catálogo si tiene precio.
 
-**Paso 4 · Guardar en el sitio.** Solo después del Excel mensual. Un botón: el
+> **Ningún botón dice ya «Actualizar».** El de la barra verde y el de la
+> tarjeta de estado se llaman ahora **«Traer cambios»**, porque es lo que
+> hacen: traen lo que hicieron los demás. **No guardan nada** — lo tuyo se
+> guarda solo al salir de la casilla, o con Enter. La ficha del producto lleva
+> además su propio **«Guardar ficha»** al lado, con un «Guardado ✓», para que
+> se vea; no hace falta pulsarlo, está ahí para que no quede duda.
+
+**Paso 4 · Guardar el inventario completo.** Solo después del Excel mensual. Un botón: el
 inventario entero sale hacia el sitio y los demás equipos lo recogen solos. No
 se descarga ni se sube nada. Ahí mismo se lee qué base tiene el sitio ahora
 —cuántos productos, de qué día, quién la guardó.
@@ -471,6 +478,18 @@ de verdad.
 
 ## Conversor del marcador (nuevo)
 
+> **Reconoce solo a la gente nueva.** El marcador nombra a cada quien igual:
+> nombre + la inicial de otro de sus nombres o apellidos — «elvins» es ELVIN de
+> SORTO, «ronali» es RONAL ISAAC. Si el usuario no estaba en la tabla, se
+> adivina y queda asignado; sale en Incidencias por si se equivocó. Solo
+> adivina cuando hay **una** respuesta posible: antes de ponerle las horas a
+> otra persona, prefiere pedirte que lo asignes.
+>
+> **Lo que asignes queda guardado.** Antes vivía solo en memoria y al recargar
+> volvía a la tabla de fábrica, así que asignar a alguien nuevo no servía de
+> nada. Ahora se guarda y **lo ven los demás equipos**, igual que la lista de
+> empleados y el orden del cuadro.
+>
 > **La hora de almuerzo ya se descuenta.** Un día completo trae **cuatro**
 > marcas: entra, sale a almorzar, regresa, se retira. Antes se tomaban solo la
 > primera y la última, así que la hora de almuerzo se pagaba como trabajada.
