@@ -23,7 +23,8 @@ robots.txt               Evita que Google indexe el área de empleados.
 analisis-inventario.html NUEVO · Analiza el reporte de FelTec: métricas, errores
                          y el SUGERIDO DE COMPRAS por movimiento.
 conversor-marcador.html  NUEVO · Convierte la exportación del marcador
-                         biométrico en el cuadro semanal de asistencia.
+                         biométrico en el cuadro semanal de asistencia, y saca
+                         el reporte semanal y los recibos de pago impresos.
 netlify.toml             Configuración (necesaria para las fotos automáticas).
 netlify/functions/       Funciones del servidor: entrada de empleados, fotos,
                          cambios de inventario compartidos, la base del
@@ -513,19 +514,74 @@ de verdad.
 
 
 `conversor-marcador.html` — convierte la exportación del marcador biométrico
-(NGL_001.TXT) en el cuadro semanal de asistencia, listo para pegar en la planilla.
-Entra con tu nombre y clave, como las demás pantallas internas.
+(AGL_001.TXT / NGL_001.TXT) en el cuadro semanal de asistencia, listo para pegar
+en la planilla, **y en el reporte con el que se pagan los salarios**. Entra con
+tu nombre y clave, como las demás pantallas internas.
 
 **La lista de empleados se edita ahí mismo**, en la tarjeta de arriba: agregar,
-renombrar, mover de lugar y quitar. Se guarda en ese equipo.
+renombrar, mover de lugar y quitar. Cada uno lleva además su **ficha de
+planilla** —salario semanal, cargo, si es fijo y si es vendedor—, que es lo que
+hace falta para calcular el pago. Todo eso se guarda **en el sitio**: lo ven
+todos los equipos.
 
 > **El orden importa.** El número de cada empleado es la fila que le toca en el
 > cuadro «📅 Asistencia Anual», así que moverlos en la pantalla mueve filas en la
 > planilla. Si agregas gente, la pantalla te avisa de que hay que hacerle sitio
 > al cuadro: cada semana ocupa 19 filas y los empleados empiezan en la 7.
 
-Cuando cambias el orden o quitas a alguien, el mapeo de usuarios del marcador se
-ajusta solo para que las marcas no terminen en la fila de otro.
+Cuando cambias el orden o quitas a alguien, el mapeo de usuarios del marcador y
+lo apuntado en el reporte se ajustan solos para que nada termine en la fila de
+otro.
+
+### Administrador — quién es quién
+
+El marcador guarda a la gente por **código y apodo** (`elvins`, `manuelb`). La
+pestaña **Administrador** dice a qué empleado de la planilla corresponde cada
+uno. Los que salen en rojo **no se exportan** y sus horas se pierden.
+
+Si aparece alguien que todavía no está en la planilla, el botón **«Darlo de
+alta»** lo crea y lo asigna de una vez; después solo hay que ponerle el salario
+en la lista de empleados.
+
+Debajo salen las **estadísticas de todo el archivo** —no solo de la semana
+elegida—: semanas y días con marca, horas, promedio por día, horas extra,
+**entrada promedio**, días que llegó tarde, días sin almuerzo marcado y días sin
+salida. Sirve para ver de un vistazo quién falta y a quién se le está pagando
+hora extra.
+
+### Reporte semanal — lo que hay que pagar
+
+La pestaña **Reporte semanal** hace las mismas cuentas que la hoja
+«💼 Planilla Anual»:
+
+| Concepto | Cómo sale |
+|---|---|
+| Salario base | `días L-V × (salario/5) + días S-D × (salario/5 × 5.5/9)` |
+| Horas extra | las que pasan de 9 h de L-V o de 5.5 h de S-D, a **$2.00** |
+| ISSS | **3 %** del bruto, **solo si es fijo** |
+| AFP | **7.25 %** del bruto, **solo si es fijo** |
+| Total a pagar | bruto − (ISSS + AFP + otras deducciones) |
+
+Los **viajes, el bono, la comisión y los adelantos** el marcador no los sabe: se
+escriben en el mismo cuadro. Quedan guardados **por semana** y los ven todos los
+equipos, así que quien apunta el viaje y quien imprime el recibo no tienen que
+ser el mismo equipo.
+
+Dos botones, los dos imprimen de verdad:
+
+- **Imprimir reporte total** — una hoja apaisada con todos, la fila de TOTALES,
+  la explicación de cómo se calculó y sitio para *elaborado / revisado /
+  autorizado*.
+- **Imprimir recibos** — un recibo por empleado, dos por hoja, con lo calculado
+  en una columna y **una columna en blanco para llenar a mano**, más firma, DUI,
+  fecha y observaciones.
+
+> **Si la semana viene a medias, avisa.** La semana corre de sábado a viernes.
+> Si bajaste el archivo antes del corte del viernes, la pantalla lo dice antes de
+> que imprimas recibos por menos de lo que toca.
+
+El Excel que se descarga trae ahora una hoja **«Planilla semana»** con esas
+mismas columnas, por si preferís pegarla en el libro.
 
 ---
 
