@@ -533,21 +533,34 @@ Cuando cambias el orden o quitas a alguien, el mapeo de usuarios del marcador y
 lo apuntado en el reporte se ajustan solos para que nada termine en la fila de
 otro.
 
-### Administrador — quién es quién
+### El Administrador — todo lo de la planilla en un solo sitio
 
-El marcador guarda a la gente por **código y apodo** (`elvins`, `manuelb`). La
-pestaña **Administrador** dice a qué empleado de la planilla corresponde cada
-uno. Los que salen en rojo **no se exportan** y sus horas se pierden.
+La pestaña **Administrador** es donde se configura todo. Se puede usar **sin
+cargar ningún archivo**: dar de alta a alguien o corregirle el salario no
+obliga a bajar el marcador primero. Tiene cuatro apartados.
 
-Si aparece alguien que todavía no está en la planilla, el botón **«Darlo de
-alta»** lo crea y lo asigna de una vez; después solo hay que ponerle el salario
-en la lista de empleados.
+**Ficha de empleados.** La lista de la planilla, en su orden. De cada uno:
+nombre, **salario semanal**, cargo, si es **fijo** (solo al fijo se le descuenta
+ISSS y AFP) y si es vendedor. Se agrega, se quita y se reordena desde ahí. Cada
+fila muestra además **qué usuario del marcador le está marcando**, o avisa en
+ámbar si no le marca nadie — esa persona se quedaría sin horas.
 
-Debajo salen las **estadísticas de todo el archivo** —no solo de la semana
-elegida—: semanas y días con marca, horas, promedio por día, horas extra,
-**entrada promedio**, días que llegó tarde, días sin almuerzo marcado y días sin
-salida. Sirve para ver de un vistazo quién falta y a quién se le está pagando
-hora extra.
+**Usuarios del marcador.** El marcador guarda a la gente por código y apodo
+(`elvins`, `manuelb`); aquí se dice a qué empleado corresponde cada uno. Los que
+salen en rojo **no se exportan** y sus horas se pierden. Si aparece alguien que
+todavía no está en la planilla, **«Darlo de alta»** lo crea y lo asigna de una
+vez.
+
+**Pagos y descuentos.** Los viajes, el bono, la comisión y los adelantos de la
+semana, con el salario con el que se está calculando y lo que queda a pagar al
+lado. Es la misma información que el reporte: escribir en cualquiera de los dos
+actualiza el otro.
+
+**Planilla anual.** El libro del año — ver abajo.
+
+**Cómo va cada uno.** Estadísticas de todo el archivo: semanas y días con marca,
+horas, promedio por día, horas extra, **entrada promedio**, días que llegó tarde,
+días sin almuerzo marcado y días sin salida.
 
 ### Reporte semanal — lo que hay que pagar
 
@@ -581,7 +594,35 @@ Dos botones, los dos imprimen de verdad:
 > que imprimas recibos por menos de lo que toca.
 
 El Excel que se descarga trae ahora una hoja **«Planilla semana»** con esas
-mismas columnas, por si preferís pegarla en el libro.
+mismas columnas.
+
+### La planilla anual vive en el sitio
+
+**Ya no hace falta el libro de Excel.** Cuando una semana está revisada se
+**cierra** —botón en el reporte o en el apartado «Planilla anual»— y queda
+guardada en el sitio. El año se va armando con las semanas cerradas, y lo ven
+todos los equipos.
+
+Una semana cerrada guarda la línea de cada quien **tal como quedó, con el
+salario que tenía esa semana**. Si a alguien le suben el sueldo en octubre, lo
+que ya se pagó en marzo no se recalcula: sería reescribir la historia. Si hay
+que corregir algo, la semana se **reabre**, se arregla y se vuelve a cerrar.
+
+> **No se pisan entre equipos.** Antes de guardar, el conversor vuelve a traer
+> el libro del sitio y le suma lo suyo. Si Diego cierra la semana 36 en la
+> oficina mientras Carlos cierra la 34 en el mostrador, quedan las dos.
+
+En el apartado se ve semana por semana (gente, días, horas, lo pagado, quién la
+cerró) y persona por persona (lo que lleva cobrado en el año). Tres botones:
+
+- **Cerrar la semana** — la guarda en el libro. Si la semana viene a medias en
+  el archivo, pregunta antes.
+- **Descargar la planilla anual** — un Excel con cuatro hojas: *Planilla anual*
+  (un bloque por semana, con las mismas columnas del libro de antes),
+  *Por empleado* (lo acumulado del año), *Semanas* (cuáles están cerradas y
+  **cuáles quedaron sin cerrar en medio**) y *Empleados*. Es tu copia en la
+  computadora; el original sigue en el sitio.
+- **Imprimir el resumen** — una hoja con lo que lleva cobrado cada quien.
 
 ---
 

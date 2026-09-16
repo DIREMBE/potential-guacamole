@@ -29,11 +29,21 @@
 
      GET    /api/config?que=marcador -> { datos:{...} }
      POST   /api/config              -> { clave, que:'marcador', datos:{...} }
+     GET    /api/config?que=planilla -> { datos:{...} }
+     POST   /api/config              -> { clave, que:'planilla', datos:{...} }
 
-   La segunda forma guarda una seccion cualquiera de ajustes tal cual. Hoy la
-   usa el conversor del marcador: el orden de los empleados y de los dias del
-   cuadro, para que la tabla salga igual en todos los equipos y calce con la
-   planilla. No se mezcla: la edita una persona a la vez y es pequena.
+   La segunda forma guarda una seccion entera tal cual. Son dos:
+
+   'marcador' — ajustes del conversor: el orden de los empleados y de los
+   dias del cuadro, la ficha de cada quien y lo apuntado de cada semana.
+
+   'planilla' — el libro del ano. Cada semana que se cierra deja aqui la
+   linea de cada empleado tal como quedo: los dias, las horas, lo que se le
+   sumo y lo que se le descontó. La ferreteria ya no lleva el libro de Excel,
+   asi que este es el registro de lo que se pago y por eso se guarda con el
+   salario que tenia esa semana, no con el de hoy.
+
+   Ninguna de las dos se mezcla: las edita una persona a la vez.
 
    La variable de Netlify es la misma de siempre: FSJ_USUARIOS.
    ========================================================================== */
@@ -41,10 +51,19 @@ import { getStore } from '@netlify/blobs';
 
 const STORE = 'fsj-config';
 const LLAVE = 'proveedores';
-/* Que secciones se dejan guardar. Lista cerrada a proposito: esto no es un
-   almacen libre donde cualquiera con clave meta lo que quiera. */
-const SECCIONES = ['marcador'];
-const MAX_SECCION = 60 * 1024;      // 60 KB por seccion, de sobra
+/* Que secciones se dejan guardar, y cuanto cabe en cada una. Lista cerrada a
+   proposito: esto no es un almacen libre donde cualquiera con clave meta lo
+   que quiera.
+
+   'marcador' son ajustes: el orden del cuadro, la ficha de la gente y lo
+   apuntado de cada semana. Es pequeno.
+
+   'planilla' es el libro del ano: la linea de cada empleado en cada semana
+   ya cerrada. Cincuenta y dos semanas por dieciseis personas no caben en 60
+   KB, y esto ya no es un ajuste sino el registro de lo que se pago, asi que
+   tiene su propio hueco mas grande. */
+const SECCIONES = { marcador: 60 * 1024, planilla: 400 * 1024 };
+const MAX_SECCION = 60 * 1024;      // por defecto, para secciones sin tope propio
 const MAX_MARCAS = 2000;        // tope de cordura
 const MAX_LARGO = 80;           // lo que cabe en un nombre de proveedor
 
@@ -135,7 +154,8 @@ export default async (req) => {
 
     const que = new URL(req.url).searchParams.get('que');
     if (que) {
-      if (SECCIONES.indexOf(que) < 0) return json({ ok: false, error: 'seccion desconocida' }, 400);
+      if (!Object.prototype.hasOwnProperty.call(SECCIONES, que))
+        return json({ ok: false, error: 'seccion desconocida' }, 400);
       let s = null;
       try { s = await store.get('s/' + que, { type: 'json' }); } catch (e) {}
       return json({ ok: true, disponible: true, que,
@@ -174,12 +194,14 @@ export default async (req) => {
 
   /* ---------------------- GUARDAR UNA SECCION --------------------------- */
   if (datos && datos.que) {
-    if (SECCIONES.indexOf(datos.que) < 0) return json({ ok: false, error: 'seccion desconocida' }, 400);
+    if (!Object.prototype.hasOwnProperty.call(SECCIONES, datos.que))
+      return json({ ok: false, error: 'seccion desconocida' }, 400);
     const cuerpo = datos.datos;
     if (!cuerpo || typeof cuerpo !== 'object') return json({ ok: false, error: 'no vienen datos' }, 400);
+    const tope = SECCIONES[datos.que] || MAX_SECCION;
     const texto = JSON.stringify(cuerpo);
-    if (texto.length > MAX_SECCION) {
-      return json({ ok: false, error: 'demasiado grande', maximo: MAX_SECCION }, 413);
+    if (texto.length > tope) {
+      return json({ ok: false, error: 'demasiado grande', maximo: tope }, 413);
     }
     const guardado = { datos: cuerpo, actualizado: new Date().toISOString(), por: quienEs(c) };
     try { await store.setJSON('s/' + datos.que, guardado); }

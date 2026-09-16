@@ -500,6 +500,7 @@ h3.sec{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; lett
       <div class="note rep-acc">
         <button class="btn primary" id="btnImpTotal" type="button">Imprimir reporte total</button>
         <button class="btn" id="btnImpRecibos" type="button">Imprimir recibos</button>
+        <button class="btn" id="btnCerrarRep" type="button">Cerrar la semana</button>
         <span id="repResumen"></span>
       </div>
       <div class="scroller"><table id="tblRep"></table></div>
@@ -517,8 +518,9 @@ h3.sec{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; lett
     <section class="panel" id="p-map" role="tabpanel">
       <div class="subnav" role="tablist" aria-label="Apartados del administrador">
         <button class="sub" role="tab" aria-selected="true"  data-s="s-emp">Ficha de empleados <span class="badge" id="bEmp">0</span></button>
-        <button class="sub" role="tab" aria-selected="false" data-s="s-usr">Usuarios del marcador <span class="badge" id="bMap">0</span></button>
+        <button class="sub" role="tab" aria-selected="false" data-s="s-usr">Usuarios del marcador <span class="badge" id="bMapSub">0</span></button>
         <button class="sub" role="tab" aria-selected="false" data-s="s-pag">Pagos y descuentos</button>
+        <button class="sub" role="tab" aria-selected="false" data-s="s-anual">Planilla anual</button>
         <button class="sub" role="tab" aria-selected="false" data-s="s-est">Cómo va cada uno</button>
       </div>
 
@@ -582,6 +584,28 @@ h3.sec{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; lett
           <span id="pagosResumen"></span>
         </div>
         <div class="scroller"><table id="tblPagos"></table></div>
+      </div>
+
+      <!-- ---------- La planilla anual ---------- -->
+      <div class="subpanel" id="s-anual" role="tabpanel" hidden>
+        <div class="note"><b>El libro del año vive aquí, en el sitio.</b> Ya no hace
+          falta el archivo de Excel: cada semana que se revisa se <b>cierra</b>, y el
+          año se va armando con las semanas cerradas. Lo ven todos los equipos.
+          <br>Una semana cerrada guarda la línea de cada quien <b>tal como quedó</b>,
+          con el salario que tenía esa semana: si a alguien le suben el sueldo, lo que
+          ya se pagó no se recalcula. Se puede volver a abrir si hay que corregir algo.
+          <br><b>Descargar</b> saca una copia para tu computadora, con un bloque por
+          semana igual que el libro de antes.</div>
+        <div class="note rep-acc">
+          <button class="btn primary" id="btnCerrar" type="button" disabled>Cerrar la semana</button>
+          <button class="btn" id="btnAnualXlsx" type="button">Descargar la planilla anual</button>
+          <button class="btn" id="btnAnualImp" type="button">Imprimir el resumen</button>
+          <span id="anualEstado"></span>
+        </div>
+        <div class="scroller"><table id="tblAnual"></table></div>
+        <div class="note" style="margin-top:18px">Lo que lleva cobrado cada quien en el
+          año, sumando las semanas cerradas.</div>
+        <div class="scroller"><table id="tblAnualEmp"></table></div>
       </div>
 
       <!-- ---------- Estadísticas ---------- -->
@@ -823,6 +847,7 @@ const AFP_LAB  = 0.0725;   // B20  AFP que se le descuenta al empleado
 const HORARIO  = "L-V: 06:30–16:30  /  S-D: 06:30–12:00";
 
 // Semana 1 = sábado 03/01/2026. Bloques cada 19 filas, empleados desde la fila 7.
+const ANIO       = 2026;
 const SEM1_UTC   = Date.UTC(2026,0,3);
 const FILA_BASE  = 7;
 const PASO_FILA  = 19;
@@ -896,6 +921,82 @@ async function bajarOrden(){
     return true;
   }catch(e){
     ordenEstado=Object.assign({},ordenEstado,{comprobado:true,compartido:false});
+    return false;
+  }
+}
+
+/* ---------------- EL LIBRO DEL AÑO ------------------------------------
+   La ferretería dejó de llevar la planilla en Excel: el libro es ahora la
+   suma de las semanas que se van cerrando, y vive en el sitio.
+
+   Una semana cerrada guarda la línea de cada quien TAL COMO QUEDÓ, con el
+   salario que tenía esa semana. Si a alguien le suben el sueldo en octubre,
+   lo pagado en marzo no se puede recalcular: sería reescribir la historia.
+
+   Se puede volver a abrir y cerrar de nuevo —eso sí se hace a propósito—. */
+let PLANILLA = { semanas:{} };      // "36" -> {cerrada, por, filas:[...]}
+let planillaEstado = { comprobado:false, compartido:false, actualizado:'' };
+
+function filaCerrada(f){
+  /* Solo lo que hace falta para rehacer la línea: el dinero se vuelve a
+     calcular con estos números, que son los del día que se cerró. */
+  return { n:f.n, nombre:f.nombre, fijo:!!f.ficha.fijo, salario:+f.ficha.salario||0,
+           cargo:f.ficha.cargo||'', diasLV:f.diasLV, diasSD:f.diasSD,
+           horas:+f.horas.toFixed(4), hrsExtra:+f.hrsExtra.toFixed(4),
+           viajes:f.viajes, bono:f.bono, comision:f.comision, otras:f.otras };
+}
+
+/* Deshace filaCerrada: de lo guardado vuelve a salir el pago completo, con
+   las mismas cuentas de siempre. */
+function pagoDeCerrada(r){
+  const dia = (r.salario||0)/5;
+  const salBase = r.diasLV*dia + r.diasSD*(dia*HRS_ORD_SD/HRS_ORD_LV);
+  const hrsExImp = (r.hrsExtra||0)*VAL_HORA_EXTRA;
+  const bruto = salBase + hrsExImp + (r.viajes||0) + (r.bono||0) + (r.comision||0);
+  const isss = r.fijo ? bruto*ISSS_LAB : 0;
+  const afp  = r.fijo ? bruto*AFP_LAB  : 0;
+  const totalDeduc = isss + afp + (r.otras||0);
+  return Object.assign({}, r, {
+    ficha:{nombre:r.nombre, fijo:r.fijo, salario:r.salario, cargo:r.cargo, vendedor:false},
+    salBase, hrsExImp, bruto, isss, afp, totalDeduc,
+    viajes:r.viajes||0, bono:r.bono||0, comision:r.comision||0, otras:r.otras||0,
+    total: bruto - totalDeduc
+  });
+}
+
+function semanasCerradas(){
+  return Object.keys(PLANILLA.semanas).map(Number).sort((a,b)=>a-b);
+}
+function estaCerrada(sem){ return !!PLANILLA.semanas[String(sem)]; }
+
+async function bajarPlanilla(){
+  const clave=claveDeSesion(); if(!clave) return false;
+  try{
+    const r=await fetch('/api/config?que=planilla',{headers:{'x-fsj-clave':clave},cache:'no-store'});
+    if(!r.ok) throw new Error('http '+r.status);
+    const d=await r.json();
+    if(!d || !d.ok) throw new Error('respuesta rara');
+    if(d.datos && d.datos.semanas && typeof d.datos.semanas==='object') PLANILLA=d.datos;
+    planillaEstado={comprobado:true, compartido:true, actualizado:d.actualizado||''};
+    return true;
+  }catch(e){
+    planillaEstado=Object.assign({},planillaEstado,{comprobado:true, compartido:false});
+    return false;
+  }
+}
+
+async function subirPlanilla(){
+  const clave=claveDeSesion();
+  if(!clave){ planillaEstado.compartido=false; return false; }
+  try{
+    const r=await fetch('/api/config',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({clave, que:'planilla', datos:PLANILLA})});
+    const d=await r.json().catch(()=>null);
+    if(!r.ok || !d || !d.ok) throw new Error((d&&d.error)||('http '+r.status));
+    planillaEstado={comprobado:true, compartido:true, actualizado:d.actualizado||''};
+    return true;
+  }catch(e){
+    planillaEstado=Object.assign({},planillaEstado,{comprobado:true, compartido:false});
     return false;
   }
 }
@@ -1271,7 +1372,7 @@ const horasTxt = n => (Math.round((+n||0)*100)/100).toFixed(2);
 function render(){
   renderTiles(); renderSelSemana(); renderGrid();
   renderMarcas(); renderInc(); renderMapeo(); renderStats();
-  renderReporte(); renderPagos(); pintarEmpleados(); renderPasos();
+  renderReporte(); renderPagos(); renderAnual(); pintarEmpleados(); renderPasos();
   $("#target").innerHTML = S.semana
     ? "Semana "+pad(S.semana)+" · pegar en <b>C"+filaExcel(S.semana)+"</b> de «📅 Asistencia Anual»"
     : "";
@@ -1568,8 +1669,12 @@ function renderInc(){
 function renderMapeo(){
   const us=[...S.usuarios.values()].sort((a,b)=>a.enNo-b.enNo);
   const sin=us.filter(u=>!S.mapeo[u.enNo]).length;
-  const b=$("#bMap"); b.textContent=sin?sin+" sin asignar":us.length;
-  b.className="badge"+(sin?" warn":"");
+  /* El mismo aviso en dos sitios: la pestaña de arriba y el apartado. */
+  for(const id of ["#bMap","#bMapSub"]){
+    const b=$(id); if(!b) continue;
+    b.textContent = sin ? sin+" sin asignar" : us.length;
+    b.className = "badge" + (sin?" warn":"");
+  }
   $("#mapGrid").innerHTML = us.map(u=>{
     const val=S.mapeo[u.enNo]??"";
     const opts='<option value="">— sin asignar —</option>' + EMPLEADOS.map((e,i)=>
@@ -1747,6 +1852,182 @@ function renderPagos(){
   tb.innerHTML=h+'</tbody>';
 
   if(res) res.innerHTML=rangoSemana(S.semana)+' · <b>$'+dinero(T.total)+'</b> a pagar';
+}
+
+/* ---------------- CERRAR Y REABRIR LA SEMANA ---------------------------- */
+async function cerrarSemana(sem){
+  const filas = planillaSemana(sem).filter(f => f.diasLV+f.diasSD>0 || f.bruto>0);
+  if(!filas.length){ toast("Esa semana no tiene nada que cerrar."); return false; }
+
+  const corta = semanaACorta(sem);
+  if(corta && !confirm("La semana "+pad(sem)+" está a medias en el archivo: "+
+      "faltan "+corta.faltan.map(d=>DIAS[d]).join(", ")+".\n\n"+
+      "Si la cerrás así, el libro del año va a quedar con esas horas de menos.\n"+
+      "¿Cerrarla igual?")) return false;
+
+  if(estaCerrada(sem) && !confirm("La semana "+pad(sem)+" ya estaba cerrada.\n"+
+      "¿Reemplazarla con lo que hay ahora en pantalla?")) return false;
+
+  /* Se vuelve a traer el libro antes de tocarlo: si mientras tanto alguien
+     cerró otra semana desde el mostrador, mandar el nuestro entero se la
+     borraría. Esto no es un ajuste que se pueda rehacer, es lo que se pagó. */
+  await bajarPlanilla();
+
+  PLANILLA.semanas[String(sem)] = {
+    cerrada: new Date().toISOString(),
+    por: quienImprime(),
+    rango: rangoSemana(sem),
+    filas: filas.map(filaCerrada)
+  };
+  const ok = await subirPlanilla();
+  renderAnual(); renderReporte(); renderPagos();
+  toast(ok ? "Semana "+pad(sem)+" cerrada y guardada en el sitio."
+           : "Semana "+pad(sem)+" cerrada, pero el sitio no respondió: "+
+             "vuelve a cerrarla cuando haya conexión.");
+  return ok;
+}
+
+async function reabrirSemana(sem){
+  if(!confirm("¿Volver a abrir la semana "+pad(sem)+"?\n"+
+    "Sale del libro del año hasta que la cierres otra vez.")) return;
+  await bajarPlanilla();      // igual que al cerrar: no pisar lo de otro
+  delete PLANILLA.semanas[String(sem)];
+  const ok = await subirPlanilla();
+  renderAnual(); renderReporte(); renderPagos();
+  toast(ok ? "Semana "+pad(sem)+" abierta de nuevo."
+           : "Abierta aquí, pero el sitio no respondió.");
+}
+
+/* ---------------- LA PLANILLA ANUAL ------------------------------------ */
+function totalesAnuales(){
+  const por = new Map();   // nombre -> acumulado
+  let gran = null;
+  for(const sem of semanasCerradas()){
+    for(const r of PLANILLA.semanas[String(sem)].filas){
+      const f = pagoDeCerrada(r);
+      if(!por.has(f.nombre)) por.set(f.nombre, {nombre:f.nombre, semanas:0,
+        diasLV:0, diasSD:0, horas:0, hrsExtra:0, salBase:0, hrsExImp:0, viajes:0,
+        bono:0, comision:0, isss:0, afp:0, otras:0, total:0});
+      const a = por.get(f.nombre);
+      a.semanas++;
+      for(const k of ['diasLV','diasSD','horas','hrsExtra','salBase','hrsExImp',
+                      'viajes','bono','comision','isss','afp','otras','total']) a[k]+=f[k]||0;
+    }
+  }
+  gran = {diasLV:0,diasSD:0,horas:0,hrsExtra:0,salBase:0,hrsExImp:0,viajes:0,
+          bono:0,comision:0,isss:0,afp:0,otras:0,total:0};
+  for(const a of por.values()) for(const k of Object.keys(gran)) gran[k]+=a[k]||0;
+  return {por, gran};
+}
+
+function renderAnual(){
+  const tb=$("#tblAnual"); if(!tb) return;
+  const cerradas = semanasCerradas();
+  const est=$("#anualEstado");
+
+  if(est){
+    est.innerHTML = cerradas.length
+      ? '<b>'+cerradas.length+'</b> semana'+(cerradas.length===1?'':'s')+' cerrada'+
+        (cerradas.length===1?'':'s')+' en el sitio'+
+        (planillaEstado.compartido ? '' : ' · <b>el sitio no respondió</b>, esto es solo de este equipo')
+      : 'Todavía no hay ninguna semana cerrada.';
+  }
+
+  const btn=$("#btnCerrar");
+  if(btn){
+    if(S.semana==null){ btn.disabled=true; btn.textContent="Cerrar la semana"; }
+    else { btn.disabled=false;
+      btn.textContent = estaCerrada(S.semana)
+        ? "Volver a cerrar la semana "+pad(S.semana)
+        : "Cerrar la semana "+pad(S.semana); }
+  }
+
+  if(!cerradas.length){
+    tb.innerHTML='<tbody><tr><td class="empty">Cuando una semana esté revisada, '
+      +'cerrala desde el reporte o con el botón de arriba y queda guardada aquí. '
+      +'El libro del año se arma con las semanas cerradas.</td></tr></tbody>';
+    return;
+  }
+
+  /* Primero, semana por semana: es como se revisa que no falte ninguna. */
+  let h='<thead><tr><th>SEMANA</th><th>PERÍODO</th><th class="num">GENTE</th>'
+    + '<th class="num">DÍAS</th><th class="num">HORAS</th><th class="num">HRS EXTRA</th>'
+    + '<th class="num">SAL. BASE</th><th class="num">EXTRAS</th>'
+    + '<th class="num">DESCUENTOS</th><th class="num">PAGADO</th>'
+    + '<th>CERRADA</th><th></th></tr></thead><tbody>';
+
+  let G={dias:0,horas:0,extra:0,base:0,sumas:0,desc:0,total:0};
+  for(const sem of cerradas){
+    const b=PLANILLA.semanas[String(sem)];
+    const fs=b.filas.map(pagoDeCerrada);
+    const t=fs.reduce((a,f)=>({
+      dias:a.dias+f.diasLV+f.diasSD, horas:a.horas+f.horas, extra:a.extra+f.hrsExtra,
+      base:a.base+f.salBase, sumas:a.sumas+f.hrsExImp+f.viajes+f.bono+f.comision,
+      desc:a.desc+f.totalDeduc, total:a.total+f.total
+    }), {dias:0,horas:0,extra:0,base:0,sumas:0,desc:0,total:0});
+    for(const k of Object.keys(G)) G[k]+=t[k];
+
+    const cuando = String(b.cerrada||'').slice(0,10).split('-').reverse().join('/');
+    h+='<tr><td class="mono">'+pad(sem)+'</td><td class="mono">'+esc(b.rango||rangoSemana(sem))+'</td>'
+     + '<td class="num">'+fs.length+'</td>'
+     + '<td class="num">'+t.dias+'</td>'
+     + '<td class="num mono">'+horasTxt(t.horas)+'</td>'
+     + '<td class="num mono">'+horasTxt(t.extra)+'</td>'
+     + '<td class="num mono">'+dinero(t.base)+'</td>'
+     + '<td class="num mono">'+dinero(t.sumas)+'</td>'
+     + '<td class="num mono">'+dinero(t.desc)+'</td>'
+     + '<td class="num mono"><b>'+dinero(t.total)+'</b></td>'
+     + '<td class="mono" style="font-size:12px">'+esc(cuando)+(b.por?'<br>'+esc(b.por):'')+'</td>'
+     + '<td><button class="sm abrir" data-sem="'+sem+'">Reabrir</button></td></tr>';
+  }
+  h+='<tr class="tot"><td></td><td>TOTAL DEL AÑO</td><td></td>'
+   + '<td class="num">'+G.dias+'</td>'
+   + '<td class="num mono">'+horasTxt(G.horas)+'</td>'
+   + '<td class="num mono">'+horasTxt(G.extra)+'</td>'
+   + '<td class="num mono">'+dinero(G.base)+'</td>'
+   + '<td class="num mono">'+dinero(G.sumas)+'</td>'
+   + '<td class="num mono">'+dinero(G.desc)+'</td>'
+   + '<td class="num mono"><b>'+dinero(G.total)+'</b></td><td></td><td></td></tr>';
+  tb.innerHTML=h+'</tbody>';
+
+  /* Y después, persona por persona: lo que lleva ganado cada quien. */
+  const tp=$("#tblAnualEmp"); if(!tp) return;
+  const {por, gran} = totalesAnuales();
+  let g='<thead><tr><th>EMPLEADO</th><th class="num">SEMANAS</th><th class="num">DÍAS</th>'
+    + '<th class="num">HORAS</th><th class="num">HRS EXTRA</th><th class="num">SAL. BASE</th>'
+    + '<th class="num">HRS EX $</th><th class="num">VIAJES</th><th class="num">BONO</th>'
+    + '<th class="num">COMISIÓN</th><th class="num">ISSS</th><th class="num">AFP</th>'
+    + '<th class="num">OTRAS DED.</th><th class="num">COBRADO</th></tr></thead><tbody>';
+  const lista=[...por.values()].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  for(const a of lista){
+    g+='<tr><td>'+esc(a.nombre)+'</td><td class="num">'+a.semanas+'</td>'
+     + '<td class="num">'+(a.diasLV+a.diasSD)+'</td>'
+     + '<td class="num mono">'+horasTxt(a.horas)+'</td>'
+     + '<td class="num mono">'+horasTxt(a.hrsExtra)+'</td>'
+     + '<td class="num mono">'+dinero(a.salBase)+'</td>'
+     + '<td class="num mono">'+dinero(a.hrsExImp)+'</td>'
+     + '<td class="num mono">'+dinero(a.viajes)+'</td>'
+     + '<td class="num mono">'+dinero(a.bono)+'</td>'
+     + '<td class="num mono">'+dinero(a.comision)+'</td>'
+     + '<td class="num mono">'+dinero(a.isss)+'</td>'
+     + '<td class="num mono">'+dinero(a.afp)+'</td>'
+     + '<td class="num mono">'+dinero(a.otras)+'</td>'
+     + '<td class="num mono"><b>'+dinero(a.total)+'</b></td></tr>';
+  }
+  g+='<tr class="tot"><td>TOTALES</td><td></td>'
+   + '<td class="num">'+(gran.diasLV+gran.diasSD)+'</td>'
+   + '<td class="num mono">'+horasTxt(gran.horas)+'</td>'
+   + '<td class="num mono">'+horasTxt(gran.hrsExtra)+'</td>'
+   + '<td class="num mono">'+dinero(gran.salBase)+'</td>'
+   + '<td class="num mono">'+dinero(gran.hrsExImp)+'</td>'
+   + '<td class="num mono">'+dinero(gran.viajes)+'</td>'
+   + '<td class="num mono">'+dinero(gran.bono)+'</td>'
+   + '<td class="num mono">'+dinero(gran.comision)+'</td>'
+   + '<td class="num mono">'+dinero(gran.isss)+'</td>'
+   + '<td class="num mono">'+dinero(gran.afp)+'</td>'
+   + '<td class="num mono">'+dinero(gran.otras)+'</td>'
+   + '<td class="num mono"><b>'+dinero(gran.total)+'</b></td></tr>';
+  tp.innerHTML=g+'</tbody>';
 }
 
 /* ---------------- ESTADÍSTICAS POR EMPLEADO ---------------------------
@@ -1937,6 +2218,68 @@ function papelRecibos(sem){
   return h+'</div>';
 }
 
+/* El resumen del año en papel: una hoja con lo que lleva cobrado cada quien
+   y qué semanas están cerradas. Es lo que se archiva o se lleva al contador. */
+function papelAnual(){
+  const cerradas = semanasCerradas();
+  if(!cerradas.length) return '';
+  const {por, gran} = totalesAnuales();
+  const lista=[...por.values()].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+
+  let h='<div class="imp-hoja">'
+   + '<div class="imp-cab"><div><h1>FERRETERÍA SAN JOSÉ · PLANILLA '+ANIO+'</h1>'
+   + '<div class="sub">'+cerradas.length+' semana'+(cerradas.length===1?'':'s')+' cerrada'
+   +   (cerradas.length===1?'':'s')+' · de la '+pad(cerradas[0])+' a la '
+   +   pad(cerradas[cerradas.length-1])+'</div></div>'
+   + '<div class="sub">Impreso '+hoyTxt()+(quienImprime()?' · '+esc(quienImprime()):'')+'</div></div>'
+   + '<table class="imp-tab"><thead><tr><th>Empleado</th><th class="num">Sem.</th>'
+   + '<th class="num">Días</th><th class="num">Horas</th><th class="num">Hrs ex</th>'
+   + '<th class="num">Sal. base</th><th class="num">Hrs ex $</th><th class="num">Viajes</th>'
+   + '<th class="num">Bono</th><th class="num">Comisión</th><th class="num">ISSS</th>'
+   + '<th class="num">AFP</th><th class="num">Otras ded.</th><th class="num">Cobrado</th>'
+   + '</tr></thead><tbody>';
+  for(const a of lista){
+    h+='<tr><td>'+esc(a.nombre)+'</td><td class="num">'+a.semanas+'</td>'
+     + '<td class="num">'+(a.diasLV+a.diasSD)+'</td>'
+     + '<td class="num">'+horasTxt(a.horas)+'</td>'
+     + '<td class="num">'+horasTxt(a.hrsExtra)+'</td>'
+     + '<td class="num">'+dinero(a.salBase)+'</td>'
+     + '<td class="num">'+dinero(a.hrsExImp)+'</td>'
+     + '<td class="num">'+dinero(a.viajes)+'</td>'
+     + '<td class="num">'+dinero(a.bono)+'</td>'
+     + '<td class="num">'+dinero(a.comision)+'</td>'
+     + '<td class="num">'+dinero(a.isss)+'</td>'
+     + '<td class="num">'+dinero(a.afp)+'</td>'
+     + '<td class="num">'+dinero(a.otras)+'</td>'
+     + '<td class="num">'+dinero(a.total)+'</td></tr>';
+  }
+  h+='<tr class="tot"><td>TOTALES</td><td></td>'
+   + '<td class="num">'+(gran.diasLV+gran.diasSD)+'</td>'
+   + '<td class="num">'+horasTxt(gran.horas)+'</td>'
+   + '<td class="num">'+horasTxt(gran.hrsExtra)+'</td>'
+   + '<td class="num">'+dinero(gran.salBase)+'</td>'
+   + '<td class="num">'+dinero(gran.hrsExImp)+'</td>'
+   + '<td class="num">'+dinero(gran.viajes)+'</td>'
+   + '<td class="num">'+dinero(gran.bono)+'</td>'
+   + '<td class="num">'+dinero(gran.comision)+'</td>'
+   + '<td class="num">'+dinero(gran.isss)+'</td>'
+   + '<td class="num">'+dinero(gran.afp)+'</td>'
+   + '<td class="num">'+dinero(gran.otras)+'</td>'
+   + '<td class="num">'+dinero(gran.total)+'</td></tr></tbody></table>';
+
+  /* Qué semanas faltan por cerrar: es lo primero que se mira al archivar. */
+  const faltan=[];
+  for(let s=cerradas[0]; s<=cerradas[cerradas.length-1]; s++) if(!estaCerrada(s)) faltan.push(pad(s));
+  h+='<div class="imp-nota">Horario '+HORARIO+'. Hora extra $'+dinero(VAL_HORA_EXTRA)
+   + '. ISSS 3% y AFP 7.25% solo al personal fijo. Cada semana se guardó con el salario '
+   + 'que la persona tenía esa semana.'
+   + (faltan.length ? ' <b>Sin cerrar en medio: semanas '+faltan.join(", ")+'.</b>' : '')
+   + '</div>'
+   + '<div class="imp-pie"><span>Elaborado por</span><span>Revisado por</span>'
+   + '<span>Autorizado por</span></div></div>';
+  return h;
+}
+
 function imprimir(html, apaisado, quefue){
   if(!html){ toast("No hay nada que imprimir en esta semana."); return; }
   $("#estiloImpresion").textContent =
@@ -1948,6 +2291,100 @@ function imprimir(html, apaisado, quefue){
     window.print();
     toast(quefue+" enviado a la impresora.");
   }, 60);
+}
+
+/* ---------------- EL LIBRO DEL AÑO, PARA BAJARLO -----------------------
+   Vive en el sitio, pero se baja cuando se quiera: una copia en la
+   computadora, con la misma forma que tenía el libro de Excel —un bloque
+   por semana— para que no haya que aprender nada nuevo. */
+function exportarAnual(){
+  const cerradas = semanasCerradas();
+  if(!cerradas.length){ toast("Todavía no hay ninguna semana cerrada."); return; }
+  const wb=XLSX.utils.book_new();
+  const c2 = n => Math.round((+n||0)*100)/100;
+
+  const CAB=["N°","NOMBRE","FIJO","DÍAS\nL-V","DÍAS\nS-D","SAL. BASE\n($)","HRS EX\nCTD.",
+    "HRS EX\nIMP. ($)","VIAJES\nEXTRA ($)","BONO\n($)","COMISIÓN\n($)","ISSS\n($)","AFP\n($)",
+    "OTRAS\nDEDUC. ($)","TOTAL\nDEDUC. ($)","TOTAL A\nPAGAR ($)","FIRMA","OBSERVACIONES"];
+
+  /* --- Hoja 1: las semanas una tras otra, como la «Planilla Anual» --- */
+  const aoa=[["PLANILLA ANUAL "+ANIO+"  ·  FERRETERÍA SAN JOSÉ"],[]];
+  const merges=[{s:{r:0,c:0},e:{r:0,c:17}}];
+  for(const sem of cerradas){
+    const b=PLANILLA.semanas[String(sem)];
+    const fs=b.filas.map(pagoDeCerrada);
+    merges.push({s:{r:aoa.length,c:0},e:{r:aoa.length,c:17}});
+    aoa.push(["  ▶  SEMANA "+pad(sem)+"  –  "+(b.rango||rangoSemana(sem))]);
+    aoa.push(CAB.slice());
+    const T={dLV:0,dSD:0,base:0,ex:0,exi:0,vi:0,bo:0,co:0,is:0,af:0,ot:0,td:0,tt:0};
+    for(const f of fs){
+      T.dLV+=f.diasLV; T.dSD+=f.diasSD; T.base+=f.salBase; T.ex+=f.hrsExtra; T.exi+=f.hrsExImp;
+      T.vi+=f.viajes; T.bo+=f.bono; T.co+=f.comision; T.is+=f.isss; T.af+=f.afp;
+      T.ot+=f.otras; T.td+=f.totalDeduc; T.tt+=f.total;
+      aoa.push([f.n, f.nombre, f.fijo?"SÍ":"NO", f.diasLV, f.diasSD, c2(f.salBase),
+        c2(f.hrsExtra), c2(f.hrsExImp), c2(f.viajes), c2(f.bono), c2(f.comision),
+        c2(f.isss), c2(f.afp), c2(f.otras), c2(f.totalDeduc), c2(f.total), "", ""]);
+    }
+    aoa.push(["","TOTALES","",T.dLV,T.dSD,c2(T.base),c2(T.ex),c2(T.exi),c2(T.vi),c2(T.bo),
+      c2(T.co),c2(T.is),c2(T.af),c2(T.ot),c2(T.td),c2(T.tt),"",""]);
+    aoa.push([]);
+  }
+  const ws1=XLSX.utils.aoa_to_sheet(aoa);
+  ws1["!cols"]=[{wch:4},{wch:36},{wch:6}].concat(Array(13).fill({wch:12})).concat([{wch:18},{wch:24}]);
+  ws1["!merges"]=merges;
+  XLSX.utils.book_append_sheet(wb, ws1, "Planilla anual");
+
+  /* --- Hoja 2: cuánto lleva cada quien en el año --- */
+  const {por, gran} = totalesAnuales();
+  const r2=[["ACUMULADO DEL AÑO "+ANIO+" POR EMPLEADO"],[],
+    ["EMPLEADO","SEMANAS","DÍAS","HORAS","HRS EXTRA","SAL. BASE ($)","HRS EX IMP. ($)",
+     "VIAJES ($)","BONO ($)","COMISIÓN ($)","ISSS ($)","AFP ($)","OTRAS DEDUC. ($)","COBRADO ($)"]];
+  for(const a of [...por.values()].sort((x,y)=>x.nombre.localeCompare(y.nombre,'es'))){
+    r2.push([a.nombre, a.semanas, a.diasLV+a.diasSD, c2(a.horas), c2(a.hrsExtra),
+      c2(a.salBase), c2(a.hrsExImp), c2(a.viajes), c2(a.bono), c2(a.comision),
+      c2(a.isss), c2(a.afp), c2(a.otras), c2(a.total)]);
+  }
+  r2.push(["TOTALES","",gran.diasLV+gran.diasSD,c2(gran.horas),c2(gran.hrsExtra),
+    c2(gran.salBase),c2(gran.hrsExImp),c2(gran.viajes),c2(gran.bono),c2(gran.comision),
+    c2(gran.isss),c2(gran.afp),c2(gran.otras),c2(gran.total)]);
+  const ws2=XLSX.utils.aoa_to_sheet(r2);
+  ws2["!cols"]=[{wch:36}].concat(Array(13).fill({wch:13}));
+  XLSX.utils.book_append_sheet(wb, ws2, "Por empleado");
+
+  /* --- Hoja 3: qué semanas están cerradas y cuáles faltan --- */
+  const r3=[["SEMANAS DEL AÑO "+ANIO],[],["SEM.","PERÍODO","ESTADO","GENTE","PAGADO ($)","CERRADA","POR"]];
+  const ultima = cerradas[cerradas.length-1];
+  /* Desde la primera cerrada, no desde enero: si se empezó a llevar esto en
+     agosto, marcar como «sin cerrar» las treinta semanas de antes no dice
+     nada. Lo que importa son los huecos de en medio. */
+  for(let s=cerradas[0]; s<=ultima; s++){
+    const b=PLANILLA.semanas[String(s)];
+    if(b){
+      const fs=b.filas.map(pagoDeCerrada);
+      r3.push([s, b.rango||rangoSemana(s), "Cerrada", fs.length,
+        c2(fs.reduce((a,f)=>a+f.total,0)),
+        String(b.cerrada||'').slice(0,10), b.por||""]);
+    }else{
+      r3.push([s, rangoSemana(s), "SIN CERRAR", "", "", "", ""]);
+    }
+  }
+  const ws3=XLSX.utils.aoa_to_sheet(r3);
+  ws3["!cols"]=[{wch:6},{wch:20},{wch:12},{wch:7},{wch:13},{wch:13},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, ws3, "Semanas");
+
+  /* --- Hoja 4: la gente, como estaba la última vez que se cerró --- */
+  const r4=[["EMPLEADOS  ·  ficha con la que se calculó la última semana cerrada"],[],
+    ["N°","NOMBRE","FIJO","SALARIO SEMANAL ($)","CARGO"]];
+  for(const r of PLANILLA.semanas[String(ultima)].filas){
+    r4.push([r.n, r.nombre, r.fijo?"SÍ":"NO", c2(r.salario), r.cargo||""]);
+  }
+  const ws4=XLSX.utils.aoa_to_sheet(r4);
+  ws4["!cols"]=[{wch:4},{wch:36},{wch:6},{wch:20},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, ws4, "Empleados");
+
+  const buf=XLSX.write(wb,{bookType:"xlsx", type:"array"});
+  guardar("Planilla_FSJ_"+ANIO+"_hasta_Sem"+pad(ultima)+".xlsx",
+    new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
 }
 
 /* ============================================================
@@ -2154,6 +2591,25 @@ $("#btnImpTotal").addEventListener("click", ()=>{
 $("#btnImpRecibos").addEventListener("click", ()=>{
   if(S.semana==null) return toast("Cargá primero un archivo del marcador.");
   imprimir(papelRecibos(S.semana), false, "Recibos de la semana "+pad(S.semana));
+});
+
+/* Cerrar la semana: desde el reporte —que es donde se revisa— y desde el
+   libro del año. Los dos hacen lo mismo. */
+$("#btnCerrarRep").addEventListener("click", ()=>{
+  if(S.semana==null) return toast("Cargá primero un archivo del marcador.");
+  cerrarSemana(S.semana);
+});
+$("#btnCerrar").addEventListener("click", ()=>{
+  if(S.semana==null) return toast("Cargá primero un archivo del marcador.");
+  cerrarSemana(S.semana);
+});
+$("#btnAnualXlsx").addEventListener("click", exportarAnual);
+$("#btnAnualImp").addEventListener("click", ()=>{
+  imprimir(papelAnual(), true, "Resumen del año");
+});
+$("#tblAnual").addEventListener("click", e=>{
+  const b=e.target.closest("button.abrir"); if(!b) return;
+  reabrirSemana(+b.dataset.sem);
 });
 
 $("#mapGrid").addEventListener("click", e=>{
@@ -2436,9 +2892,10 @@ pintarEmpleados();
     u = u || (window.FSJAuth && FSJAuth.usuario && FSJAuth.usuario());
     var e = document.getElementById('quien');
     if(u && e) e.textContent = 'Empleado: ' + u.nombre;
-    /* Hasta que no entra no hay clave, y el orden del cuadro pide clave
-       incluso para leerse. Se recoge aquí. */
-    if(u) bajarOrden().then(function(){
+    /* Hasta que no entra no hay clave, y lo guardado en el sitio pide clave
+       incluso para leerse. Se recoge aquí: los ajustes del cuadro y el libro
+       del año, que es lo que reemplazó al Excel. */
+    if(u) Promise.all([bajarOrden(), bajarPlanilla()]).then(function(){
       var chk=document.getElementById('verAlm');
       if(chk) chk.checked = ORDEN.verAlmuerzo !== false;
       pintarOrdenEstado(); render();
