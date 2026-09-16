@@ -173,6 +173,10 @@ button.sm{padding:5px 10px; min-height:28px; font-size:12.5px; letter-spacing:.0
 .panel{background:var(--surface); border:1px solid var(--line); border-top:0;
   border-radius:0 0 var(--radius) var(--radius); padding:0}
 .panel[hidden]{display:none}
+/* «hidden» pierde contra cualquier regla de display que venga después
+   —.actions es display:flex—, y entonces algo que se ocultó a propósito se
+   sigue viendo. Que gane siempre. */
+[hidden]{display:none !important}
 .panel-pad{padding:16px}
 
 /* ---------- tables ---------- */
@@ -271,15 +275,6 @@ h3.sec{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; lett
   .rail{margin:16px 0}
 }
 
-.card-emp{background:var(--surface);border:1px solid var(--line);border-radius:var(--rl);
-  box-shadow:var(--shadow);margin:22px 0 20px;overflow:hidden}
-.card-emp > .note{margin:0;border-radius:0;border-left:0;border-right:0;border-top:0}
-.card-emp .panel-pad{padding:16px 18px}
-.card-emp h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;
-  letter-spacing:.04em;font-size:16px;margin:0 0 4px;color:var(--ink)}
-.card-emp h3 .badge{margin-left:7px;font-family:'IBM Plex Mono',monospace;font-size:12px;
-  font-weight:600;background:var(--surface-2);border:1px solid var(--line);color:var(--muted);
-  border-radius:999px;padding:1px 8px;vertical-align:2px;letter-spacing:0}
 /* --------------------------- Lista de empleados -------------------------- */
 .emp-add{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .emp-add input{flex:1;min-width:240px;border:1px solid var(--line);border-radius:var(--r);
@@ -315,15 +310,36 @@ h3.sec{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; lett
 .emp-nota.ok{background:var(--ok-bg);border:1px solid #a8d5b8;color:#1c5e33}
 .emp-nota.avisa{background:var(--warn-wash);border:1px solid var(--warn-edge);color:var(--warn)}
 
+/* --- EL ADMINISTRADOR: apartados dentro de la misma pestaña --- */
+.subnav{display:flex;gap:6px;flex-wrap:wrap;padding:12px 14px 0;border-bottom:1px solid var(--line)}
+.subnav .sub{border:1px solid var(--line);border-bottom:0;background:var(--surface-2);color:var(--muted);
+  border-radius:var(--r) var(--r) 0 0;padding:8px 14px;font:inherit;font-size:13px;font-weight:500;
+  cursor:pointer;margin-bottom:-1px}
+.subnav .sub:hover{color:var(--ink)}
+.subnav .sub[aria-selected="true"]{background:var(--surface);color:var(--orange);
+  border-color:var(--line);border-bottom:1px solid var(--surface)}
+.subnav .sub .badge{margin-left:5px}
+.subpanel[hidden]{display:none !important}
+
+/* Cabecera de la lista de empleados: sin ella no se sabe qué es cada casilla. */
+.emp-cab{display:flex;align-items:center;gap:10px;padding:7px 12px;
+  font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+  border:1px solid var(--line);border-bottom:0;border-radius:var(--rl) var(--rl) 0 0;
+  background:var(--surface-2)}
+.emp-cab .np{min-width:32px;text-align:center}
+.emp-cab .nom{flex:1;min-width:0}
+.emp-cab .acc{margin-left:auto}
+.emp-cab + .emp-lista{border-radius:0 0 var(--rl) var(--rl)}
+
 /* --- REPORTE SEMANAL --- */
 .rep-acc{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .rep-acc #repResumen{color:var(--muted);font-size:13px}
-#tblRep input.ex{width:76px;border:1px solid var(--line);border-radius:var(--r);
+#tblRep input.ex,#tblPagos input.ex{width:82px;border:1px solid var(--line);border-radius:var(--r);
   padding:4px 6px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;text-align:right;
   background:var(--surface);color:var(--ink)}
-#tblRep input.ex:focus{outline:none;border-color:var(--orange);background:#fff}
-#tblRep tr.tot td{font-weight:600;background:var(--surface-2);border-top:2px solid var(--line)}
-#tblRep tr.sinsem td,#tblStats tr.sinsem td{color:var(--muted)}
+#tblRep input.ex:focus,#tblPagos input.ex:focus{outline:none;border-color:var(--orange);background:#fff}
+#tblRep tr.tot td,#tblPagos tr.tot td{font-weight:600;background:var(--surface-2);border-top:2px solid var(--line)}
+#tblRep tr.sinsem td,#tblStats tr.sinsem td,#tblPagos tr.sinsem td{color:var(--muted)}
 
 /* --- IMPRESIÓN --- */
 .solo-impresion{display:none}
@@ -414,32 +430,12 @@ h3.sec{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; lett
     <input type="file" id="fileInput" accept=".txt,.csv,.dat,text/plain" hidden>
   </div>
 
-  <!-- La lista de empleados va FUERA del bloque que se oculta: se tiene que
-       poder agregar gente antes de cargar ningún archivo, que es justo cuando
-       hace falta. -->
-    <section class="card-emp" id="p-emp">
-      <div class="note"><h3>Empleados de la planilla <span class="badge" id="bEmp">0</span></h3>
-        Esta es la lista de la planilla, <b>en el mismo orden</b>. El número de
-        cada uno es la fila que le toca en «📅 Asistencia Anual», así que
-        moverlos aquí mueve filas allá. La lista se guarda <b>en el sitio</b>:
-        la ven todos los equipos.
-        <br>El <b>salario semanal</b>, el cargo y si es <b>fijo</b> son los de la
-        hoja «👥 Empleados» y son los que se usan para calcular el pago:
-        al fijo se le descuenta ISSS y AFP, al que no, no.
-      </div>
-      <div class="panel-pad">
-        <div class="emp-add">
-          <input type="text" id="empNuevo" placeholder="APELLIDOS, NOMBRES"
-                 aria-label="Nombre del empleado nuevo" maxlength="60">
-          <button class="sm primary" id="btnEmpAdd">Agregar empleado</button>
-          <button class="sm" id="btnEmpReset">Volver a la lista original</button>
-        </div>
-        <div id="empAviso"></div>
-        <div class="emp-lista" id="empLista"></div>
-      </div>
-    </section>
+  <div id="app">
 
-  <div id="app" hidden>
+    <!-- Lo que solo tiene sentido con un archivo cargado. El resto —sobre
+         todo el Administrador— se puede usar sin archivo: dar de alta a
+         alguien o corregirle el salario no debería obligar a cargar nada. -->
+    <div id="conArchivo" hidden>
 
     <div class="tiles" id="tiles"></div>
 
@@ -458,16 +454,19 @@ h3.sec{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; lett
       </div>
       <div class="hint">Las marcas repetidas dentro del intervalo se cuentan como una sola. Súbelo si el marcador registra varios intentos seguidos.</div>
     </div>
+    </div><!-- /#conArchivo -->
 
     <div class="tabs" role="tablist">
-      <button class="tab" role="tab" aria-selected="true"  data-p="p-grid">Cuadro semanal</button>
+      <button class="tab" role="tab" aria-selected="false" data-p="p-grid">Cuadro semanal</button>
       <button class="tab" role="tab" aria-selected="false" data-p="p-marcas">Marcas detectadas <span class="badge" id="bMarcas">0</span></button>
       <button class="tab" role="tab" aria-selected="false" data-p="p-rep">Reporte semanal</button>
       <button class="tab" role="tab" aria-selected="false" data-p="p-inc">Incidencias <span class="badge" id="bInc">0</span></button>
-      <button class="tab" role="tab" aria-selected="false" data-p="p-map">Administrador <span class="badge" id="bMap">0</span></button>
+      <!-- Sin archivo, lo único que se puede hacer es administrar: se abre ahí.
+           Al cargar un archivo se pasa solo al cuadro. -->
+      <button class="tab" role="tab" aria-selected="true"  data-p="p-map">Administrador <span class="badge" id="bMap">0</span></button>
     </div>
 
-    <section class="panel" id="p-grid" role="tabpanel">
+    <section class="panel" id="p-grid" role="tabpanel" hidden>
       <div class="note">Cada día tiene <b>cuatro</b> horas: entra, sale a almorzar,
         regresa y se retira. La hora de almuerzo <b>no se cuenta como trabajada</b>.
         Si un día no trae las cuatro marcas, se cuenta entero y queda señalado
@@ -511,30 +510,90 @@ h3.sec{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; lett
       <div class="scroller"><table id="tblInc"></table></div>
     </section>
 
-    <section class="panel" id="p-map" role="tabpanel" hidden>
-      <div class="note"><b>Quién es quién.</b> El marcador guarda a la gente por
-        código y por un nombre corto —<span class="mono">elvins</span>,
-        <span class="mono">manuelb</span>—. Aquí se dice a qué empleado de la
-        planilla corresponde cada uno. Los que salen <b>en rojo</b> no se exportan
-        y sus horas se pierden. Lo asignado se guarda <b>en el sitio</b>: se hace
-        una vez y lo ven todos los equipos.</div>
-      <div class="panel-pad">
-        <div style="display:flex; gap:8px; margin-bottom:13px; flex-wrap:wrap">
-          <button class="sm" id="btnMapSave">Descargar mapeo</button>
-          <button class="sm" id="btnMapLoad">Cargar mapeo</button>
-          <input type="file" id="mapInput" accept=".json,application/json" hidden>
-        </div>
-        <div class="mapgrid" id="mapGrid"></div>
+    <!-- ====================== EL ADMINISTRADOR ======================
+         Todo lo que se configura de la planilla en un solo sitio: la ficha
+         de cada empleado, quién es quién en el marcador, lo que se le suma
+         o se le descuenta cada semana, y cómo va cada uno. -->
+    <section class="panel" id="p-map" role="tabpanel">
+      <div class="subnav" role="tablist" aria-label="Apartados del administrador">
+        <button class="sub" role="tab" aria-selected="true"  data-s="s-emp">Ficha de empleados <span class="badge" id="bEmp">0</span></button>
+        <button class="sub" role="tab" aria-selected="false" data-s="s-usr">Usuarios del marcador <span class="badge" id="bMap">0</span></button>
+        <button class="sub" role="tab" aria-selected="false" data-s="s-pag">Pagos y descuentos</button>
+        <button class="sub" role="tab" aria-selected="false" data-s="s-est">Cómo va cada uno</button>
       </div>
-      <div class="note" style="margin-top:18px"><b>Estadísticas de todo el archivo</b>
-        —no solo de la semana elegida—. Sirve para ver de un vistazo quién falta,
-        quién llega tarde y a quién se le está pagando hora extra.</div>
-      <div class="scroller"><table id="tblStats"></table></div>
+
+      <!-- ---------- Ficha de empleados ---------- -->
+      <div class="subpanel" id="s-emp" role="tabpanel">
+        <div class="note">La lista de la planilla, <b>en el mismo orden</b>. El número
+          de cada uno es la fila que le toca en «📅 Asistencia Anual», así que moverlos
+          aquí mueve filas allá.
+          <br>El <b>salario semanal</b>, el cargo y si es <b>fijo</b> son los de la hoja
+          «👥 Empleados» y son los que se usan para calcular el pago: al fijo se le
+          descuenta ISSS y AFP, al que no, no. Todo se guarda <b>en el sitio</b>: lo ven
+          todos los equipos.</div>
+        <div class="panel-pad">
+          <div class="emp-add">
+            <input type="text" id="empNuevo" placeholder="APELLIDOS, NOMBRES"
+                   aria-label="Nombre del empleado nuevo" maxlength="60">
+            <button class="sm primary" id="btnEmpAdd">Agregar empleado</button>
+            <button class="sm" id="btnEmpReset">Volver a la lista original</button>
+          </div>
+          <div id="empAviso"></div>
+          <div class="emp-cab">
+            <span class="np">N°</span><span class="nom">Nombre en la planilla</span>
+            <span class="ficha">Salario semanal · Cargo · Cotiza · Vende</span>
+            <span class="acc">Orden</span>
+          </div>
+          <div class="emp-lista" id="empLista"></div>
+        </div>
+      </div>
+
+      <!-- ---------- Usuarios del marcador ---------- -->
+      <div class="subpanel" id="s-usr" role="tabpanel" hidden>
+        <div class="note"><b>Quién es quién.</b> El marcador guarda a la gente por
+          código y por un nombre corto —<span class="mono">elvins</span>,
+          <span class="mono">manuelb</span>—. Aquí se dice a qué empleado de la
+          planilla corresponde cada uno. Los que salen <b>en rojo</b> no se exportan
+          y sus horas se pierden. Lo asignado se guarda <b>en el sitio</b>: se hace
+          una vez y lo ven todos los equipos.</div>
+        <div class="panel-pad">
+          <div style="display:flex; gap:8px; margin-bottom:13px; flex-wrap:wrap">
+            <button class="sm" id="btnMapSave">Descargar mapeo</button>
+            <button class="sm" id="btnMapLoad">Cargar mapeo</button>
+            <input type="file" id="mapInput" accept=".json,application/json" hidden>
+          </div>
+          <div class="mapgrid" id="mapGrid"></div>
+        </div>
+      </div>
+
+      <!-- ---------- Pagos y descuentos de la semana ---------- -->
+      <div class="subpanel" id="s-pag" role="tabpanel" hidden>
+        <div class="note">Lo que el marcador <b>no puede saber</b>: los viajes, el
+          bono, la comisión y los adelantos. Se apuntan por semana y quedan guardados
+          para todos los equipos, así que quien apunta el viaje y quien imprime el
+          recibo no tienen que ser el mismo equipo.
+          <br>Las horas y el salario base salen solos del cuadro; aquí solo se agrega
+          lo de fuera y se ve cómo queda el total.</div>
+        <div class="note rep-acc">
+          <div class="fld">
+            <label for="selSemanaPagos">Semana</label>
+            <select id="selSemanaPagos"></select>
+          </div>
+          <span id="pagosResumen"></span>
+        </div>
+        <div class="scroller"><table id="tblPagos"></table></div>
+      </div>
+
+      <!-- ---------- Estadísticas ---------- -->
+      <div class="subpanel" id="s-est" role="tabpanel" hidden>
+        <div class="note"><b>De todo el archivo</b> —no solo de la semana elegida—.
+          Sirve para ver de un vistazo quién falta, quién llega tarde y a quién se le
+          está pagando hora extra.</div>
+        <div class="scroller"><table id="tblStats"></table></div>
+      </div>
     </section>
 
-
-
-    <div class="actions">
+    <div class="actions" id="accionesExportar" hidden>
       <div class="target" id="target"></div>
       <button id="btnCopy">Copiar bloque</button>
       <button class="primary" id="btnXlsx">Descargar Excel</button>
@@ -1212,7 +1271,7 @@ const horasTxt = n => (Math.round((+n||0)*100)/100).toFixed(2);
 function render(){
   renderTiles(); renderSelSemana(); renderGrid();
   renderMarcas(); renderInc(); renderMapeo(); renderStats();
-  renderReporte(); renderPasos();
+  renderReporte(); renderPagos(); pintarEmpleados(); renderPasos();
   $("#target").innerHTML = S.semana
     ? "Semana "+pad(S.semana)+" · pegar en <b>C"+filaExcel(S.semana)+"</b> de «📅 Asistencia Anual»"
     : "";
@@ -1249,14 +1308,29 @@ function renderTiles(){
 }
 
 function renderSelSemana(){
-  const sel=$("#selSemana");
-  sel.innerHTML = S.semanas.map(s=>
+  const ops = S.semanas.map(s=>
     '<option value="'+s+'"'+(s===S.semana?" selected":"")+'>Semana '+pad(s)+' · '+rangoSemana(s)+'</option>'
   ).join("") || '<option>—</option>';
+  /* Dos sitios donde elegir la semana —arriba y dentro del administrador—
+     pero una sola semana: los dos muestran lo mismo. */
+  $("#selSemana").innerHTML = ops;
+  const p=$("#selSemanaPagos"); if(p) p.innerHTML = ops;
+}
+
+/* Cambiar de semana desde donde sea. */
+function cambiarSemana(s){
+  S.semana = +s;
+  S.celdas = new Map();
+  sembrarCeldas();
+  render();
 }
 
 function renderGrid(){
-  if(S.semana==null){ $("#grid").innerHTML=""; return; }
+  if(S.semana==null){
+    $("#grid").innerHTML='<tbody><tr><td class="empty">Sin archivo. Suelta arriba '
+      +'la exportación del marcador y aquí sale el cuadro de la semana.</td></tr></tbody>';
+    return;
+  }
   const campos=camposDia(), dias=ordenDias(), ancho=campos.length;
   let h='<thead><tr><th class="emp" rowspan="2">Empleado</th>';
   for(const d of dias){
@@ -1621,6 +1695,60 @@ function semanaACorta(sem){
   return {hasta:ultimo.dow, faltan};
 }
 
+/* ---------------- PAGOS Y DESCUENTOS (EN EL ADMINISTRADOR) -------------
+   Lo mismo que se puede escribir en el reporte, pero puesto donde se
+   administra todo: aquí se ve con qué salario se está calculando y qué
+   queda a pagar, que es lo que se quiere mirar al apuntar un bono. */
+function renderPagos(){
+  const tb=$("#tblPagos"); if(!tb) return;
+  const res=$("#pagosResumen");
+  if(S.semana==null){
+    tb.innerHTML='<tbody><tr><td class="empty">Cargá un archivo del marcador para '
+      +'apuntar los pagos de una semana. La ficha de los empleados sí se puede '
+      +'editar sin archivo.</td></tr></tbody>';
+    if(res) res.textContent='';
+    return;
+  }
+  const filas=planillaSemana(S.semana), T=totalesDe(filas);
+
+  let h='<thead><tr><th>N°</th><th>EMPLEADO</th><th class="num">SALARIO SEM.</th>'
+    + '<th class="num">DÍAS</th><th class="num">GANADO POR HORAS</th>'
+    + '<th class="num">VIAJES</th><th class="num">BONO</th><th class="num">COMISIÓN</th>'
+    + '<th class="num">OTRAS DEDUC.</th><th class="num">DESCUENTOS</th>'
+    + '<th class="num">TOTAL A PAGAR</th></tr></thead><tbody>';
+
+  for(const f of filas){
+    const ex=extrasDe(S.semana,f.n);
+    const campo=(c,v)=>'<td class="num"><input class="ex" type="number" step="0.01" min="0" '
+      + 'data-n="'+f.n+'" data-c="'+c+'" value="'+(v||"")+'" placeholder="0.00" '
+      + 'aria-label="'+c+' de '+esc(f.nombre)+'"></td>';
+    h+='<tr'+(f.diasLV+f.diasSD===0?' class="sinsem"':'')+'>'
+     + '<td class="mono">'+pad(f.n)+'</td>'
+     + '<td>'+esc(f.nombre)+(f.ficha.cargo?' <span class="pill">'+esc(f.ficha.cargo)+'</span>':'')+'</td>'
+     + '<td class="num mono">'+dinero(f.ficha.salario)+'</td>'
+     + '<td class="num mono">'+f.diasLV+' + '+f.diasSD+'</td>'
+     + '<td class="num mono">'+dinero(f.salBase+f.hrsExImp)+'</td>'
+     + campo('viajes',ex.viajes) + campo('bono',ex.bono) + campo('comision',ex.comision)
+     + campo('otras',ex.otras)
+     + '<td class="num mono">'+(f.ficha.fijo
+         ? dinero(f.isss+f.afp+f.otras)
+         : '<span class="pill">no cotiza</span>')+'</td>'
+     + '<td class="num mono"><b>'+dinero(f.total)+'</b></td></tr>';
+  }
+  h+='<tr class="tot"><td></td><td>TOTALES</td><td></td>'
+   + '<td class="num">'+T.diasLV+' + '+T.diasSD+'</td>'
+   + '<td class="num mono">'+dinero(T.salBase+T.hrsExImp)+'</td>'
+   + '<td class="num mono">'+dinero(T.viajes)+'</td>'
+   + '<td class="num mono">'+dinero(T.bono)+'</td>'
+   + '<td class="num mono">'+dinero(T.comision)+'</td>'
+   + '<td class="num mono">'+dinero(T.otras)+'</td>'
+   + '<td class="num mono">'+dinero(T.isss+T.afp+T.otras)+'</td>'
+   + '<td class="num mono"><b>'+dinero(T.total)+'</b></td></tr>';
+  tb.innerHTML=h+'</tbody>';
+
+  if(res) res.innerHTML=rangoSemana(S.semana)+' · <b>$'+dinero(T.total)+'</b> a pagar';
+}
+
 /* ---------------- ESTADÍSTICAS POR EMPLEADO ---------------------------
    De todo lo que trae el archivo, no solo de la semana elegida. */
 const ENTRADA_LV = 6*3600+30*60;   // 06:30, la hora de entrada de la hoja
@@ -1960,7 +2088,11 @@ function leerArchivo(file){
     }
     S.crudas=filas; S.archivo=file.name; S.celdas=new Map(); S.semana=null;
     $("#chipFile").textContent=file.name+" · "+filas.length+" marcas";
-    $("#app").hidden=false;
+    $("#conArchivo").hidden=false;
+    $("#accionesExportar").hidden=false;
+    /* Al cargar un archivo lo que se quiere ver es el cuadro, aunque se
+       viniera del administrador. */
+    const tg=$('.tab[data-p="p-grid"]'); if(tg) tg.click();
     procesar(); render();
     dz.classList.add("compact");
     dz.querySelector("h2").textContent="Archivo";
@@ -1971,7 +2103,8 @@ function leerArchivo(file){
   fr.readAsText(file,"utf-8");
 }
 
-$("#selSemana").addEventListener("change", e=>{ S.semana=+e.target.value; S.celdas=new Map(); sembrarCeldas(); render(); });
+$("#selSemana").addEventListener("change", e=>cambiarSemana(e.target.value));
+$("#selSemanaPagos").addEventListener("change", e=>cambiarSemana(e.target.value));
 $("#inpDedupe").addEventListener("change", ()=>{ S.celdas=new Map(); procesar(); render(); });
 $("#inpMinAnio").addEventListener("change", ()=>{ S.celdas=new Map(); procesar(); render(); });
 
@@ -1990,23 +2123,29 @@ $("#grid").addEventListener("input", e=>{
   },420);
 });
 
-/* Los viajes, bonos, comisiones y adelantos del reporte. Se guarda al salir
-   del campo, no en cada tecla, y se devuelve el foco donde estaba para poder
-   ir de uno a otro con el tabulador sin perder el sitio. */
-$("#tblRep").addEventListener("change", e=>{
-  const el=e.target; if(!el.classList.contains("ex")) return;
-  if(S.semana==null) return;
-  const n=+el.dataset.n, campo=el.dataset.c;
-  const v=Number(el.value);
-  if(el.value.trim() && (!isFinite(v) || v<0)){
-    el.value=extrasDe(S.semana,n)[campo]||"";
-    return toast("Tiene que ser un número.");
-  }
-  setExtra(S.semana, n, campo, el.value.trim()? v : 0);
-  renderReporte(); renderTiles();
-  const otra=$('#tblRep input.ex[data-n="'+n+'"][data-c="'+campo+'"]');
-  if(otra){ otra.focus(); try{ otra.setSelectionRange(otra.value.length, otra.value.length); }catch(_){} }
-});
+/* Los viajes, bonos, comisiones y adelantos. Se pueden escribir en el reporte
+   o en el administrador —son lo mismo, así que los dos cuadros se rehacen—.
+   Se guarda al salir del campo, no en cada tecla, y se devuelve el foco donde
+   estaba para poder ir de uno a otro con el tabulador sin perder el sitio. */
+function engancharExtras(cual){
+  const tabla=$(cual); if(!tabla) return;
+  tabla.addEventListener("change", e=>{
+    const el=e.target; if(!el.classList.contains("ex")) return;
+    if(S.semana==null) return;
+    const n=+el.dataset.n, campo=el.dataset.c;
+    const v=Number(el.value);
+    if(el.value.trim() && (!isFinite(v) || v<0)){
+      el.value=extrasDe(S.semana,n)[campo]||"";
+      return toast("Tiene que ser un número.");
+    }
+    setExtra(S.semana, n, campo, el.value.trim()? v : 0);
+    renderReporte(); renderPagos(); renderTiles();
+    const otra=$(cual+' input.ex[data-n="'+n+'"][data-c="'+campo+'"]');
+    if(otra){ otra.focus(); try{ otra.setSelectionRange(otra.value.length, otra.value.length); }catch(_){} }
+  });
+}
+engancharExtras("#tblRep");
+engancharExtras("#tblPagos");
 
 $("#btnImpTotal").addEventListener("click", ()=>{
   if(S.semana==null) return toast("Cargá primero un archivo del marcador.");
@@ -2061,6 +2200,22 @@ $$(".tab").forEach(t=>t.addEventListener("click", ()=>{
   $("#"+t.dataset.p).hidden=false;
 }));
 
+// apartados dentro del administrador
+$$(".subnav .sub").forEach(t=>t.addEventListener("click", ()=>{
+  $$(".subnav .sub").forEach(x=>x.setAttribute("aria-selected","false"));
+  t.setAttribute("aria-selected","true");
+  $$(".subpanel").forEach(p=>p.hidden=true);
+  $("#"+t.dataset.s).hidden=false;
+}));
+
+/* Ir al administrador, y si se pide a un apartado suyo. Lo usan los avisos
+   que dicen «ponele el salario» para llevarte directo al sitio. */
+function irAlAdmin(apartado){
+  const t=$('.tab[data-p="p-map"]'); if(t) t.click();
+  if(apartado){ const s=$('.subnav .sub[data-s="'+apartado+'"]'); if(s) s.click(); }
+  const p=$("#p-map"); if(p) p.scrollIntoView({behavior:"smooth", block:"start"});
+}
+
 // acciones
 $("#btnCopy").addEventListener("click", async ()=>{
   if(S.semana==null){ toast("Cargá primero un archivo."); return; }
@@ -2107,11 +2262,27 @@ function pintarEmpleados(){
   }
   $("#empAviso").innerHTML = aviso;
 
+  /* A quién del marcador está enganchado cada uno: es la mitad de «revisar
+     la ficha» —si nadie le marca, sus horas no van a salir—. */
+  const usuarioDe = new Map();
+  for(const [en, nE] of Object.entries(S.mapeo)){
+    if(!nE) continue;
+    const u = S.usuarios.get(+en);
+    if(u) usuarioDe.set(nE, u.nombre || ('EnNo ' + en));
+  }
+  const hayArchivo = S.crudas.length > 0;
+
   cont.innerHTML = EMPLEADOS.map(function(e, i){
+    const usr = usuarioDe.get(i+1);
     return '<div class="emp-fila">'+
       '<span class="np">'+pad(i+1)+'</span>'+
       '<input class="nom" data-i="'+i+'" value="'+esc(e.nombre)+'" maxlength="60" '+
         'aria-label="Nombre del empleado '+(i+1)+'">'+
+      (hayArchivo
+        ? (usr ? '<span class="pill mono" title="Usuario del marcador">'+esc(usr)+'</span>'
+               : '<span class="pill warn" title="Nadie del marcador apunta a esta persona: '+
+                 'sus horas no van a salir">sin marcador</span>')
+        : '')+
       '<span class="ficha">'+
         '<label title="Salario semanal completo, el de la hoja «👥 Empleados»">$'+
           '<input class="sal" type="number" min="0" step="0.01" data-i="'+i+'" '+
