@@ -170,6 +170,16 @@ tr.ficha-row>td{background:var(--s50);padding:0}
 .ficha .dato b{color:var(--s900)}
 .ficha table{font-size:13px}
 .ficha .cerrar{margin-left:auto}
+/* --- las casillas para corregir la ficha --- */
+.fic-campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));
+  gap:9px 12px;margin:12px 0 4px}
+.fic-campo{display:flex;flex-direction:column;gap:3px}
+.fic-campo.ancho{grid-column:1/-1}
+.fic-campo>span{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--s500)}
+.fic-campo input,.fic-campo textarea{border:1px solid var(--s200);border-radius:var(--r);
+  padding:6px 9px;font:inherit;font-size:13.5px;background:#fff;color:var(--s900);width:100%;
+  resize:vertical}
+.fic-campo input:focus,.fic-campo textarea:focus{outline:none;border-color:var(--orange)}
 @media(max-width:640px){ .ficha{grid-template-columns:1fr} .ficha .foto{width:100%;height:200px} }
 
 .alta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
@@ -1797,6 +1807,20 @@ details.plegable[open]>summary{margin-bottom:12px}
     setTimeout(function(){ refrescarFicha(item); }, 2600);
   }
 
+  /* Una casilla de la ficha. Se guarda al salir de ella, como el resto de la
+     pantalla; el botón «Guardar ficha» solo obliga a soltarla y confirma. */
+  function campoFicha(item, campo, etiqueta, valor, ayuda, largo){
+    var v = String(valor==null?'':valor);
+    return '<label class="fic-campo'+(largo?' ancho':'')+'">'+
+      '<span>'+esc(etiqueta)+'</span>'+
+      (largo
+        ? '<textarea data-ficha-campo="'+esc(campo)+'" data-item="'+esc(item)+'" rows="2" '+
+          'placeholder="'+esc(ayuda)+'" maxlength="160">'+esc(v)+'</textarea>'
+        : '<input class="txt" data-ficha-campo="'+esc(campo)+'" data-item="'+esc(item)+'" '+
+          'value="'+esc(v)+'" placeholder="'+esc(ayuda)+'" maxlength="160">')+
+      '</label>';
+  }
+
   function fichaHTML(item){
     var p=Inventario.porItem(item);
     if(!p) return '<div class="empty">Este producto ya no está.</div>';
@@ -1822,11 +1846,23 @@ details.plegable[open]>summary{margin-bottom:12px}
             '<button class="btn b-pri b-sm" data-fic="guardar" data-item="'+esc(item)+'">Guardar ficha</button>'+
             '<button class="btn b-gh b-sm" data-fic="cerrar" data-item="'+esc(item)+'">Cerrar</button>'+
           '</span></div>'+
-        '<div class="dato">ITEM <b class="mono">'+esc(p.item)+'</b> · Categoría <b>'+esc(p.categoria||'—')+'</b>'+
-          ' · Unidad <b>'+esc(p.unidad||'—')+'</b>'+(p.marca?' · Marca <b>'+esc(p.marca)+'</b>':'')+'</div>'+
-        '<div class="dato">Precio <b>'+(Number(p.precio)>0?money(p.precio):'sin precio')+'</b>'+
+        '<div class="dato">ITEM <b class="mono">'+esc(p.item)+'</b>'+
+          ' · Precio <b>'+(Number(p.precio)>0?money(p.precio):'sin precio')+'</b>'+
           (Number(p.costo)>0?' · Costo <b>'+money(p.costo)+'</b>':'')+
           ' · Existencia <b>'+nf(p.existencia)+'</b></div>'+
+        /* La ficha se corrige aquí. El reporte de FelTec se equivoca —nombres
+           cortados, categorías mal puestas— y antes solo se podía arreglar la
+           marca y el código: el resto había que aguantarlo hasta el siguiente
+           reporte, que traía el mismo error. */
+        '<div class="fic-campos">'+
+          campoFicha(item,'nombre','Nombre',p.nombre,'como se llama el producto')+
+          campoFicha(item,'codigo','Código de barras',p.codigo,'sin código')+
+          campoFicha(item,'categoria','Categoría',p.categoria,'sin categoría')+
+          campoFicha(item,'unidad','Unidad',p.unidad,'Unidad')+
+          campoFicha(item,'marca','Marca',p.marca,'sin marca')+
+          campoFicha(item,'especificaciones','Especificaciones',p.especificaciones,
+            'medidas, material, para qué sirve — lo que el nombre no dice', true)+
+        '</div>'+
         '<label class="dato" style="display:flex;gap:7px;align-items:center;margin:10px 0">'+
           '<input type="checkbox" data-fic="destacado" data-item="'+esc(item)+'"'+(p.destacado?' checked':'')+'>'+
           'Destacado en la portada del sitio</label>'+
@@ -1845,6 +1881,38 @@ details.plegable[open]>summary{margin-bottom:12px}
   }
 
   $('p-body').addEventListener('change',function(e){
+    /* Corrección de la ficha. El código lleva su propio camino porque puede
+       chocar con el de otro producto y hay que avisar. */
+    var c=e.target.closest('[data-ficha-campo]');
+    if(c){
+      var it=c.dataset.item, campo=c.dataset.fichaCampo, val=c.value.trim();
+      var antes=Inventario.porItem(it) || {};
+      if(String(antes[campo]||'')===val) return;
+
+      var hecho = campo==='codigo'
+        ? Inventario.setCodigo(it,val)
+        : Inventario.setFicha(it,(function(o){o[campo]=val;return o;})({}));
+
+      hecho.then(function(ok){
+        if(campo==='nombre' && !val){
+          c.value=String(antes.nombre||'');
+          return toast('El producto tiene que llamarse de alguna forma.',true);
+        }
+        if(!ok) return toast('No se pudo guardar.',true);
+        marcarGuardada(it);
+        var est=$('fic-estado-'+it);
+        if(est){ est.textContent='Guardado ✓'; est.classList.add('ok'); }
+        /* El nombre y la marca salen en la tabla de arriba: hay que
+           redibujarla o se queda enseñando lo viejo. */
+        if(campo==='nombre'||campo==='marca'||campo==='categoria') pintarProductos();
+        toast('Ficha corregida y compartida con los demás equipos.');
+      }).catch(function(err){
+        c.value=String(antes[campo]||'');
+        toast(err.message||'No se pudo guardar.',true);
+      });
+      return;
+    }
+
     var f=e.target.closest('input[data-foto]');
     if(f){
       var item=f.dataset.foto, file=f.files&&f.files[0];

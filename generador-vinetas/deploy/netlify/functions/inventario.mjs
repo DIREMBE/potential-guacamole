@@ -105,7 +105,13 @@ function quienEs(clave) {
    precio. Se comparten para no reimprimir en un equipo lo que ya se imprimió
    en otro. No son datos del cliente: la parte pública no los sirve. */
 const NUMEROS = ['precio', 'promoAntes', 'existencia', 'etiquetaEn', 'etiquetaPrecio'];
-const TEXTOS = ['promoHasta', 'codigo', 'bajaMotivo', 'nombre', 'categoria', 'unidad', 'marca'];
+/* `especificaciones` es nuestro, no viene del reporte de FelTec: es donde va
+   lo que el nombre no dice (medidas, material, para que sirve). Como el resto
+   de la ficha, se corrige a mano y se comparte. */
+/* `fichaFijada` dice que campos corrigio una persona a mano («nombre,marca»).
+   Viaja para que el reporte no los vuelva a pisar en NINGUN equipo. */
+const TEXTOS = ['promoHasta', 'codigo', 'bajaMotivo', 'nombre', 'categoria', 'unidad',
+                'marca', 'especificaciones', 'fichaFijada'];
 const SINO = ['activo', 'activoManual', 'destacado', 'alta'];
 
 function limpiarCambio(c) {

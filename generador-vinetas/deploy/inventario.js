@@ -416,7 +416,7 @@ window.Inventario = (function () {
 
     const st = store(COLS.productos, 'readwrite');
     if (!parcial) st.clear();
-    let count = 0, preciosConservados = 0;
+    let count = 0, preciosConservados = 0, fichasConservadas = 0;
     for (const p of data.productos) {
       const item = String(p.item).trim();
       const ant = previo.get(item);
@@ -425,15 +425,38 @@ window.Inventario = (function () {
         precio = numOf(ant.precio);          // gana el precio corregido aquí
         preciosConservados++;
       }
+
+      /* Lo que alguien corrigió a mano en la ficha manda sobre lo que trae el
+         reporte. Si no, el reporte volvería a poner el nombre mal cada vez que
+         se carga, y la corrección duraría hasta la siguiente carga —que es
+         justo cuando hace falta que aguante—. La diferencia no se pierde: se
+         enseña en el análisis para poder decidir quién tiene razón. */
+      const fijados = ant ? fijadosDe(ant) : [];
+      const manda = (k, delReporte) => {
+        if (fijados.indexOf(k) >= 0 && ant && String(ant[k] || '') !== String(delReporte || '')) {
+          fichasConservadas++;
+          return String(ant[k] || '');
+        }
+        return delReporte;
+      };
+
       st.put({
         item,
-        nombre: String(p.nombre || '').trim(),
-        categoria: String(p.categoria || '').trim(),
-        unidad: String(p.unidad || '').trim(),
+        nombre: manda('nombre', String(p.nombre || '').trim()),
+        categoria: manda('categoria', String(p.categoria || '').trim()),
+        unidad: manda('unidad', String(p.unidad || '').trim()),
         existencia: numOf(p.existencia),
         precio: precio,
         costo: numOf(p.costo) || (ant ? numOf(ant.costo) : 0),
-        marca: String(p.marca || '').trim() || (ant ? String(ant.marca || '') : ''),
+        marca: manda('marca', String(p.marca || '').trim() || (ant ? String(ant.marca || '') : '')),
+        /* `especificaciones` no viene del reporte: es nuestro y se conserva
+           siempre, o se perderia en cada carga. */
+        especificaciones: p.especificaciones !== undefined
+          ? String(p.especificaciones || '').trim()
+          : (ant ? String(ant.especificaciones || '') : ''),
+        fichaFijada: p.fichaFijada !== undefined
+          ? String(p.fichaFijada || '')
+          : (ant ? String(ant.fichaFijada || '') : ''),
         // el código de barras del archivo manda; si no trae, se conserva el de aquí
         codigo: p.codigo ? String(p.codigo).trim() : (ant && ant.codigo ? ant.codigo : ''),
         destacado: p.destacado !== undefined ? !!p.destacado : !!(ant && ant.destacado),
@@ -953,21 +976,161 @@ window.Inventario = (function () {
 
   /* Cambiar el código de barras de un producto a mano (por si el escáner da
      otro distinto al del archivo). */
+  /* ======================== CORREGIR LA FICHA ==========================
+     El reporte de FelTec manda casi todo, pero se equivoca: nombres cortados,
+     categorías mal puestas, unidades que no son. Antes solo se podía corregir
+     la marca y el código; el resto había que aguantarlo hasta el siguiente
+     reporte, y el siguiente traía el mismo error.
+
+     Ahora se corrige cualquier campo de la ficha y la corrección se comparte
+     como cualquier otro cambio. `especificaciones` es nuestro, no viene del
+     reporte: es donde va lo que el nombre no dice (medidas, material, para
+     qué sirve).
+
+     Qué se puede tocar y hasta dónde. El tope es el mismo que aguanta el
+     servidor (160), salvo la marca, que va más corta porque también es una
+     clave para agrupar y buscar.                                          */
+  const FICHA_CAMPOS = {
+    nombre: 160, categoria: 80, unidad: 40, marca: 60, especificaciones: 160,
+  };
+
+  /* Qué campos de este producto están corregidos a mano. */
+  function fijadosDe(p) {
+    return String((p && p.fichaFijada) || '').split(',').map((x) => x.trim()).filter(Boolean);
+  }
+  function fichaFijada(item, campo) {
+    const p = byItem.get(String(item));
+    if (!p) return false;
+    const f = fijadosDe(p);
+    return campo ? f.indexOf(campo) >= 0 : f;
+  }
+
+  /* Soltar una corrección: el campo vuelve a hacer caso al reporte. Es lo que
+     se usa al decir «tiene razón el reporte» en el análisis. */
+  async function soltarFicha(item, campo) {
+    const p = byItem.get(String(item));
+    if (!p) return false;
+    const quedan = fijadosDe(p).filter((k) => k !== campo);
+    p.fichaFijada = quedan.join(',');
+    p.tocadoEn = Date.now();
+    await guardar(COLS.productos, (st) => st.put(p));
+    _editado(p);
+    emitir('ficha', { item: p.item, solto: campo });
+    _empujar([{ item: p.item, fichaFijada: p.fichaFijada }]);
+    return true;
+  }
+
+  /* ============ QUÉ DICE EL REPORTE QUE NO DICE LA FICHA ===============
+     Al cargar un reporte nuevo hay que poder ver en qué se diferencia de lo
+     que tenemos guardado, porque cada diferencia se resuelve distinto:
+
+       · un nombre que alguien corrigió a mano y el reporte trae mal   -> se
+         deja la ficha y se avisa
+       · un producto que el reporte ya no trae                          -> o
+         se dio de baja, o alguien lo borró por error
+       · un producto nuevo que la ficha no tiene                        -> hay
+         que darlo de alta
+       · un precio distinto                                             -> lo
+         normal, pero conviene verlo antes de aceptarlo
+
+     Esto NO cambia nada: solo cuenta lo que hay. Quien decide es la persona.
+     `filas` es lo que trae el reporte: {item, nombre, categoria, unidad,
+     precio, existencia, codigo}.                                         */
+  const DIF_CAMPOS = ['nombre', 'categoria', 'unidad', 'codigo'];
+
+  function diferenciasConReporte(filas) {
+    const out = { campos: [], faltan: [], nuevos: [], precios: [], total: 0 };
+    if (!Array.isArray(filas)) return out;
+
+    const enReporte = new Set();
+    for (const f of filas) {
+      const item = String(f.item == null ? '' : f.item).trim();
+      if (!item) continue;
+      enReporte.add(item);
+      const p = byItem.get(item);
+
+      if (!p) {
+        out.nuevos.push({ item, nombre: String(f.nombre || ''), precio: numOf(f.precio) });
+        continue;
+      }
+
+      const fijados = fijadosDe(p);
+      for (const k of DIF_CAMPOS) {
+        if (f[k] === undefined) continue;
+        const delReporte = String(f[k] == null ? '' : f[k]).trim();
+        const laFicha = String(p[k] || '');
+        if (delReporte === laFicha) continue;
+        /* Una casilla vacía en el reporte no es una diferencia: es que el
+           reporte no trae ese dato. Solo cuenta cuando dice otra cosa. */
+        if (!delReporte) continue;
+        out.campos.push({
+          item, nombre: p.nombre, campo: k, ficha: laFicha, reporte: delReporte,
+          fijado: fijados.indexOf(k) >= 0,
+        });
+      }
+
+      const pr = numOf(f.precio), pa = numOf(p.precio);
+      if (f.precio !== undefined && pr !== pa) {
+        out.precios.push({ item, nombre: p.nombre, ficha: pa, reporte: pr,
+                           sube: pr > pa, dif: pr - pa });
+      }
+    }
+
+    for (const p of productos) {
+      if (enReporte.has(String(p.item))) continue;
+      out.faltan.push({ item: p.item, nombre: p.nombre, existencia: numOf(p.existencia),
+                        activo: p.activo !== false });
+    }
+
+    out.total = out.campos.length + out.faltan.length + out.nuevos.length + out.precios.length;
+    return out;
+  }
+
+  async function setFicha(item, campos) {
+    const p = byItem.get(String(item));    if (!p) return false;
+    if (!campos || typeof campos !== 'object') return false;
+
+    const cambio = { item: p.item };
+    let toco = false;
+    for (const k of Object.keys(FICHA_CAMPOS)) {
+      if (campos[k] === undefined) continue;
+      const v = String(campos[k] == null ? '' : campos[k]).trim().slice(0, FICHA_CAMPOS[k]);
+      if (String(p[k] || '') === v) continue;
+      /* Un producto sin nombre no se puede ni buscar ni vender: se deja el
+         que tenía antes que dejarlo en blanco. */
+      if (k === 'nombre' && !v) continue;
+      p[k] = v;
+      cambio[k] = v;
+      toco = true;
+    }
+    if (!toco) return true;
+
+    /* Se apunta QUÉ se corrigió a mano. Sin esto, el siguiente reporte de
+       FelTec volvería a escribir encima el nombre mal puesto y la corrección
+       duraría hasta la próxima carga —que es justo cuando hace falta—.
+       Va como texto («nombre,marca») porque es lo que el servidor deja pasar
+       y así la corrección la respetan también los demás equipos. */
+    const fijados = new Set(fijadosDe(p));
+    for (const k of Object.keys(cambio)) if (k !== 'item') fijados.add(k);
+    p.fichaFijada = [...fijados].join(',');
+    cambio.fichaFijada = p.fichaFijada;
+
+    p.tocadoEn = Date.now();
+    await guardar(COLS.productos, (st) => st.put(p));
+    _editado(p);
+    /* El nombre y la categoría cambian cómo se busca y cómo se agrupa, así
+       que hay que rehacer los índices. */
+    await loadAll();
+    emitir('ficha', { item: p.item, campos: cambio });
+    _empujar([cambio]);
+    return true;
+  }
+
   /* La marca escrita a mano. El reporte de FelTec no trae columna de marca
      —se deduce del nombre—, pero deducir falla con nombres raros, así que se
      puede corregir. Se comparte como cualquier otro cambio. */
   async function setMarca(item, marca) {
-    const p = byItem.get(String(item));
-    if (!p) return false;
-    const m = String(marca || '').trim().slice(0, 60);
-    if (String(p.marca || '') === m) return true;
-    p.marca = m;
-    p.tocadoEn = Date.now();
-    await guardar(COLS.productos, (st) => st.put(p));
-    _editado(p);
-    emitir('marca', { item: p.item, marca: m });
-    _empujar([{ item: p.item, marca: m }]);
-    return true;
+    return setFicha(item, { marca: marca });
   }
 
   async function setCodigo(item, codigo) {
@@ -1168,7 +1331,8 @@ window.Inventario = (function () {
      verdad cambió algo, para no escribir en la base sin motivo. */
   const INV_CAMPOS = ['precio', 'promoAntes', 'promoHasta', 'activo', 'activoManual',
                       'bajaMotivo', 'codigo', 'destacado', 'existencia',
-                      'nombre', 'categoria', 'unidad', 'marca'];
+                      'nombre', 'categoria', 'unidad', 'marca', 'especificaciones',
+                      'fichaFijada'];
 
   async function _aplicarCambioServidor(o) {
     if (!o || !o.item) return false;
@@ -2305,7 +2469,8 @@ window.Inventario = (function () {
     proveedores, setProveedorDeMarca, setProveedores, proveedorDeMarca, SIN_PROVEEDOR,
     estadoProveedores, bajarProveedores: _bajarProveedores,
     setDestacado, historial, catalogo, categorias, sinPrecio, recientes, tocar, marcarVisto,
-    setMarca,
+    setMarca, setFicha, soltarFicha, fichaFijada, FICHA_CAMPOS,
+    diferenciasConReporte,
     analizarConteo, aplicarConteo, setActivo, deBaja, altaProducto, setCodigo,
     setPromo, quitarPromo, promociones, enOferta, descuento,
     publicar, publicarCatalogo, publicarImagenes, publicarShowcase, exportarCambios, limpiarCambios,
