@@ -380,6 +380,7 @@ h3.sec{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; lett
   .recibo .num{text-align:right;width:74px;font-variant-numeric:tabular-nums}
   .recibo .lin{width:88px;background:#fcfcfc}
   .recibo tr.sum td{font-weight:700;background:#f2f2f2}
+  .recibo tr.info td{font-size:7.5pt;color:#333;border-top:2px solid #000}
   /* Sitio de sobra para escribir: una firma no cabe en cuatro milímetros. */
   .recibo .r-firma{display:flex;gap:16px;margin-top:16px;font-size:8.5pt}
   .recibo .r-firma span{flex:1;border-bottom:1px solid #000;padding-bottom:20px}
@@ -501,6 +502,9 @@ h3.sec{font-family:"Barlow Condensed",sans-serif; text-transform:uppercase; lett
         <button class="btn primary" id="btnImpTotal" type="button">Imprimir reporte total</button>
         <button class="btn" id="btnImpRecibos" type="button">Imprimir recibos</button>
         <button class="btn" id="btnCerrarRep" type="button">Cerrar la semana</button>
+        <label class="chk" style="display:flex;gap:6px;align-items:center;cursor:pointer;
+               font-size:13px;color:var(--muted)" title="De momento es experimental">
+          <input type="checkbox" id="verVentas"> Sacar las ventas en el papel</label>
         <span id="repResumen"></span>
       </div>
       <div class="scroller"><table id="tblRep"></table></div>
@@ -730,7 +734,11 @@ const LS_EXTRAS = 'fsj-marcador-extras';
 /* Se guarda solo lo que NO es cero. Un año entero de bonos para todos son
    más de 800 apuntes, y el sitio no acepta más de 60 KB por sección: con los
    ceros dentro se llenaría; sin ellos sobra sitio. Lo que falte se lee como
-   cero, que es lo que era. */
+   cero, que es lo que era.
+
+   `ventas` va aquí porque es un apunte más de la semana, pero NO es dinero
+   que se paga: es lo que vendió esa persona, para ir viendo cómo le va antes
+   de decidir si le toca comisión. No entra en ninguna cuenta del pago. */
 function limpiarExtras(x){
   const out={};
   if(!x || typeof x!=='object') return out;
@@ -738,7 +746,7 @@ function limpiarExtras(x){
     if(!/^\d+\|\d+$/.test(k)) continue;
     const v=x[k]; if(!v || typeof v!=='object') continue;
     const f={};
-    for(const c of ['viajes','bono','comision','otras']){ const n=+v[c]; if(n) f[c]=n; }
+    for(const c of ['viajes','bono','comision','otras','ventas']){ const n=+v[c]; if(n) f[c]=n; }
     if(Object.keys(f).length) out[k]=f;
   }
   return out;
@@ -860,7 +868,11 @@ const DIAS = ["SÁB","DOM","LUN","MAR","MIÉ","JUE","VIE"];
    que haya en el equipo.                                                  */
 const ETIQ = { ent:"Entrada", alm:"Sale a almorzar", reg:"Regresa", sal:"Salida" };
 const LS_ORDEN = 'fsj-marcador-orden';
-let ORDEN = { dias:[0,1,2,3,4,5,6], verAlmuerzo:true };
+let ORDEN = { dias:[0,1,2,3,4,5,6], verAlmuerzo:true,
+  /* Lo de las ventas es experimental: de momento nadie tiene comisión y se
+     está mirando para decidir. Por eso sale apagado del papel salvo que se
+     encienda, y el interruptor lo comparten todos los equipos. */
+  verVentas:false };
 
 function camposDia(){ return ORDEN.verAlmuerzo ? ["ent","alm","reg","sal"] : ["ent","sal"]; }
 function ordenDias(){
@@ -899,6 +911,7 @@ async function bajarOrden(){
     if(d.datos){
       if(Array.isArray(d.datos.dias)) ORDEN.dias=d.datos.dias;
       if(typeof d.datos.verAlmuerzo==='boolean') ORDEN.verAlmuerzo=d.datos.verAlmuerzo;
+      if(typeof d.datos.verVentas==='boolean') ORDEN.verVentas=d.datos.verVentas;
       /* La lista puede venir de un equipo viejo, que solo mandaba nombres:
          normalizarEmpleados les rearma la ficha. */
       const llegaron = normalizarEmpleados(d.datos.empleados);
@@ -943,7 +956,8 @@ function filaCerrada(f){
   return { n:f.n, nombre:f.nombre, fijo:!!f.ficha.fijo, salario:+f.ficha.salario||0,
            cargo:f.ficha.cargo||'', diasLV:f.diasLV, diasSD:f.diasSD,
            horas:+f.horas.toFixed(4), hrsExtra:+f.hrsExtra.toFixed(4),
-           viajes:f.viajes, bono:f.bono, comision:f.comision, otras:f.otras };
+           viajes:f.viajes, bono:f.bono, comision:f.comision, otras:f.otras,
+           vendedor:!!f.ficha.vendedor, ventas:f.ventas||0 };
 }
 
 /* Deshace filaCerrada: de lo guardado vuelve a salir el pago completo, con
@@ -957,9 +971,11 @@ function pagoDeCerrada(r){
   const afp  = r.fijo ? bruto*AFP_LAB  : 0;
   const totalDeduc = isss + afp + (r.otras||0);
   return Object.assign({}, r, {
-    ficha:{nombre:r.nombre, fijo:r.fijo, salario:r.salario, cargo:r.cargo, vendedor:false},
+    ficha:{nombre:r.nombre, fijo:r.fijo, salario:r.salario, cargo:r.cargo,
+           vendedor:!!r.vendedor},
     salBase, hrsExImp, bruto, isss, afp, totalDeduc,
     viajes:r.viajes||0, bono:r.bono||0, comision:r.comision||0, otras:r.otras||0,
+    ventas:r.ventas||0,
     total: bruto - totalDeduc
   });
 }
@@ -1007,7 +1023,8 @@ async function subirOrden(){
   try{
     const r=await fetch('/api/config',{method:'POST',headers:{'content-type':'application/json'},
       body:JSON.stringify({clave, que:'marcador',
-        datos:{dias:ORDEN.dias, verAlmuerzo:ORDEN.verAlmuerzo, empleados:EMPLEADOS,
+        datos:{dias:ORDEN.dias, verAlmuerzo:ORDEN.verAlmuerzo, verVentas:ORDEN.verVentas,
+               empleados:EMPLEADOS,
                mapeo:(typeof S!=='undefined' && S.mapeo) ? S.mapeo : null,
                extras:(typeof S!=='undefined' && S.extras) ? S.extras : null}})});
     const d=await r.json().catch(()=>null);
@@ -1327,6 +1344,9 @@ function pagoDe(nEmp, extrasFila){
     n:nEmp, ficha:f, nombre:f.nombre,
     horas:c.horas, diasLV:c.diasLV, diasSD:c.diasSD, hrsExtra:c.extra, sinAlm:c.sinAlm,
     salBase, hrsExImp, viajes, bono, comision,
+    /* Lo que vendió: va aparte a propósito, NO entra en ninguna suma del
+       pago. De momento nadie tiene comisión; esto es para ir viendo. */
+    ventas: +x.ventas || 0,
     bruto, isss, afp, otras, totalDeduc,
     total: bruto - totalDeduc
   };
@@ -1337,7 +1357,7 @@ function pagoDe(nEmp, extrasFila){
    oficina, el recibo que se imprime en el mostrador ya lo trae. */
 function claveExtras(sem, nEmp){ return sem + "|" + nEmp; }
 function extrasDe(sem, nEmp){
-  return S.extras[claveExtras(sem,nEmp)] || {viajes:0, bono:0, comision:0, otras:0};
+  return S.extras[claveExtras(sem,nEmp)] || {viajes:0, bono:0, comision:0, otras:0, ventas:0};
 }
 function setExtra(sem, nEmp, campo, valor){
   const k = claveExtras(sem,nEmp);
@@ -1358,7 +1378,7 @@ function planillaSemana(sem){
 }
 function totalesDe(filas){
   const t={diasLV:0,diasSD:0,horas:0,hrsExtra:0,salBase:0,hrsExImp:0,viajes:0,bono:0,
-           comision:0,bruto:0,isss:0,afp:0,otras:0,totalDeduc:0,total:0};
+           comision:0,bruto:0,isss:0,afp:0,otras:0,totalDeduc:0,total:0,ventas:0};
   for(const f of filas) for(const k of Object.keys(t)) t[k]+=f[k]||0;
   return t;
 }
@@ -1820,7 +1840,9 @@ function renderPagos(){
     + '<th class="num">DÍAS</th><th class="num">GANADO POR HORAS</th>'
     + '<th class="num">VIAJES</th><th class="num">BONO</th><th class="num">COMISIÓN</th>'
     + '<th class="num">OTRAS DEDUC.</th><th class="num">DESCUENTOS</th>'
-    + '<th class="num">TOTAL A PAGAR</th></tr></thead><tbody>';
+    + '<th class="num">TOTAL A PAGAR</th>'
+    + '<th class="num" title="Lo que vendió. No entra en el pago.">VENTAS</th>'
+    + '</tr></thead><tbody>';
 
   for(const f of filas){
     const ex=extrasDe(S.semana,f.n);
@@ -1838,7 +1860,12 @@ function renderPagos(){
      + '<td class="num mono">'+(f.ficha.fijo
          ? dinero(f.isss+f.afp+f.otras)
          : '<span class="pill">no cotiza</span>')+'</td>'
-     + '<td class="num mono"><b>'+dinero(f.total)+'</b></td></tr>';
+     + '<td class="num mono"><b>'+dinero(f.total)+'</b></td>'
+     /* Solo a quien esté marcado como vendedor: al que no vende, la casilla
+        no le dice nada y estorba. */
+     + (f.ficha.vendedor ? campo('ventas',ex.ventas)
+                         : '<td class="num"><span class="hint">—</span></td>')
+     + '</tr>';
   }
   h+='<tr class="tot"><td></td><td>TOTALES</td><td></td>'
    + '<td class="num">'+T.diasLV+' + '+T.diasSD+'</td>'
@@ -1848,10 +1875,12 @@ function renderPagos(){
    + '<td class="num mono">'+dinero(T.comision)+'</td>'
    + '<td class="num mono">'+dinero(T.otras)+'</td>'
    + '<td class="num mono">'+dinero(T.isss+T.afp+T.otras)+'</td>'
-   + '<td class="num mono"><b>'+dinero(T.total)+'</b></td></tr>';
+   + '<td class="num mono"><b>'+dinero(T.total)+'</b></td>'
+   + '<td class="num mono"><b>'+dinero(T.ventas)+'</b></td></tr>';
   tb.innerHTML=h+'</tbody>';
 
-  if(res) res.innerHTML=rangoSemana(S.semana)+' · <b>$'+dinero(T.total)+'</b> a pagar';
+  if(res) res.innerHTML=rangoSemana(S.semana)+' · <b>$'+dinero(T.total)+'</b> a pagar'
+    + (T.ventas ? ' · <b>$'+dinero(T.ventas)+'</b> vendidos' : '');
 }
 
 /* ---------------- CERRAR Y REABRIR LA SEMANA ---------------------------- */
@@ -2137,7 +2166,9 @@ function papelTotal(sem){
    + '<th class="num">Horas</th><th class="num">Sal. base</th><th class="num">Hrs ex</th>'
    + '<th class="num">Hrs ex $</th><th class="num">Viajes</th><th class="num">Bono</th>'
    + '<th class="num">Comisión</th><th class="num">ISSS</th><th class="num">AFP</th>'
-   + '<th class="num">Otras ded.</th><th class="num">Total a pagar</th><th>Firma</th>'
+   + '<th class="num">Otras ded.</th><th class="num">Total a pagar</th>'
+   + (ORDEN.verVentas ? '<th class="num">Vendió</th>' : '')
+   + '<th>Firma</th>'
    + '</tr></thead><tbody>';
   for(const f of filas){
     h+='<tr><td>'+pad(f.n)+'</td><td>'+esc(f.nombre)+'</td><td>'+(f.ficha.fijo?'SÍ':'NO')+'</td>'
@@ -2152,7 +2183,10 @@ function papelTotal(sem){
      + '<td class="num">'+dinero(f.isss)+'</td>'
      + '<td class="num">'+dinero(f.afp)+'</td>'
      + '<td class="num">'+dinero(f.otras)+'</td>'
-     + '<td class="num">'+dinero(f.total)+'</td><td></td></tr>';
+     + '<td class="num">'+dinero(f.total)+'</td>'
+     + (ORDEN.verVentas
+         ? '<td class="num">'+(f.ficha.vendedor ? dinero(f.ventas) : '—')+'</td>' : '')
+     + '<td></td></tr>';
   }
   h+='<tr class="tot"><td></td><td>TOTALES</td><td></td>'
    + '<td class="num">'+T.diasLV+'</td><td class="num">'+T.diasSD+'</td>'
@@ -2166,7 +2200,9 @@ function papelTotal(sem){
    + '<td class="num">'+dinero(T.isss)+'</td>'
    + '<td class="num">'+dinero(T.afp)+'</td>'
    + '<td class="num">'+dinero(T.otras)+'</td>'
-   + '<td class="num">'+dinero(T.total)+'</td><td></td></tr>'
+   + '<td class="num">'+dinero(T.total)+'</td>'
+   + (ORDEN.verVentas ? '<td class="num">'+dinero(T.ventas)+'</td>' : '')
+   + '<td></td></tr>'
    + '</tbody></table>'
    + '<div class="imp-nota">Horario '+HORARIO+'. Hora extra $'+dinero(VAL_HORA_EXTRA)
    + '. ISSS 3% y AFP 7.25% solo al personal fijo. '
@@ -2209,6 +2245,12 @@ function papelRecibos(sem){
      +   '<td class="num">'+dinero(f.afp)+'</td>'+lin+'</tr>'
      + '<tr><td>Otros / Adelantos</td><td class="num">'+dinero(f.otras)+'</td>'+lin+'</tr>'
      + '<tr class="sum"><td>TOTAL A COBRAR</td><td class="num">'+dinero(f.total)+'</td>'+lin+'</tr>'
+     /* Lo que vendió va DESPUÉS del total y separado: es informativo, no
+        forma parte de lo que se le paga. Y solo si se pidió sacarlo. */
+     + (ORDEN.verVentas && f.ficha.vendedor
+         ? '<tr class="info"><td>Vendió esta semana <i>(informativo, no se paga)</i></td>'
+           + '<td class="num">'+dinero(f.ventas)+'</td>'+lin+'</tr>'
+         : '')
      + '</tbody></table>'
      + '<div class="r-firma"><span>Recibí conforme (firma)</span><span>DUI</span>'
      +   '<span>Fecha: ___ / ___ / ______</span></div>'
@@ -2595,6 +2637,15 @@ $("#btnImpRecibos").addEventListener("click", ()=>{
 
 /* Cerrar la semana: desde el reporte —que es donde se revisa— y desde el
    libro del año. Los dos hacen lo mismo. */
+/* El interruptor de las ventas: se comparte, como el resto del cuadro. */
+$("#verVentas").addEventListener("change", (e)=>{
+  ORDEN.verVentas = e.target.checked;
+  guardarOrdenLocal(); subirOrden();
+  toast(ORDEN.verVentas
+    ? "Las ventas salen en el reporte y en el recibo."
+    : "Las ventas ya no salen en el papel.");
+});
+
 $("#btnCerrarRep").addEventListener("click", ()=>{
   if(S.semana==null) return toast("Cargá primero un archivo del marcador.");
   cerrarSemana(S.semana);
@@ -2898,6 +2949,8 @@ pintarEmpleados();
     if(u) Promise.all([bajarOrden(), bajarPlanilla()]).then(function(){
       var chk=document.getElementById('verAlm');
       if(chk) chk.checked = ORDEN.verAlmuerzo !== false;
+      var cv=document.getElementById('verVentas');
+      if(cv) cv.checked = !!ORDEN.verVentas;
       pintarOrdenEstado(); render();
     });
   };

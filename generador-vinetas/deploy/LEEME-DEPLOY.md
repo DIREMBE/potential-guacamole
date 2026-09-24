@@ -355,6 +355,39 @@ se descarga ni se sube nada. Ahí mismo se lee qué base tiene el sitio ahora
 | Administrar productos (crear uno nuevo) | **Productos → «Crear un producto…»** |
 | Cargar archivos | **Actualizar con un archivo** |
 
+### La ficha del producto se corrige entera
+
+En **Productos**, al abrir la ficha de cualquier artículo se puede corregir
+**nombre, código, categoría, unidad, marca** y un campo nuevo,
+**especificaciones**, que no viene del reporte: es donde van las medidas, el
+material o para qué sirve.
+
+> **La corrección aguanta.** Cada producto apunta qué campos se tocaron a mano
+> y la siguiente carga del reporte los respeta — si no, el reporte volvería a
+> poner el nombre mal cada mes. Eso lo ven todos los equipos.
+
+En **Análisis de inventario**, al cargar el reporte siguiente sale la tarjeta
+**«Diferencias con lo guardado»**, que separa los cuatro casos: datos distintos
+(con *«vale el reporte»* / *«vale la ficha»* para resolver uno a uno), precios
+distintos, productos que la ficha no tiene, y productos que el reporte ya no
+trae —avisando de los que tienen existencia guardada, porque cargar el archivo
+los dejaría en cero—. No cambia nada por su cuenta.
+
+### Varios proveedores, y productos que son lo mismo
+
+En **Qué comprar → Quién le vende cada marca** ahora se escriben **varios**,
+separados por coma. El primero es el de cabecera, y al armar el pedido se elige
+producto por producto a cuál se le compra esta vez — eso no se guarda en la
+tabla, porque la mejor oferta cambia de un pedido a otro. También se le pueden
+poner proveedores **a un producto concreto**, y mandan sobre los de su marca.
+
+En **Productos que son lo mismo** se agrupan los artículos que son el mismo
+aunque se llamen distinto (la llave para chorro de media la traiga VALCOBRE,
+GATO o DUCAS). El pedido los mira **juntos**: si de uno quedan dos y del otro
+veinte, no hace falta pedir. Vienen **87 grupos sembrados de fábrica**, sacados
+del inventario por parecido de nombre; son un punto de partida para corregir a
+mano, no la verdad.
+
 ### Armar el pedido de verdad
 
 El sugerido dice qué pedir; ahora se convierte en **un pedido que se manda**.
@@ -518,7 +551,7 @@ de verdad.
 en la planilla, **y en el reporte con el que se pagan los salarios**. Entra con
 tu nombre y clave, como las demás pantallas internas.
 
-**La lista de empleados se edita ahí mismo**, en la tarjeta de arriba: agregar,
+**La lista de empleados se edita ahí mismo**, en el Administrador: agregar,
 renombrar, mover de lugar y quitar. Cada uno lleva además su **ficha de
 planilla** —salario semanal, cargo, si es fijo y si es vendedor—, que es lo que
 hace falta para calcular el pago. Todo eso se guarda **en el sitio**: lo ven
@@ -555,6 +588,14 @@ vez.
 semana, con el salario con el que se está calculando y lo que queda a pagar al
 lado. Es la misma información que el reporte: escribir en cualquiera de los dos
 actualiza el otro.
+
+> **Las ventas de cada vendedor.** A quien está marcado como *vendedor* se le
+> puede apuntar lo que vendió en la semana. **No entra en el pago** —de momento
+> nadie tiene comisión—: está para ir viendo cómo le va a cada uno y decidir
+> más adelante a quién y cuándo asignársela. Por eso es experimental y sale
+> **apagada del papel**; la casilla *«Sacar las ventas en el papel»*, en el
+> reporte, la enciende para todos los equipos. En el recibo va después del
+> total y marcada como informativa.
 
 **Planilla anual.** El libro del año — ver abajo.
 
