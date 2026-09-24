@@ -97,6 +97,7 @@ window.Inventario = (function () {
     /* Los grupos de equivalentes viven con lo demás del equipo; el sitio
        manda, pero esto deja la pantalla lista sin esperar a la red. */
     if (meta.equivalencias && Array.isArray(meta.equivalencias.grupos)) EQUIV = meta.equivalencias;
+    if (meta.combos && Array.isArray(meta.combos.lista)) COMBOS = meta.combos;
     reindex();
   }
 
@@ -491,6 +492,11 @@ window.Inventario = (function () {
         fichaFijada: p.fichaFijada !== undefined
           ? String(p.fichaFijada || '')
           : (ant ? String(ant.fichaFijada || '') : ''),
+        /* Las presentaciones tampoco vienen del reporte: se conservan o se
+           perderian en cada carga del Excel. */
+        presentaciones: p.presentaciones !== undefined
+          ? String(p.presentaciones || '')
+          : (ant ? String(ant.presentaciones || '') : ''),
         // el código de barras del archivo manda; si no trae, se conserva el de aquí
         codigo: p.codigo ? String(p.codigo).trim() : (ant && ant.codigo ? ant.codigo : ''),
         destacado: p.destacado !== undefined ? !!p.destacado : !!(ant && ant.destacado),
@@ -1366,7 +1372,7 @@ window.Inventario = (function () {
   const INV_CAMPOS = ['precio', 'promoAntes', 'promoHasta', 'activo', 'activoManual',
                       'bajaMotivo', 'codigo', 'destacado', 'existencia',
                       'nombre', 'categoria', 'unidad', 'marca', 'especificaciones',
-                      'fichaFijada'];
+                      'fichaFijada', 'presentaciones'];
 
   async function _aplicarCambioServidor(o) {
     if (!o || !o.item) return false;
@@ -1595,6 +1601,7 @@ window.Inventario = (function () {
     const n = await _bajarCambiosServidor();
     await _bajarProveedores().catch(() => {});
     await _bajarEquiv().catch(() => {});
+    await _bajarCombos().catch(() => {});
     return { recibidos: n, base, estado: estadoSincronizacion() };
   }
 
@@ -2172,6 +2179,179 @@ window.Inventario = (function () {
     } catch (e) { return 0; }
   }
 
+  /* ============== SE VENDE POR VARILLA Y POR QUINTAL ==================
+     Muchas cosas se venden de dos formas y a precio distinto: el hierro
+     corrugado de 3/8 se vende por varilla o por quintal, y el quintal son
+     catorce varillas. El catálogo solo sabía enseñar un precio, así que el
+     cliente veía el de la varilla y llamaba para preguntar el del quintal.
+
+     Cada presentación es {nombre, cantidad, precio}: cómo se llama, cuántas
+     unidades lleva y cuánto cuesta ENTERA (no por unidad). El precio suelto
+     del producto sigue siendo el de una unidad.
+
+     Se guardan dentro del producto como texto, porque así viajan por el
+     mismo camino que el resto de la ficha y llegan solas a los demás
+     equipos y al catálogo, sin publicar nada.                            */
+  const MAX_PRESENTACIONES = 6;
+
+  function presentacionesDe(p) {
+    const o = (p && typeof p === 'object') ? p : byItem.get(String(p));
+    if (!o) return [];
+    let l = [];
+    try { l = JSON.parse(o.presentaciones || '[]'); } catch (e) { return []; }
+    if (!Array.isArray(l)) return [];
+    return l.map((x) => ({
+      nombre: String((x && x.nombre) || '').slice(0, 40),
+      cantidad: numOf(x && x.cantidad),
+      precio: numOf(x && x.precio),
+    })).filter((x) => x.nombre && x.cantidad > 0 && x.precio > 0)
+      .slice(0, MAX_PRESENTACIONES);
+  }
+
+  /* Lo que ahorra comprar la presentación entera en vez de unidad a unidad.
+     Es lo que hace que valga la pena enseñarla. */
+  function ahorroPresentacion(p, pres) {
+    const suelto = numOf(p && p.precio) * numOf(pres && pres.cantidad);
+    if (suelto <= 0 || numOf(pres.precio) <= 0) return 0;
+    return Math.max(0, suelto - numOf(pres.precio));
+  }
+
+  async function setPresentaciones(item, lista) {
+    const p = byItem.get(String(item));
+    if (!p) return false;
+    const limpia = (Array.isArray(lista) ? lista : []).map((x) => ({
+      nombre: String((x && x.nombre) || '').trim().slice(0, 40),
+      cantidad: numOf(x && x.cantidad),
+      precio: numOf(x && x.precio),
+    })).filter((x) => x.nombre && x.cantidad > 0 && x.precio > 0)
+      .slice(0, MAX_PRESENTACIONES);
+
+    const txt = limpia.length ? JSON.stringify(limpia) : '';
+    if (String(p.presentaciones || '') === txt) return true;
+    /* Tope de cordura: si no cabe, no se guarda a medias. */
+    if (txt.length > 600) throw new Error('Son demasiadas presentaciones.');
+
+    p.presentaciones = txt;
+    p.tocadoEn = Date.now();
+    await guardar(COLS.productos, (st) => st.put(p));
+    _editado(p);
+    emitir('presentaciones', { item: p.item, n: limpia.length });
+    _empujar([{ item: p.item, presentaciones: txt }]);
+    return true;
+  }
+
+  /* ================ COSAS QUE SE VENDEN JUNTAS =========================
+     Un soldador y una careta se venden por separado, pero quien compra uno
+     casi siempre necesita el otro. Un combo es: estos productos, a este
+     precio, con este nombre.
+
+     No son de un producto: son de la ferretería, así que viven en el sitio
+     como los proveedores. Y son una OFERTA, o sea algo que el cliente tiene
+     que poder ver: el catálogo los lee sin clave.                        */
+  let COMBOS = { lista: [] };
+  let combosEstado = { comprobado: false, compartida: false, actualizado: '', por: '' };
+
+  function combos() {
+    return COMBOS.lista.map((c) => Object.assign({}, c, { items: c.items.slice() }));
+  }
+  /* Los combos en los que entra un producto. Es lo que enseña su tarjeta. */
+  function combosDe(item) {
+    const k = String(item);
+    return COMBOS.lista.filter((c) => c.items.some((x) => String(x.item) === k));
+  }
+  function estadoCombos() { return Object.assign({}, combosEstado); }
+
+  /* Lo que costaría comprarlo suelto, para poder decir cuánto se ahorra. */
+  function precioSuelto(combo) {
+    if (!combo) return 0;
+    let t = 0;
+    for (const x of combo.items) {
+      const p = byItem.get(String(x.item));
+      if (!p) return 0;                       // falta uno: no se puede decir
+      t += numOf(p.precio) * (numOf(x.cant) || 1);
+    }
+    return Math.round(t * 100) / 100;
+  }
+
+  async function setCombo(datos) {
+    const d = datos || {};
+    const items = (d.items || []).map((x) => ({
+      item: String((x && x.item) || '').trim(),
+      cant: Math.max(1, Math.round(numOf(x && x.cant) || 1)),
+    })).filter((x) => x.item && byItem.has(x.item));
+    const nombre = String(d.nombre || '').trim().slice(0, 80);
+    const precio = numOf(d.precio);
+
+    if (items.length < 2) throw new Error('Un combo necesita al menos dos productos.');
+    if (!nombre) throw new Error('El combo necesita un nombre.');
+    if (precio <= 0) throw new Error('El combo necesita un precio.');
+
+    const id = d.id || ('c' + Date.now().toString(36));
+    const combo = { id, nombre, items, precio,
+                    nota: String(d.nota || '').trim().slice(0, 120),
+                    hasta: String(d.hasta || '').trim().slice(0, 10) };
+    COMBOS = { lista: COMBOS.lista.filter((c) => c.id !== id).concat([combo]) };
+    await _guardarCombos();
+    emitir('combos', { id, total: COMBOS.lista.length });
+    return combo;
+  }
+
+  async function borrarCombo(id) {
+    COMBOS = { lista: COMBOS.lista.filter((c) => c.id !== id) };
+    await _guardarCombos();
+    emitir('combos', { total: COMBOS.lista.length });
+    return true;
+  }
+
+  async function _guardarCombos() {
+    await asegurarMeta();
+    meta.combos = COMBOS;
+    await saveMeta();
+    await _mandarCombos();
+  }
+
+  async function _mandarCombos() {
+    const clave = _claveEnvio();
+    if (!clave) { combosEstado.compartida = false; return false; }
+    try {
+      const r = await fetch(API_CONFIG, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ clave, que: 'combos', datos: COMBOS }),
+      });
+      const d = await r.json().catch(() => null);
+      if (!r.ok || !d || !d.ok) throw new Error((d && d.error) || ('http ' + r.status));
+      combosEstado = { comprobado: true, compartida: true,
+                       actualizado: d.actualizado || '', por: d.por || '' };
+      return true;
+    } catch (e) {
+      combosEstado = Object.assign({}, combosEstado, { comprobado: true, compartida: false });
+      return false;
+    }
+  }
+
+  /* Los combos se leen SIN clave: son una oferta, y el catálogo del cliente
+     tiene que poder enseñarlos. */
+  async function _bajarCombos() {
+    try {
+      const r = await fetch(API_CONFIG + '?que=combos', { cache: 'no-store' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      const d = await r.json();
+      if (!d || !d.ok) throw new Error('respuesta rara');
+      if (d.datos && Array.isArray(d.datos.lista)) {
+        COMBOS = { lista: d.datos.lista.filter((c) => c && c.id && Array.isArray(c.items)) };
+        await asegurarMeta();
+        meta.combos = COMBOS;
+        await saveMeta();
+      }
+      combosEstado = { comprobado: true, compartida: true,
+                       actualizado: d.actualizado || '', por: d.por || '' };
+      return true;
+    } catch (e) {
+      combosEstado = Object.assign({}, combosEstado, { comprobado: true, compartida: false });
+      return false;
+    }
+  }
+
   function proveedorDeMarca(marca) {
     const l = proveedoresDeMarca(marca);
     return l.length ? l[0] : SIN_PROVEEDOR;
@@ -2268,6 +2448,10 @@ window.Inventario = (function () {
         };
         if (p.marca) o.marca = p.marca;
         if (p.destacado) o.destacado = true;
+        /* Lo que el empleado escribio en la ficha para que el cliente lo
+           vea: de que es y de que formas se vende. */
+        if (p.especificaciones) o.especificaciones = p.especificaciones;
+        if (p.presentaciones) o.presentaciones = p.presentaciones;
         if (numOf(p.promoAntes) > 0) { o.promoAntes = numOf(p.promoAntes); o.promoHasta = p.promoHasta || ''; }
         return o;
       }),
@@ -2433,6 +2617,8 @@ window.Inventario = (function () {
       item: p.item, nombre: p.nombre, categoria: p.categoria,
       unidad: p.unidad, existencia: p.existencia, precio: p.precio, codigo: p.codigo || '',
       marca: p.marca || '',
+      especificaciones: p.especificaciones || '', presentaciones: p.presentaciones || '',
+      fichaFijada: p.fichaFijada || '',
       promoAntes: p.promoAntes || 0, promoHasta: p.promoHasta || '',
       destacado: !!p.destacado, activo: p.activo !== false,
       bajaMotivo: p.bajaMotivo || '', activoManual: !!p.activoManual,
@@ -2650,6 +2836,11 @@ window.Inventario = (function () {
     await openDB();
     await loadAll();
 
+    /* Los combos se leen sin clave —son una oferta y el catálogo del cliente
+       tiene que poder enseñarlos—, así que se piden siempre, también en la
+       parte pública, donde nunca hay clave. */
+    _bajarCombos().catch(() => {});
+
     /* Primero, la base guardada EN EL SITIO: es la que puede ser más nueva
        que los archivos publicados, porque no hace falta publicar para
        cambiarla. Si no está disponible se sigue con los .json de siempre. */
@@ -2736,6 +2927,9 @@ window.Inventario = (function () {
     setProveedoresDeMarca, setProveedoresDeProducto,
     equivalencias, grupoDe, equivalentesDe, setGrupoEquivalente, quitarDeGrupo,
     borrarGrupo, estadoEquivalencias, bajarEquivalencias: _bajarEquiv,
+    presentacionesDe, setPresentaciones, ahorroPresentacion, MAX_PRESENTACIONES,
+    combos, combosDe, setCombo, borrarCombo, precioSuelto, estadoCombos,
+    bajarCombos: _bajarCombos,
     estadoProveedores, bajarProveedores: _bajarProveedores,
     setDestacado, historial, catalogo, categorias, sinPrecio, recientes, tocar, marcarVisto,
     setMarca, setFicha, soltarFicha, fichaFijada, FICHA_CAMPOS,

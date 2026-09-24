@@ -89,7 +89,11 @@ function quienEs(clave) {
    Lista blanca, igual que en los cambios sueltos. El COSTO DE COMPRA no
    está y no debe estar: la parte del catálogo se sirve sin clave.          */
 const NUMEROS = ['precio', 'promoAntes', 'existencia', 'tocadoEn', 'etiquetaEn', 'etiquetaPrecio'];
-const TEXTOS = ['nombre', 'categoria', 'unidad', 'codigo', 'marca', 'promoHasta', 'bajaMotivo'];
+const TEXTOS = ['nombre', 'categoria', 'unidad', 'codigo', 'marca', 'promoHasta',
+                'bajaMotivo', 'especificaciones', 'presentaciones', 'fichaFijada'];
+/* `presentaciones` lleva dentro las formas en que se vende el producto
+   —«varilla», «quintal de 14»—; recortarla a 200 la dejaria rota a medias. */
+const LARGO_TEXTO = { presentaciones: 600 };
 const SINO = ['activo', 'destacado', 'activoManual'];
 
 function limpiar(p) {
@@ -101,7 +105,7 @@ function limpiar(p) {
     const n = Number(p[k]);
     if (isFinite(n) && n >= 0 && n < 1e13) o[k] = (k === 'tocadoEn' || k === 'etiquetaEn') ? Math.round(n) : Math.round(n * 100) / 100;
   }
-  for (const k of TEXTOS) if (p[k] != null) o[k] = String(p[k]).slice(0, 200);
+  for (const k of TEXTOS) if (p[k] != null) o[k] = String(p[k]).slice(0, LARGO_TEXTO[k] || 200);
   for (const k of SINO) if (p[k] !== undefined) o[k] = !!p[k];
   return o;
 }
@@ -116,6 +120,10 @@ function paraCatalogo(p) {
   };
   if (p.marca) o.marca = p.marca;
   if (p.destacado) o.destacado = true;
+  /* Lo que el empleado escribio para que lo vea el cliente: de que es el
+     producto y de que formas se vende. El costo de compra sigue sin ir. */
+  if (p.especificaciones) o.especificaciones = p.especificaciones;
+  if (p.presentaciones) o.presentaciones = p.presentaciones;
   if (p.promoAntes > 0) { o.promoAntes = p.promoAntes; o.promoHasta = p.promoHasta || ''; }
   return o;
 }

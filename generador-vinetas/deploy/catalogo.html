@@ -113,6 +113,26 @@ main{max-width:1280px;margin:0 auto;padding:22px clamp(16px,4vw,40px) 80px}
 .price{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:25px;color:var(--orange);line-height:1}
 .unit{font-size:12px;color:var(--tx-3)}
 .price.consultar{font-size:17px;color:var(--tx-2);font-weight:600}
+/* Lo que la ficha del empleado le cuenta al cliente: de qué es el producto,
+   de qué otras formas se vende y con qué se lleva junto. */
+.espec{font-size:12px;color:var(--tx-2);line-height:1.4;margin:2px 0 6px;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.pres{list-style:none;margin:7px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+/* Se envuelve: el nombre de la presentación y lo que se ahorra no caben en
+   una sola línea dentro de la tarjeta, y sin envolver se salían del borde. */
+.pres li{display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;font-size:12.5px;
+  background:var(--ink-3);border:1px solid var(--line);border-radius:6px;
+  padding:5px 8px;color:var(--tx)}
+.pres .pn{font-weight:600;color:var(--tx)}
+.pres .pc{color:var(--tx-3);font-size:11.5px}
+.pres .pp{margin-left:auto;font-weight:700;color:var(--orange);white-space:nowrap}
+.pres .pa{flex-basis:100%;font-size:11px;color:var(--ok);font-weight:600}
+.combo{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-top:7px;
+  border:1px dashed var(--orange);border-radius:6px;padding:6px 8px;font-size:12px;
+  color:var(--tx)}
+.combo .ct{flex:1;min-width:110px}
+.combo .cp{font-weight:700;color:var(--orange);white-space:nowrap}
+.combo .ca{flex-basis:100%;font-size:11px;color:var(--ok);font-weight:600}
 /* Oferta: el precio de antes tachado y el descuento sobre la foto */
 .price-antes{font-family:'Barlow Condensed',sans-serif;font-size:16px;color:var(--tx-3);text-decoration:line-through}
 /* La etiqueta de oferta va donde iba la de «Destacado» (arriba a la izquierda):
@@ -429,12 +449,19 @@ footer.ft{border-top:1px solid var(--line);text-align:center;color:var(--tx-3);f
              '<div class="body">'+
                (p.categoria ? '<span class="cat-lbl">'+esc(p.categoria)+'</span>' : '')+
                '<h3 class="name">'+esc(p.nombre)+'</h3>'+
+               /* Lo que el empleado escribió en la ficha: de qué es. Antes
+                  el cliente tenía que llamar para preguntarlo. */
+               (p.especificaciones ? '<p class="espec">'+esc(p.especificaciones)+'</p>' : '')+
                (p.precio > 0
                  ? '<div class="price-row">'+
                      (Inventario.enOferta(p) ? '<span class="price-antes">'+money(p.promoAntes)+'</span>' : '')+
                      '<span class="price">'+money(p.precio)+'</span>'+
                      (p.unidad ? '<span class="unit">/ '+esc(p.unidad)+'</span>' : '')+'</div>'
                  : '<div class="price-row"><span class="price consultar">Consultar precio</span></div>')+
+               /* Y de qué otras formas se vende: por varilla y por quintal,
+                  por bolsa y por saco. */
+               presentacionesHTML(p)+
+               combosHTML(p)+
                '<button class="add'+(enCart?' in':'')+'" data-item="'+esc(p.item)+'">'+
                  (enCart ? '✓ Agregado ('+cart[String(p.item)].cant+')' : (p.precio > 0 ? 'Agregar' : 'Consultar'))+'</button>'+
              '</div>'+
@@ -442,6 +469,41 @@ footer.ft{border-top:1px solid var(--line);text-align:center;color:var(--tx-3);f
     });
     grid.innerHTML = h;
     $('more').style.display = lista.length > mostrados ? 'block' : 'none';
+  }
+
+  /* Las otras formas en que se vende. Se enseña el precio de la presentación
+     entera y, si sale más barato que comprarlo suelto, cuánto se ahorra: es
+     justo lo que hace que valga la pena llevarse el quintal. */
+  function presentacionesHTML(p){
+    var l = Inventario.presentacionesDe(p);
+    if(!l.length) return '';
+    return '<ul class="pres">'+l.map(function(x){
+      var ah = Inventario.ahorroPresentacion(p, x);
+      return '<li><span class="pn">'+esc(x.nombre)+'</span>'+
+        '<span class="pc">'+x.cantidad+' '+esc(p.unidad||'u')+'</span>'+
+        '<span class="pp">'+money(x.precio)+'</span>'+
+        (ah > 0 ? '<span class="pa">ahorra '+money(ah)+'</span>' : '')+
+        '</li>';
+    }).join('')+'</ul>';
+  }
+
+  /* Lo que se vende junto: un soldador y su careta. */
+  function combosHTML(p){
+    var cs = Inventario.combosDe(p.item);
+    if(!cs.length) return '';
+    return cs.map(function(c){
+      var suelto = Inventario.precioSuelto(c);
+      var con = c.items.filter(function(x){ return String(x.item)!==String(p.item); })
+        .map(function(x){
+          var q = Inventario.porItem(x.item);
+          return (x.cant>1 ? x.cant+'× ' : '') + (q ? q.nombre : '');
+        }).filter(Boolean).join(' + ');
+      return '<div class="combo">'+
+        '<span class="ct">Llévalo con '+esc(con)+'</span>'+
+        '<span class="cp">'+money(c.precio)+'</span>'+
+        (suelto > c.precio ? '<span class="ca">ahorra '+money(suelto-c.precio)+'</span>' : '')+
+        '</div>';
+    }).join('');
   }
 
   /* ------------------- Sugerencias e ir directo al producto -------------- */

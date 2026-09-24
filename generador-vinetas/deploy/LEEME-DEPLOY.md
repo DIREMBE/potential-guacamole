@@ -373,6 +373,29 @@ distintos, productos que la ficha no tiene, y productos que el reporte ya no
 trae —avisando de los que tienen existencia guardada, porque cargar el archivo
 los dejaría en cero—. No cambia nada por su cuenta.
 
+### Lo que la ficha le cuenta al cliente
+
+Tres cosas se configuran en la **ficha del producto** (panel de empleados) y
+salen en el **catálogo del cliente**, sin publicar archivos:
+
+**Especificaciones.** Lo que el nombre no dice: medidas, material, para qué
+sirve. Sale bajo el nombre en la tarjeta del catálogo.
+
+**Se vende por volumen.** El hierro corrugado de 3/8 se vende por varilla y por
+quintal, y el quintal son 14 varillas. En la ficha se dice cómo se llama la
+presentación, cuántas unidades lleva y cuánto cuesta entera; el catálogo la
+enseña junto al precio por unidad y calcula **cuánto se ahorra** llevándola.
+El precio suelto no se toca.
+
+**Combos.** Un soldador y su careta se venden por separado, pero quien compra
+uno casi siempre necesita el otro. Desde la ficha se arma el combo —con qué va
+y a cuánto— y la tarjeta de cada producto ofrece llevarlo, diciendo lo que se
+ahorra frente a comprarlo suelto.
+
+> **Los combos los lee el catálogo sin clave**, porque son una oferta y el
+> cliente tiene que poder verlos. Es la única sección compartida que se lee sin
+> clave, y no lleva costos ni nombres de empleados dentro.
+
 ### Varios proveedores, y productos que son lo mismo
 
 En **Qué comprar → Quién le vende cada marca** ahora se escriben **varios**,

@@ -111,7 +111,11 @@ const NUMEROS = ['precio', 'promoAntes', 'existencia', 'etiquetaEn', 'etiquetaPr
 /* `fichaFijada` dice que campos corrigio una persona a mano («nombre,marca»).
    Viaja para que el reporte no los vuelva a pisar en NINGUN equipo. */
 const TEXTOS = ['promoHasta', 'codigo', 'bajaMotivo', 'nombre', 'categoria', 'unidad',
-                'marca', 'especificaciones', 'fichaFijada'];
+                'marca', 'especificaciones', 'fichaFijada', 'presentaciones'];
+/* Lo normal cabe en 160, pero `presentaciones` lleva dentro la lista de
+   formas en que se vende el producto —«varilla», «quintal de 14»— y necesita
+   mas sitio. Recortarla a 160 la dejaria rota a medias. */
+const LARGO_TEXTO = { presentaciones: 600 };
 const SINO = ['activo', 'activoManual', 'destacado', 'alta'];
 
 function limpiarCambio(c) {
@@ -137,7 +141,7 @@ function limpiarCambio(c) {
   }
   for (const k of TEXTOS) {
     if (c[k] === undefined) continue;
-    out[k] = String(c[k]).slice(0, 160);
+    out[k] = String(c[k]).slice(0, LARGO_TEXTO[k] || 160);
   }
   for (const k of SINO) {
     if (c[k] === undefined) continue;

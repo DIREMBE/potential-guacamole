@@ -64,7 +64,13 @@ const LLAVE = 'proveedores';
    tiene su propio hueco mas grande. */
 /* 'equivalencias' son los grupos de productos que son lo mismo con nombres
    distintos. Cabe de sobra en 60 KB: son listas de numeros de producto. */
-const SECCIONES = { marcador: 60 * 1024, planilla: 400 * 1024, equivalencias: 120 * 1024 };
+const SECCIONES = { marcador: 60 * 1024, planilla: 400 * 1024, equivalencias: 120 * 1024,
+                    combos: 60 * 1024 };
+/* Casi todo aqui pide clave hasta para leerse, porque es informacion del
+   negocio. Los combos NO: son una oferta, y el catalogo del cliente —que no
+   tiene clave ninguna— tiene que poder enseñarlos. Escribirlos si pide clave,
+   como todo lo demas. */
+const PUBLICAS = ['combos'];
 const MAX_SECCION = 60 * 1024;      // por defecto, para secciones sin tope propio
 const MAX_LARGO = 80;           // lo que cabe en un nombre de marca
 /* A casi todo le venden varios y se le compra al que mejor este en ese
@@ -157,17 +163,23 @@ export default async (req) => {
     if (!clavesValidas().length) {
       return json({ ok: false, disponible: false, error: 'sin claves configuradas' }, 503);
     }
-    if (!claveOk(clave)) return json({ ok: false, error: 'hace falta la clave' }, 401);
-
     const que = new URL(req.url).searchParams.get('que');
+    const publica = que && PUBLICAS.indexOf(que) >= 0;
+    if (!publica && !claveOk(clave)) {
+      return json({ ok: false, error: 'hace falta la clave' }, 401);
+    }
+
     if (que) {
       if (!Object.prototype.hasOwnProperty.call(SECCIONES, que))
         return json({ ok: false, error: 'seccion desconocida' }, 400);
       let s = null;
       try { s = await store.get('s/' + que, { type: 'json' }); } catch (e) {}
+      /* En la lectura publica no va quien lo edito: el nombre del empleado
+         no es cosa del cliente. */
       return json({ ok: true, disponible: true, que,
                     datos: (s && s.datos) || null,
-                    actualizado: (s && s.actualizado) || '', por: (s && s.por) || '' });
+                    actualizado: (s && s.actualizado) || '',
+                    por: publica ? '' : ((s && s.por) || '') });
     }
 
     const d = await leer(store);
