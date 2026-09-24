@@ -472,6 +472,9 @@ details.plegable[open]>summary{margin-bottom:12px}
           El reporte de FelTec no trae proveedor, así que se arma aquí: a cada marca
           se le pone quién se la vende y el pedido se puede partir por proveedor.
           Se escribe una vez y <b>la ven todos los equipos</b> — no hace falta pasarla.
+          <br><b>Pueden ser varios</b>, separados por coma: a casi todo le venden más
+          de uno y se le compra al que mejor esté en ese momento. El primero es el de
+          cabecera, y al armar el pedido se puede cambiar producto por producto.
           <span id="prov-estado"></span>
         </p>
         <div id="prov-lista"><div class="empty">Carga un reporte para ver las marcas.</div></div>
@@ -482,6 +485,25 @@ details.plegable[open]>summary{margin-bottom:12px}
           <span class="hint" style="color:var(--s500);font-size:12.5px">
             Cargar un archivo <b>reemplaza la tabla de todos</b>.</span>
         </div>
+      </details>
+
+      <!-- ---------------- productos que son lo mismo ------------------- -->
+      <details class="plegable" id="det-equiv">
+        <summary>Productos que son lo mismo (para no pedir de más)</summary>
+        <p style="margin:0 0 10px;font-size:13.5px;color:var(--s600)">
+          La llave para chorro de media es la misma la traiga VALCOBRE, GATO o DUCAS.
+          Si se miran por separado, el sugerido pide de una aunque de la otra queden
+          veinte. Agrupados se miran <b>juntos</b>.
+          <br>Vienen unos cuantos hechos de fábrica, sacados del inventario por
+          parecido de nombre. <b>Son un punto de partida</b>: se corrigen aquí y los
+          ven todos los equipos. <span id="equiv-estado"></span>
+        </p>
+        <div class="row" style="margin-bottom:10px">
+          <input type="text" id="q-equiv" class="txt" style="flex:1;min-width:200px"
+                 placeholder="Buscar un grupo o un producto…" autocomplete="off">
+          <button class="btn b-gh b-sm" id="equiv-nuevo">Crear un grupo</button>
+        </div>
+        <div id="equiv-lista"><div class="empty">Carga un reporte para verlos.</div></div>
       </details>
     </div>
   </div>
@@ -1167,9 +1189,27 @@ details.plegable[open]>summary{margin-bottom:12px}
           : '<b>«'+esc(qc)+'» no entra al pedido</b>: o no se movió, o le aguanta la existencia.')
       : '';
 
-    /* A cada fila se le cuelga su proveedor, sacado de la marca. Es lo que
-       permite partir el pedido por proveedor sin que el reporte lo traiga. */
-    vis.forEach(function(p){ p.prov = Inventario.proveedorDeMarca(p.marca); });
+    /* A cada fila se le cuelga su proveedor. Es lo que permite partir el
+       pedido por proveedor sin que el reporte lo traiga. Si tiene varios, el
+       elegido para ESTE pedido; si no se ha elegido, el de cabecera. */
+    vis.forEach(function(p){
+      p.provs = Inventario.proveedoresDeProducto(p);
+      var e = comProv.get(String(p.item));
+      p.prov = (e && p.provs.indexOf(e)>=0) ? e
+             : (p.provs.length ? p.provs[0] : Inventario.SIN_PROVEEDOR);
+    });
+
+    /* Lo que es lo mismo se mira JUNTO: de nada sirve pedir llave de media
+       de una marca si de la otra quedan veinte en la bodega. */
+    vis.forEach(function(p){
+      var g = Inventario.grupoDe(p.item);
+      p.grupo = g;
+      if(!g){ p.juntos = 0; return; }
+      p.juntos = g.items.reduce(function(a,it){
+        var q = Inventario.porItem(it);
+        return a + (q ? (Number(q.existencia)||0) : 0);
+      },0);
+    });
 
     var grupos=Analisis.agrupar(vis,por,function(p){return p.costo;});
     $('com-grupos').innerHTML = grupos.length ? grupos.map(function(g,i){
@@ -1180,30 +1220,171 @@ details.plegable[open]>summary{margin-bottom:12px}
         '<span style="font-size:13px;color:var(--s500)" class="ch">'+(i===0||palc.length?'ocultar':'ver')+'</span></div>'+
         '<div class="grupo-b"><div class="scroll"><table><thead><tr>'+
         '<th style="width:34px"></th><th>ITEM</th><th>Producto</th><th>Salió</th><th>Hay</th>'+
-        '<th>Aguanta</th><th>A pedir</th><th>Costo</th>'+
+        '<th>Aguanta</th><th>A pedir</th><th>Costo</th><th>A quién</th>'+
         '</tr></thead><tbody>'+
         g.items.slice(0,60).map(function(p){
           var k=String(p.item);
           return '<tr><td><input type="checkbox" class="ckp" data-item="'+esc(k)+'"'+
               (comMarcados.has(k)?' checked':'')+'></td>'+
-            '<td class="mono">'+esc(p.item)+'</td><td>'+esc(p.nombre)+'</td>'+
-            '<td class="mono">'+nf(p.sal)+'</td><td class="mono">'+nf(p.exist)+'</td>'+
+            '<td class="mono">'+esc(p.item)+'</td><td>'+esc(p.nombre)+
+              (p.grupo
+                ? ' <span class="chip" title="Con sus equivalentes hay '+nf(p.juntos)+
+                  '">= '+esc(p.grupo.nombre)+'</span>'
+                : '')+'</td>'+
+            '<td class="mono">'+nf(p.sal)+'</td>'+
+            '<td class="mono">'+nf(p.exist)+
+              (p.grupo && p.juntos!==p.exist
+                ? ' <span class="hint" title="entre todos los equivalentes">('+nf(p.juntos)+')</span>'
+                : '')+'</td>'+
             '<td class="mono">'+(p.exist<=0?'0 días':Math.round(p.cob)+' días')+'</td>'+
             '<td class="mono"><b>'+nf(p.pedir)+'</b></td>'+
-            '<td class="mono">'+(p.costo?money(p.costo):'—')+'</td></tr>';
+            '<td class="mono">'+(p.costo?money(p.costo):'—')+'</td>'+
+            /* Con varios proveedores se elige aquí a cuál se le compra esta
+               vez: es lo que cambia de un pedido a otro. */
+            '<td>'+(p.provs.length>1
+              ? '<select class="pin" data-elige-prov="'+esc(k)+'">'+
+                p.provs.map(function(x){
+                  return '<option'+(x===p.prov?' selected':'')+'>'+esc(x)+'</option>';
+                }).join('')+'</select>'
+              : '<span class="hint">'+esc(p.provs.length?p.provs[0]:'—')+'</span>')+'</td></tr>';
         }).join('')+'</tbody></table></div></div></div>';
     }).join('') : '<div class="empty">'+(palc.length?'Nada coincide con «'+esc(qc)+'».':'Nada que pedir con estos números.')+'</div>';
 
     resumenCom();
     pintarProveedores();
+    pintarEquivalentes();
     pintarCongelado();
   }
+
+  /* ============== PRODUCTOS QUE SON LO MISMO ==========================
+     Se listan los grupos con sus productos y cuánto suman entre todos: es
+     lo que hay que mirar para decidir si hace falta pedir. */
+  function pintarEquivalentes(){
+    var cont=$('equiv-lista'); if(!cont) return;
+    var e=Inventario.estadoEquivalencias();
+    $('equiv-estado').innerHTML = !e.comprobado ? ''
+      : e.compartida
+        ? '<b style="color:var(--ok)">Compartidos.</b>'
+        : '<b style="color:var(--warn)">Ahora mismo solo en este equipo</b> — el sitio no respondió.';
+
+    var grupos=Inventario.equivalencias();
+    var q=($('q-equiv').value||'').trim();
+    if(q){
+      var pal=palabrasDe(q);
+      grupos=grupos.filter(function(g){
+        if(Inventario.coincideTexto(g.nombre,pal)) return true;
+        return g.items.some(function(it){
+          var p=Inventario.porItem(it);
+          return p && (String(it)===q || Inventario.coincideTexto(p.nombre,pal));
+        });
+      });
+    }
+    if(!grupos.length){
+      cont.innerHTML='<div class="empty">'+(q?'Ningún grupo coincide con «'+esc(q)+'».'
+        :'Todavía no hay grupos. Pulsa «Crear un grupo».')+'</div>';
+      return;
+    }
+    grupos.sort(function(a,b){ return a.nombre.localeCompare(b.nombre,'es'); });
+
+    cont.innerHTML='<div class="scroll"><table><thead><tr><th>Grupo</th>'+
+      '<th>Productos que son lo mismo</th><th>Existencia junta</th><th></th>'+
+      '</tr></thead><tbody>'+
+      grupos.slice(0,80).map(function(g){
+        var ps=g.items.map(function(it){return Inventario.porItem(it);}).filter(Boolean);
+        var junta=ps.reduce(function(a,p){return a+(Number(p.existencia)||0);},0);
+        return '<tr data-grupo="'+esc(g.id)+'">'+
+          '<td><input class="pin txt" data-equiv-nombre="'+esc(g.id)+'" '+
+            'style="min-width:150px" value="'+esc(g.nombre)+'"></td>'+
+          '<td>'+ps.map(function(p){
+              return '<span class="chip" style="margin:2px 3px 2px 0">'+esc(p.nombre)+
+                (p.marca?' · '+esc(p.marca):'')+
+                ' <a href="#" data-equiv-quita="'+esc(p.item)+'" title="Sacar del grupo" '+
+                'style="text-decoration:none">✕</a></span>';
+            }).join('')+
+            (ps.length<g.items.length
+              ? '<span class="chip" style="opacity:.6">'+(g.items.length-ps.length)+' ya no están</span>'
+              : '')+
+          '</td>'+
+          '<td class="mono"><b>'+nf(junta)+'</b></td>'+
+          '<td style="white-space:nowrap">'+
+            '<button class="btn b-gh b-sm" data-equiv-add="'+esc(g.id)+'">Agregar</button> '+
+            '<button class="btn b-gh b-sm" data-equiv-borra="'+esc(g.id)+'">Borrar</button>'+
+          '</td></tr>';
+      }).join('')+'</tbody></table></div>'+
+      (grupos.length>80?'<div class="hint" style="margin-top:8px">Se muestran 80 de '+
+        nf(grupos.length)+'. Busca para acotar.</div>':'');
+  }
+
+  /* Pedir un producto por ITEM o por nombre, buscándolo en el inventario. */
+  function pedirProducto(mensaje){
+    var q=prompt(mensaje);
+    if(!q) return null;
+    q=q.trim();
+    var p=Inventario.porItem(q);
+    if(p) return p;
+    var r=Inventario.buscar(q);
+    if(!r.length){ toast('No se encontró «'+q+'».',true); return null; }
+    if(r.length===1) return r[0];
+    var op=r.slice(0,10).map(function(x,i){return (i+1)+') '+x.item+'  '+x.nombre;}).join('\n');
+    var n=prompt('Hay varios. ¿Cuál?\n\n'+op+'\n\nEscribe el número:');
+    var i=parseInt(n,10);
+    return (i>=1 && i<=Math.min(10,r.length)) ? r[i-1] : null;
+  }
+
+  $('equiv-nuevo').addEventListener('click',function(){
+    var a=pedirProducto('Primer producto del grupo (ITEM o nombre):'); if(!a) return;
+    var b=pedirProducto('Y el otro que es lo mismo:'); if(!b) return;
+    if(String(a.item)===String(b.item)) return toast('Son el mismo producto.',true);
+    Inventario.setGrupoEquivalente(a.nombre,[String(a.item),String(b.item)]).then(function(){
+      pintarEquivalentes(); pintarCompras();
+      toast('Grupo creado: se miran juntos al pedir.');
+    });
+  });
+  $('q-equiv').addEventListener('input',pintarEquivalentes);
+
+  $('equiv-lista').addEventListener('click',function(e){
+    var q=e.target.closest('a[data-equiv-quita]');
+    if(q){
+      e.preventDefault();
+      Inventario.quitarDeGrupo(q.dataset.equivQuita).then(function(){
+        pintarEquivalentes(); pintarCompras(); toast('Fuera del grupo.');
+      });
+      return;
+    }
+    var add=e.target.closest('button[data-equiv-add]');
+    if(add){
+      var g=Inventario.equivalencias().find(function(x){return x.id===add.dataset.equivAdd;});
+      if(!g) return;
+      var p=pedirProducto('Producto que es lo mismo que «'+g.nombre+'»:'); if(!p) return;
+      Inventario.setGrupoEquivalente(g.nombre,g.items.concat([String(p.item)]),g.id)
+        .then(function(){ pintarEquivalentes(); pintarCompras(); toast('Agregado al grupo.'); });
+      return;
+    }
+    var bo=e.target.closest('button[data-equiv-borra]');
+    if(bo){
+      if(!confirm('¿Deshacer este grupo? Los productos vuelven a mirarse por separado.')) return;
+      Inventario.borrarGrupo(bo.dataset.equivBorra).then(function(){
+        pintarEquivalentes(); pintarCompras(); toast('Grupo deshecho.');
+      });
+    }
+  });
+  $('equiv-lista').addEventListener('change',function(e){
+    var i=e.target.closest('input[data-equiv-nombre]'); if(!i) return;
+    var g=Inventario.equivalencias().find(function(x){return x.id===i.dataset.equivNombre;});
+    if(!g) return;
+    Inventario.setGrupoEquivalente(i.value.trim()||g.nombre,g.items,g.id)
+      .then(function(){ pintarEquivalentes(); toast('Nombre del grupo guardado.'); });
+  });
 
   /* --------------- Armar el pedido con lo que uno elija ----------------
      Lo marcado vive aquí, no en las casillas de la tabla: así buscar,
      cambiar el agrupamiento o los días no borra la selección.            */
   var comMarcados=new Set();      // items elegidos
   var comCantidad=new Map();      // item -> cantidad corregida a mano
+  /* A quién se le compra ESTE producto en ESTE pedido. Solo para los que
+     tienen varios: la mejor oferta cambia de un pedido a otro, así que no
+     se guarda en la tabla de proveedores. */
+  var comProv=new Map();          // item -> proveedor elegido ahora
   var pedidoGrupos=null;          // lo último que se armó, para descargar/imprimir
 
   function comVisibles(){
@@ -1224,6 +1405,12 @@ details.plegable[open]>summary{margin-bottom:12px}
   }
 
   $('com-grupos').addEventListener('change',function(e){
+    var sp=e.target.closest('select[data-elige-prov]');
+    if(sp){
+      comProv.set(sp.dataset.eligeProv, sp.value);
+      if($('com-por').value==='prov') pintarCompras();
+      return;
+    }
     var c=e.target.closest('input.ckp'); if(!c) return;
     if(c.checked) comMarcados.add(c.dataset.item); else comMarcados.delete(c.dataset.item);
     resumenCom();
@@ -1367,18 +1554,23 @@ details.plegable[open]>summary{margin-bottom:12px}
     $('prov-lista').innerHTML='<div class="scroll"><table><thead><tr>'+
       '<th>Marca</th><th>Se la compramos a</th></tr></thead><tbody>'+
       lista.map(function(m){
-        var v=Inventario.proveedorDeMarca(m);
+        var l=Inventario.proveedoresDeMarca(m);
         return '<tr><td><b>'+esc(m)+'</b></td>'+
           '<td><input class="pin txt" data-prov="'+esc(m)+'" style="width:100%" '+
-            'placeholder="nombre del proveedor" value="'+
-            esc(v===Inventario.SIN_PROVEEDOR?'':v)+'"></td></tr>';
+            'placeholder="uno o varios, separados por coma" value="'+
+            esc(l.join(', '))+'"></td></tr>';
       }).join('')+'</tbody></table></div>';
   }
   $('prov-lista').addEventListener('change',function(e){
     var i=e.target.closest('input[data-prov]'); if(!i) return;
-    Inventario.setProveedorDeMarca(i.dataset.prov,i.value).then(function(){
+    /* Se escriben separados por coma; el primero es el de cabecera. */
+    var lista=i.value.split(',').map(function(x){return x.trim();}).filter(Boolean);
+    Inventario.setProveedoresDeMarca(i.dataset.prov,lista).then(function(){
+      i.value=Inventario.proveedoresDeMarca(i.dataset.prov).join(', ');
       if($('com-por').value==='prov') pintarCompras();
-    });
+      toast(lista.length>1 ? lista.length+' proveedores para '+i.dataset.prov+'.'
+                           : (lista.length?'Proveedor guardado.':'Proveedor quitado.'));
+    }).catch(function(err){ toast(err.message||'No se pudo guardar.',true); });
   });
   $('prov-bajar').addEventListener('click',function(){
     var mapa=Inventario.proveedores();

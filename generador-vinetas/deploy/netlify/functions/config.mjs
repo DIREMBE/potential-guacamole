@@ -62,10 +62,17 @@ const LLAVE = 'proveedores';
    ya cerrada. Cincuenta y dos semanas por dieciseis personas no caben en 60
    KB, y esto ya no es un ajuste sino el registro de lo que se pago, asi que
    tiene su propio hueco mas grande. */
-const SECCIONES = { marcador: 60 * 1024, planilla: 400 * 1024 };
+/* 'equivalencias' son los grupos de productos que son lo mismo con nombres
+   distintos. Cabe de sobra en 60 KB: son listas de numeros de producto. */
+const SECCIONES = { marcador: 60 * 1024, planilla: 400 * 1024, equivalencias: 120 * 1024 };
 const MAX_SECCION = 60 * 1024;      // por defecto, para secciones sin tope propio
-const MAX_MARCAS = 2000;        // tope de cordura
-const MAX_LARGO = 80;           // lo que cabe en un nombre de proveedor
+const MAX_LARGO = 80;           // lo que cabe en un nombre de marca
+/* A casi todo le venden varios y se le compra al que mejor este en ese
+   momento, asi que el valor lleva la lista separada por « | ». Y las claves
+   que empiezan por # son de un producto concreto, no de una marca: hay
+   productos que no siguen a su marca. Por eso el valor va mas holgado. */
+const MAX_VALOR = 300;
+const MAX_MARCAS_ANCHO = 8000;  // con los productos sueltos caben mas claves
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -120,9 +127,9 @@ function limpiarMapa(obj) {
   if (!obj || typeof obj !== 'object') return out;
   let n = 0;
   for (const k of Object.keys(obj)) {
-    if (n >= MAX_MARCAS) break;
+    if (n >= MAX_MARCAS_ANCHO) break;
     const marca = String(k || '').trim().toUpperCase().slice(0, MAX_LARGO);
-    const quien = String(obj[k] == null ? '' : obj[k]).trim().slice(0, MAX_LARGO);
+    const quien = String(obj[k] == null ? '' : obj[k]).trim().slice(0, MAX_VALOR);
     if (!marca || !quien) continue;
     out[marca] = quien;
     n++;
@@ -226,11 +233,11 @@ export default async (req) => {
     for (const k of Object.keys(cambios)) {
       const marca = String(k || '').trim().toUpperCase().slice(0, MAX_LARGO);
       if (!marca) continue;
-      const quien = String(cambios[k] == null ? '' : cambios[k]).trim().slice(0, MAX_LARGO);
+      const quien = String(cambios[k] == null ? '' : cambios[k]).trim().slice(0, MAX_VALOR);
       if (quien) mapa[marca] = quien; else delete mapa[marca];
     }
-    if (Object.keys(mapa).length > MAX_MARCAS) {
-      return json({ ok: false, error: 'demasiadas marcas', maximo: MAX_MARCAS }, 413);
+    if (Object.keys(mapa).length > MAX_MARCAS_ANCHO) {
+      return json({ ok: false, error: 'demasiadas marcas', maximo: MAX_MARCAS_ANCHO }, 413);
     }
   }
 

@@ -94,6 +94,9 @@ window.Inventario = (function () {
     const m = await reqP(store(COLS.meta).get('meta'));
     meta = (m && m.v) ? m.v : { lastUpload: null, count: 0, baselineAt: null };
     metaLeida = true;
+    /* Los grupos de equivalentes viven con lo demás del equipo; el sitio
+       manda, pero esto deja la pantalla lista sin esperar a la red. */
+    if (meta.equivalencias && Array.isArray(meta.equivalencias.grupos)) EQUIV = meta.equivalencias;
     reindex();
   }
 
@@ -1591,6 +1594,7 @@ window.Inventario = (function () {
     }
     const n = await _bajarCambiosServidor();
     await _bajarProveedores().catch(() => {});
+    await _bajarEquiv().catch(() => {});
     return { recibidos: n, base, estado: estadoSincronizacion() };
   }
 
@@ -1948,9 +1952,234 @@ window.Inventario = (function () {
   }
 
   const SIN_PROVEEDOR = '(sin proveedor asignado)';
-  function proveedorDeMarca(marca) {
+
+  /* ================= VARIOS PROVEEDORES, Y POR PRODUCTO ================
+     A casi todo le venden varios, y se le compra al que mejor esté en ese
+     momento. Antes solo cabía uno por marca, así que había que elegir de
+     antemano y el pedido salía siempre con el mismo.
+
+     Se guardan separados por « | » en el mismo sitio de siempre, para no
+     partir en dos la tabla que ya comparten los equipos.
+
+     Y hay productos que no siguen a su marca —la misma marca la traen dos
+     distribuidores, o una cosa suelta se la compramos solo a uno—. Esos se
+     apuntan por producto, con la clave «#ITEM», y mandan sobre la marca. */
+  const SEPARA_PROV = ' | ';
+  function _listaProv(txt) {
+    return String(txt || '').split('|').map((x) => x.trim()).filter(Boolean);
+  }
+  function _clave(item) { return '#' + upper(item); }
+
+  function proveedoresDeMarca(marca) {
     const m = upper(marca);
-    return (meta.proveedores && meta.proveedores[m]) || SIN_PROVEEDOR;
+    return _listaProv(meta.proveedores && meta.proveedores[m]);
+  }
+  /* Los de un producto concreto: los suyos si los tiene, y si no los de su
+     marca. Es lo que se usa al partir el pedido. */
+  function proveedoresDeProducto(p) {
+    if (!p) return [];
+    const propios = _listaProv(meta.proveedores && meta.proveedores[_clave(p.item)]);
+    return propios.length ? propios : proveedoresDeMarca(p.marca);
+  }
+  function tieneProveedorPropio(item) {
+    return _listaProv(meta.proveedores && meta.proveedores[_clave(item)]).length > 0;
+  }
+
+  async function setProveedoresDeMarca(marca, lista) {
+    const m = upper(marca);
+    if (!m) return false;
+    return _guardarProv(m, lista);
+  }
+  async function setProveedoresDeProducto(item, lista) {
+    const k = _clave(item);
+    if (k === '#') return false;
+    return _guardarProv(k, lista);
+  }
+
+  async function _guardarProv(clave, lista) {
+    const limpia = (Array.isArray(lista) ? lista : _listaProv(lista))
+      .map((x) => String(x || '').trim()).filter(Boolean);
+    /* Sin repetidos, respetando el orden: el primero es el de cabecera. */
+    const vistos = new Set(), fin = [];
+    for (const x of limpia) { const k = x.toUpperCase();
+      if (!vistos.has(k)) { vistos.add(k); fin.push(x); } }
+    const v = fin.join(SEPARA_PROV);
+
+    await asegurarMeta();
+    const mapa = Object.assign({}, meta.proveedores || {});
+    if (v) mapa[clave] = v; else delete mapa[clave];
+    meta.proveedores = mapa;
+    await saveMeta();
+    const cambios = {}; cambios[clave] = v;
+    await _mandarProveedores({ cambios });
+    emitir('proveedores', { clave, proveedores: fin });
+    return true;
+  }
+
+  /* El de cabecera de una marca: el primero de la lista. Se conserva porque
+     hay pantallas que solo enseñan uno. */
+  /* ==================== PRODUCTOS QUE SON LO MISMO =====================
+     Media ferretería vende la misma cosa con tres nombres: la llave para
+     chorro de media es la misma la traiga VALCOBRE, GATO o DUCAS. Para
+     pedir bien hay que mirarlos JUNTOS: si de uno quedan dos y del otro
+     veinte, no hace falta pedir nada, y por separado el sugerido pediría.
+
+     Un grupo es {id, nombre, items:[...]}. Un producto está en un grupo como
+     mucho. Viven en el sitio, en su propia sección, porque son del negocio y
+     no de un equipo.
+
+     Vienen sembrados de fábrica —se sacaron del inventario por parecido de
+     nombre— y se corrigen a mano: la semilla es un punto de partida, no la
+     verdad.                                                              */
+  let EQUIV = { grupos: [] };
+  let equivEstado = { comprobado: false, compartida: false, actualizado: '', por: '' };
+  let _equivSembrada = false;
+
+  function equivalencias() { return EQUIV.grupos.map((g) => Object.assign({}, g)); }
+  function grupoDe(item) {
+    const k = String(item);
+    return EQUIV.grupos.find((g) => g.items.indexOf(k) >= 0) || null;
+  }
+  /* Los hermanos de un producto: los demás del grupo, ya como productos. */
+  function equivalentesDe(item) {
+    const g = grupoDe(item);
+    if (!g) return [];
+    return g.items.filter((x) => x !== String(item))
+      .map((x) => byItem.get(x)).filter(Boolean);
+  }
+  function estadoEquivalencias() { return Object.assign({}, equivEstado); }
+
+  function _idNuevo() {
+    let n = 1;
+    const usados = new Set(EQUIV.grupos.map((g) => g.id));
+    while (usados.has('g' + n)) n++;
+    return 'g' + n;
+  }
+
+  /* Poner productos en un grupo. Si ya estaban en otro, salen de aquel: un
+     producto no puede ser dos cosas a la vez. */
+  async function setGrupoEquivalente(nombre, items, id) {
+    const lista = (Array.isArray(items) ? items : [items])
+      .map((x) => String(x).trim()).filter(Boolean);
+    const nom = String(nombre || '').trim().slice(0, 120);
+    if (!lista.length || !nom) return false;
+
+    const grupos = EQUIV.grupos.filter((g) => g.id !== id).map((g) => ({
+      id: g.id, nombre: g.nombre,
+      items: g.items.filter((x) => lista.indexOf(x) < 0),
+    })).filter((g) => g.items.length > 1);
+
+    grupos.push({ id: id || _idNuevo(), nombre: nom, items: lista });
+    EQUIV = { grupos };
+    await _guardarEquiv();
+    emitir('equivalencias', { grupos: grupos.length });
+    return true;
+  }
+
+  async function quitarDeGrupo(item) {
+    const k = String(item);
+    const grupos = EQUIV.grupos.map((g) => ({
+      id: g.id, nombre: g.nombre, items: g.items.filter((x) => x !== k),
+    })).filter((g) => g.items.length > 1);
+    EQUIV = { grupos };
+    await _guardarEquiv();
+    emitir('equivalencias', { grupos: grupos.length });
+    return true;
+  }
+
+  async function borrarGrupo(id) {
+    EQUIV = { grupos: EQUIV.grupos.filter((g) => g.id !== id) };
+    await _guardarEquiv();
+    emitir('equivalencias', { grupos: EQUIV.grupos.length });
+    return true;
+  }
+
+  async function _guardarEquiv() {
+    meta.equivalencias = EQUIV;
+    await saveMeta();
+    await _mandarEquiv();
+  }
+
+  async function _mandarEquiv() {
+    const clave = _claveEnvio();
+    if (!clave) { equivEstado.compartida = false; return false; }
+    try {
+      const r = await fetch(API_CONFIG, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ clave, que: 'equivalencias', datos: EQUIV }),
+      });
+      const d = await r.json().catch(() => null);
+      if (!r.ok || !d || !d.ok) throw new Error((d && d.error) || ('http ' + r.status));
+      equivEstado = { comprobado: true, compartida: true,
+                      actualizado: d.actualizado || '', por: d.por || '' };
+      return true;
+    } catch (e) {
+      equivEstado = Object.assign({}, equivEstado, { comprobado: true, compartida: false });
+      return false;
+    }
+  }
+
+  async function _bajarEquiv() {
+    const clave = _claveEnvio();
+    if (!clave) return false;
+    try {
+      const r = await fetch(API_CONFIG + '?que=equivalencias',
+        { headers: { 'x-fsj-clave': clave }, cache: 'no-store' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      const d = await r.json();
+      if (!d || !d.ok) throw new Error('respuesta rara');
+      if (d.datos && Array.isArray(d.datos.grupos)) {
+        EQUIV = { grupos: d.datos.grupos.filter((g) => g && g.id && Array.isArray(g.items)) };
+        await asegurarMeta();
+        meta.equivalencias = EQUIV;
+        await saveMeta();
+      } else if (!EQUIV.grupos.length) {
+        /* El sitio no tiene nada todavía: se siembra con lo que vino de
+           fábrica y se sube, para que los demás equipos lo encuentren ya. */
+        await _sembrarEquiv();
+      }
+      equivEstado = { comprobado: true, compartida: true,
+                      actualizado: d.actualizado || '', por: d.por || '' };
+      return true;
+    } catch (e) {
+      equivEstado = Object.assign({}, equivEstado, { comprobado: true, compartida: false });
+      return false;
+    }
+  }
+
+  async function _sembrarEquiv() {
+    if (_equivSembrada) return 0;
+    _equivSembrada = true;
+    try {
+      const r = await fetch('./equivalencias-semilla.json', { cache: 'no-store' });
+      if (!r.ok) return 0;
+      const d = await r.json();
+      if (!d || !Array.isArray(d.grupos) || !d.grupos.length) return 0;
+      /* Solo los que de verdad existen aquí: la semilla se hizo con el
+         inventario de un día concreto y desde entonces hay bajas. */
+      const grupos = d.grupos.map((g) => ({
+        id: g.id, nombre: String(g.nombre || '').slice(0, 120),
+        items: (g.items || []).map(String).filter((x) => byItem.has(x)),
+      })).filter((g) => g.items.length > 1);
+      if (!grupos.length) return 0;
+      EQUIV = { grupos };
+      await asegurarMeta();
+      meta.equivalencias = EQUIV;
+      await saveMeta();
+      await _mandarEquiv();
+      emitir('equivalencias', { grupos: grupos.length, semilla: true });
+      return grupos.length;
+    } catch (e) { return 0; }
+  }
+
+  function proveedorDeMarca(marca) {
+    const l = proveedoresDeMarca(marca);
+    return l.length ? l[0] : SIN_PROVEEDOR;
+  }
+  /* Y el de un producto, que es con el que se parte el pedido. */
+  function proveedorDeProducto(p) {
+    const l = proveedoresDeProducto(p);
+    return l.length ? l[0] : SIN_PROVEEDOR;
   }
 
   // Los N productos más recientes (modificados o vistos) para el showcase.
@@ -2104,9 +2333,11 @@ window.Inventario = (function () {
      vuelve a intentar y se queda con la del sitio si es más nueva. */
   function _reintentarBaseConClave() {
     if (!_claveEnvio()) return;
-    /* La tabla de proveedores también necesita clave hasta para leerse, así
-       que se recoge en este mismo momento: cuando el empleado entra. */
+    /* La tabla de proveedores y los grupos de productos equivalentes también
+       necesitan clave hasta para leerse, así que se recogen en este mismo
+       momento: cuando el empleado entra. */
     Promise.resolve(_arranque).catch(() => {}).then(() => _bajarProveedores()).catch(() => {});
+    Promise.resolve(_arranque).catch(() => {}).then(() => _bajarEquiv()).catch(() => {});
     if (!_baseFaltaClave) return;
     _baseFaltaClave = false;
     Promise.resolve(_arranque).catch(() => {})
@@ -2501,6 +2732,10 @@ window.Inventario = (function () {
     guardarBaseEnServidor, estadoBaseServidor, bajarBaseServidor: _bajarBaseServidor,
     estadoEtiqueta, marcarEtiqueta, sinEtiqueta,
     proveedores, setProveedorDeMarca, setProveedores, proveedorDeMarca, SIN_PROVEEDOR,
+    proveedoresDeMarca, proveedoresDeProducto, proveedorDeProducto, tieneProveedorPropio,
+    setProveedoresDeMarca, setProveedoresDeProducto,
+    equivalencias, grupoDe, equivalentesDe, setGrupoEquivalente, quitarDeGrupo,
+    borrarGrupo, estadoEquivalencias, bajarEquivalencias: _bajarEquiv,
     estadoProveedores, bajarProveedores: _bajarProveedores,
     setDestacado, historial, catalogo, categorias, sinPrecio, recientes, tocar, marcarVisto,
     setMarca, setFicha, soltarFicha, fichaFijada, FICHA_CAMPOS,

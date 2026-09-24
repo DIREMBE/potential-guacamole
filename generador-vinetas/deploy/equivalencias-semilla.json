@@ -1,0 +1,715 @@
+{
+ "version": 1,
+ "generado": "2026-09-24",
+ "comoSeHizo": "Sacados del inventario por parecido de nombre: misma categoria, misma unidad, las mismas medidas y el mismo cuerpo del nombre al quitarle la marca. Solo se agruparon los que dejaban poco margen de duda. Se corrigen a mano desde el panel: esto es un punto de partida, no la verdad.",
+ "grupos": [
+  {
+   "id": "s001",
+   "nombre": "CINTA METRICA TOTAL 3M",
+   "items": [
+    "18476",
+    "4394",
+    "5218",
+    "5781",
+    "7432"
+   ]
+  },
+  {
+   "id": "s002",
+   "nombre": "CINTA METRICA TOTAL 5M",
+   "items": [
+    "14982",
+    "16358",
+    "5539",
+    "5780"
+   ]
+  },
+  {
+   "id": "s003",
+   "nombre": "LLAVE PARA CHORRO 1/2 GATO",
+   "items": [
+    "1293",
+    "15463",
+    "5825",
+    "6654"
+   ]
+  },
+  {
+   "id": "s004",
+   "nombre": "BOMBA P/FUMIGAR INGCO 16LTS",
+   "items": [
+    "14866",
+    "19218",
+    "6196"
+   ]
+  },
+  {
+   "id": "s005",
+   "nombre": "CORTA PERNO 24 INGCO",
+   "items": [
+    "1770",
+    "18494",
+    "6123"
+   ]
+  },
+  {
+   "id": "s006",
+   "nombre": "CORTA PERNO 30 TOTAL",
+   "items": [
+    "17599",
+    "1771",
+    "18496"
+   ]
+  },
+  {
+   "id": "s007",
+   "nombre": "CUBO HEXAGONAL 3/8 EMTOP",
+   "items": [
+    "18387",
+    "18610",
+    "18721"
+   ]
+  },
+  {
+   "id": "s008",
+   "nombre": "LIMA P/MOTOSIERRA 3/16 PFERD",
+   "items": [
+    "18389",
+    "2690",
+    "7423"
+   ]
+  },
+  {
+   "id": "s009",
+   "nombre": "ALAMBRE DE PUAS FORT 335M",
+   "items": [
+    "1269",
+    "16309"
+   ]
+  },
+  {
+   "id": "s010",
+   "nombre": "ALAMBRE DE PUAS TITAN 400V",
+   "items": [
+    "1209",
+    "1265"
+   ]
+  },
+  {
+   "id": "s011",
+   "nombre": "ALICATE PICO LORO EMTOP",
+   "items": [
+    "16523",
+    "4988"
+   ]
+  },
+  {
+   "id": "s012",
+   "nombre": "BROCA P/METAL 1/2 INGCO",
+   "items": [
+    "18441",
+    "5096"
+   ]
+  },
+  {
+   "id": "s013",
+   "nombre": "BROCA P/METAL 3/8 INGCO",
+   "items": [
+    "18440",
+    "5097"
+   ]
+  },
+  {
+   "id": "s014",
+   "nombre": "BROCHA EXPERT 1PLG",
+   "items": [
+    "18427",
+    "3306"
+   ]
+  },
+  {
+   "id": "s015",
+   "nombre": "CERRADURA INGCO DERECHA",
+   "items": [
+    "14975",
+    "2210"
+   ]
+  },
+  {
+   "id": "s016",
+   "nombre": "CINTA METRICA 5MT INGCO",
+   "items": [
+    "18633",
+    "2317"
+   ]
+  },
+  {
+   "id": "s017",
+   "nombre": "CODO LISO CPVC 3/4 AMANCO",
+   "items": [
+    "16701",
+    "5898"
+   ]
+  },
+  {
+   "id": "s018",
+   "nombre": "CONECTOR YP2U3 #2 BURNDY",
+   "items": [
+    "4115",
+    "6572"
+   ]
+  },
+  {
+   "id": "s019",
+   "nombre": "CONECTOR YPC2A8U #6 BURNDY",
+   "items": [
+    "14928",
+    "3971"
+   ]
+  },
+  {
+   "id": "s020",
+   "nombre": "CORTA PERNO 36 TOTAL",
+   "items": [
+    "2221",
+    "7087"
+   ]
+  },
+  {
+   "id": "s021",
+   "nombre": "CORTADOR DE TUBO PVC EMTOP",
+   "items": [
+    "18386",
+    "6353"
+   ]
+  },
+  {
+   "id": "s022",
+   "nombre": "CUCHARA P/ALBANIL DE 7 EMTOP",
+   "items": [
+    "18673",
+    "2349"
+   ]
+  },
+  {
+   "id": "s023",
+   "nombre": "CUCHARA P/ALBANIL DE 8 EMTOP",
+   "items": [
+    "16795",
+    "18674"
+   ]
+  },
+  {
+   "id": "s024",
+   "nombre": "CUCHARA P/ALBANIL DE 9 BELLOTA",
+   "items": [
+    "16796",
+    "901"
+   ]
+  },
+  {
+   "id": "s025",
+   "nombre": "CUCHILLA RETRACTIL EMTOP",
+   "items": [
+    "18849",
+    "18974"
+   ]
+  },
+  {
+   "id": "s026",
+   "nombre": "CURVA PVC DE 2 45G AMANCO",
+   "items": [
+    "1406",
+    "1407"
+   ]
+  },
+  {
+   "id": "s027",
+   "nombre": "DADO TERMICO 15A 1P TANIA",
+   "items": [
+    "1629",
+    "4470"
+   ]
+  },
+  {
+   "id": "s028",
+   "nombre": "DISCO DE CORTE P/METAL 4 1/2 PFERD",
+   "items": [
+    "16963",
+    "2428"
+   ]
+  },
+  {
+   "id": "s029",
+   "nombre": "DISCO DE CORTE P/METAL 7 PFERD",
+   "items": [
+    "6108",
+    "6614"
+   ]
+  },
+  {
+   "id": "s030",
+   "nombre": "DISCO DE CORTE P/METAL 9 TOTAL",
+   "items": [
+    "14920",
+    "17338"
+   ]
+  },
+  {
+   "id": "s031",
+   "nombre": "DISCO DIAMANTADO CONTINUO 4 1/2",
+   "items": [
+    "18099",
+    "2320"
+   ]
+  },
+  {
+   "id": "s032",
+   "nombre": "DISCO DIAMANTADO MARNOL 4 1/2",
+   "items": [
+    "17597",
+    "6929"
+   ]
+  },
+  {
+   "id": "s033",
+   "nombre": "DISCO DIAMANTADO SEGMENTADO 4 1/2 IRWIN",
+   "items": [
+    "18097",
+    "19320"
+   ]
+  },
+  {
+   "id": "s034",
+   "nombre": "DISCO DIAMANTE 4 1/2 INGCO",
+   "items": [
+    "15206",
+    "15333"
+   ]
+  },
+  {
+   "id": "s035",
+   "nombre": "DISCO LAMINADO 4 1/2 GRANO 40 MAKITA",
+   "items": [
+    "15029",
+    "16970"
+   ]
+  },
+  {
+   "id": "s036",
+   "nombre": "DISCO LAMINADO 4 1/2 GRANO 80 MAKITA",
+   "items": [
+    "15031",
+    "16971"
+   ]
+  },
+  {
+   "id": "s037",
+   "nombre": "DISCO LAMINADO 7 GRANO 40 MAKITA",
+   "items": [
+    "15034",
+    "16974"
+   ]
+  },
+  {
+   "id": "s038",
+   "nombre": "DISCO LAMINADO DE 4 1/2 GRANO 120",
+   "items": [
+    "15032",
+    "16973"
+   ]
+  },
+  {
+   "id": "s039",
+   "nombre": "DISCO P/PULIR 4 1/2 TOTAL",
+   "items": [
+    "18992",
+    "3814"
+   ]
+  },
+  {
+   "id": "s040",
+   "nombre": "DISCO P/PULIR 9 PFERD",
+   "items": [
+    "18949",
+    "3819"
+   ]
+  },
+  {
+   "id": "s041",
+   "nombre": "DISCO SEGMENTADO 9 BRICKELL",
+   "items": [
+    "18606",
+    "4227"
+   ]
+  },
+  {
+   "id": "s042",
+   "nombre": "EPOXI-MIL 98 G LOCTITE",
+   "items": [
+    "1621",
+    "3906"
+   ]
+  },
+  {
+   "id": "s043",
+   "nombre": "ESPRAY AMARILLO LIMON ABRO",
+   "items": [
+    "15544",
+    "5685"
+   ]
+  },
+  {
+   "id": "s044",
+   "nombre": "ESPRAY BLANCO ACUARIO",
+   "items": [
+    "1592",
+    "3287"
+   ]
+  },
+  {
+   "id": "s045",
+   "nombre": "EXTENSION ELECTRICA 15MTS WADFOW",
+   "items": [
+    "18592",
+    "18704"
+   ]
+  },
+  {
+   "id": "s046",
+   "nombre": "FLOTA DE ESPONJA TOTAL",
+   "items": [
+    "19288",
+    "19319"
+   ]
+  },
+  {
+   "id": "s047",
+   "nombre": "INODORO CORONA BLANCO HUESO",
+   "items": [
+    "15703",
+    "4761"
+   ]
+  },
+  {
+   "id": "s048",
+   "nombre": "LAPIZ BICOLOR EMTOP",
+   "items": [
+    "18130",
+    "4631"
+   ]
+  },
+  {
+   "id": "s049",
+   "nombre": "LIMA P/MOTOSIERRA 5/32 STIHL",
+   "items": [
+    "2813",
+    "6428"
+   ]
+  },
+  {
+   "id": "s050",
+   "nombre": "LLAVE DE CHORRO 1/2 PFISTER",
+   "items": [
+    "18033",
+    "4522"
+   ]
+  },
+  {
+   "id": "s051",
+   "nombre": "MARTILLO 16 OZ TOTAL",
+   "items": [
+    "18428",
+    "18796"
+   ]
+  },
+  {
+   "id": "s052",
+   "nombre": "NIVEL MAGNETICO 80CM TOTAL",
+   "items": [
+    "16380",
+    "17739"
+   ]
+  },
+  {
+   "id": "s053",
+   "nombre": "PANEL LED CUADRADO 18W PILA",
+   "items": [
+    "17124",
+    "17907"
+   ]
+  },
+  {
+   "id": "s054",
+   "nombre": "PANEL LED REDONDO 12W",
+   "items": [
+    "17576",
+    "17903"
+   ]
+  },
+  {
+   "id": "s055",
+   "nombre": "PANEL LED REDONDO 6W PILA",
+   "items": [
+    "17902",
+    "18950"
+   ]
+  },
+  {
+   "id": "s056",
+   "nombre": "PEGAMENTO P/CERAMICA UNIPEGA 20KG",
+   "items": [
+    "3128",
+    "6889"
+   ]
+  },
+  {
+   "id": "s057",
+   "nombre": "PEGAMENTO PVC 4 OZ LANCO",
+   "items": [
+    "1381",
+    "2467"
+   ]
+  },
+  {
+   "id": "s058",
+   "nombre": "PERNO HEXAGONAL 5/16X1",
+   "items": [
+    "110",
+    "3222"
+   ]
+  },
+  {
+   "id": "s059",
+   "nombre": "PISTOLA DE CALOR 1600W",
+   "items": [
+    "16071",
+    "18694"
+   ]
+  },
+  {
+   "id": "s060",
+   "nombre": "PUNTA PHILIPS PH2 IRWIN",
+   "items": [
+    "16413",
+    "5872"
+   ]
+  },
+  {
+   "id": "s061",
+   "nombre": "SERRUCHO PARA TABLA ROCA INGCO",
+   "items": [
+    "18226",
+    "19011"
+   ]
+  },
+  {
+   "id": "s062",
+   "nombre": "SET DE 3 CUBOS MAGNETICOS 5/16 INGCO",
+   "items": [
+    "18327",
+    "19276"
+   ]
+  },
+  {
+   "id": "s063",
+   "nombre": "TANQUE P/AGUA 1100L EUREKA",
+   "items": [
+    "4190",
+    "5202"
+   ]
+  },
+  {
+   "id": "s064",
+   "nombre": "TAPON PVC DRENAJE 4 AMANCO",
+   "items": [
+    "4235",
+    "4236"
+   ]
+  },
+  {
+   "id": "s065",
+   "nombre": "TAPON PVC HEMBRA C/R 1 1/2 DURMAN",
+   "items": [
+    "15627",
+    "3419"
+   ]
+  },
+  {
+   "id": "s066",
+   "nombre": "TAPON PVC PSI 1 DURMAN",
+   "items": [
+    "401",
+    "6713"
+   ]
+  },
+  {
+   "id": "s067",
+   "nombre": "TAPON PVC PSI 1/2 DURMAN",
+   "items": [
+    "383",
+    "5380"
+   ]
+  },
+  {
+   "id": "s068",
+   "nombre": "TAPON PVC PSI 3 DURMAN",
+   "items": [
+    "1414",
+    "3367"
+   ]
+  },
+  {
+   "id": "s069",
+   "nombre": "TEE PVC DE 1 1/4 DURMAN",
+   "items": [
+    "405",
+    "6711"
+   ]
+  },
+  {
+   "id": "s070",
+   "nombre": "TOMA HEMBRA POLARIZADO ELEGRP",
+   "items": [
+    "19428",
+    "2427"
+   ]
+  },
+  {
+   "id": "s071",
+   "nombre": "TUBO DE ABASTO 1/2X3/8 WASSER",
+   "items": [
+    "6041",
+    "6599"
+   ]
+  },
+  {
+   "id": "s072",
+   "nombre": "TUBO DE ABASTO 7/8X3/8 WASSER",
+   "items": [
+    "6348",
+    "6598"
+   ]
+  },
+  {
+   "id": "s073",
+   "nombre": "TUBO PVC 1 1/2 PSI 160 BLANCO DURMAN",
+   "items": [
+    "5608",
+    "881"
+   ]
+  },
+  {
+   "id": "s074",
+   "nombre": "TUBO PVC 1 PSI 160 BLANCO DURMAN",
+   "items": [
+    "2578",
+    "6931"
+   ]
+  },
+  {
+   "id": "s075",
+   "nombre": "TUBO PVC 1 PSI 250 BLANCO AMANCO",
+   "items": [
+    "4217",
+    "4598"
+   ]
+  },
+  {
+   "id": "s076",
+   "nombre": "TUBO PVC 1/2 PSI 315 BLANCO DURMAN",
+   "items": [
+    "2580",
+    "872"
+   ]
+  },
+  {
+   "id": "s077",
+   "nombre": "TUBO PVC 2 PSI 100 BLANCO AMANCO",
+   "items": [
+    "889",
+    "891"
+   ]
+  },
+  {
+   "id": "s078",
+   "nombre": "TUBO PVC 2 PSI 250 BLANCO AMANCO",
+   "items": [
+    "15776",
+    "3127"
+   ]
+  },
+  {
+   "id": "s079",
+   "nombre": "TUBO PVC 3 DRE 64 BLANCO DURMAN",
+   "items": [
+    "2574",
+    "893"
+   ]
+  },
+  {
+   "id": "s080",
+   "nombre": "TUBO PVC 4 DRE 64 BLANCO DURMAN",
+   "items": [
+    "3092",
+    "896"
+   ]
+  },
+  {
+   "id": "s081",
+   "nombre": "TUBO PVC 4 PSI 80 BLANCO AMANCO",
+   "items": [
+    "15777",
+    "2577"
+   ]
+  },
+  {
+   "id": "s082",
+   "nombre": "VALVULA DE CONTROL 1/2X3/8 VALCOBRE",
+   "items": [
+    "15983",
+    "15984"
+   ]
+  },
+  {
+   "id": "s083",
+   "nombre": "VALVULA DE CONTROL 1/2X3/8 VYG",
+   "items": [
+    "17366",
+    "7355"
+   ]
+  },
+  {
+   "id": "s084",
+   "nombre": "VALVULA DE CONTROL AL PISO 1/2X3/8",
+   "items": [
+    "17616",
+    "6309"
+   ]
+  },
+  {
+   "id": "s085",
+   "nombre": "VALVULA PARA DUCHA 1/2 DECA",
+   "items": [
+    "14940",
+    "19360"
+   ]
+  },
+  {
+   "id": "s086",
+   "nombre": "VARILLA 1/2 CORRUG. AG",
+   "items": [
+    "1184",
+    "18393"
+   ]
+  },
+  {
+   "id": "s087",
+   "nombre": "VARILLA 3/8 CORRUG. AG",
+   "items": [
+    "1182",
+    "4837"
+   ]
+  }
+ ]
+}
