@@ -198,6 +198,19 @@ tr:hover td{background:var(--s50)}
       </div>
     </div>
 
+    <!-- ============ LO QUE EL REPORTE DICE DISTINTO A LA FICHA ==========
+         La ficha se corrige a mano, y el reporte viene como viene. Cada vez
+         que se carga uno nuevo hay que poder ver en qué se separan, porque
+         cada caso se resuelve distinto. -->
+    <div class="card" id="card-dif" style="display:none">
+      <div class="card-h"><h2>Diferencias con lo guardado</h2>
+        <span class="hint" id="dif-sub"></span></div>
+      <div class="card-b">
+        <div class="note" id="dif-nota"></div>
+        <div id="dif-cuerpo"></div>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-h"><h2>Dinero e inventario</h2></div>
       <div class="card-b"><div class="kpis" id="kpis2"></div>
@@ -294,6 +307,9 @@ tr:hover td{background:var(--s50)}
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.mini.min.js"></script>
 <script src="analisis.js"></script>
+<!-- El inventario guardado, para poder comparar el reporte contra la ficha.
+     Esta pantalla no cambia nada por su cuenta; solo con lo que se pulse. -->
+<script src="inventario.js"></script>
 <script>
 (function(){
   'use strict';
@@ -326,6 +342,7 @@ tr:hover td{background:var(--s50)}
   function pintar(){
     var D=datos.filas, M=metricas(D);
     pintarSugerido();
+    pintarDiferencias();
     $('res').style.display='block';
     $('res-sub').textContent = nf(M.total)+' productos analizados'+(datos.descartadas?' · '+datos.descartadas+' fila(s) descartada(s) (totales/encabezados)':'');
 
@@ -483,6 +500,177 @@ tr:hover td{background:var(--s50)}
      ===================================================================== */
 
   var sugCompras = null, sugCong = null;
+
+  /* ============ LO QUE EL REPORTE DICE DISTINTO A LA FICHA ==============
+     Cada diferencia se resuelve distinto, así que se enseñan separadas y con
+     el botón que hace falta en cada caso. Nada se aplica solo: esta pantalla
+     no toca el inventario si no se pulsa. */
+  var DIF = null;
+  var invListo = false;      // el inventario guardado ya está entero
+  var ETIQ_DIF = { nombre:'Nombre', categoria:'Categoría', unidad:'Unidad', codigo:'Código' };
+
+  function filasParaComparar(){
+    /* El análisis llama a las columnas a su manera; el inventario a la suya.
+       Lo que el reporte NO trae se deja fuera: si no viene la columna de
+       precio, `analizar` pone cero, y comparar contra ese cero diría que a
+       todos los productos les cambió el precio a $0.00. */
+    var col = datos.col || {};
+    var hayPrecio = col.venta >= 0, hayCat = col.cat >= 0, hayUni = col.uni >= 0;
+    return datos.filas.map(function(f){
+      var o = { item:f.item, nombre:f.nombre };
+      if(hayCat) o.categoria = f.cat;
+      if(hayUni) o.unidad = f.uni;
+      if(hayPrecio) o.precio = f.venta;
+      return o;
+    });
+  }
+
+  function pintarDiferencias(){
+    var card=$('card-dif');
+    if(!window.Inventario || !Inventario.disponible || !Inventario.disponible()){
+      card.style.display='none'; return;
+    }
+    /* El inventario tarda en cargarse —son miles de productos—. Comparar
+       contra media base daría una lista disparatada: «11.000 productos
+       nuevos» cuando en realidad todavía no habían terminado de leerse. */
+    if(!invListo){
+      card.style.display='block';
+      $('dif-sub').textContent='cargando el inventario…';
+      $('dif-nota').innerHTML='Un momento: hay que terminar de leer el inventario '+
+        'guardado para poder compararlo con el reporte.';
+      $('dif-cuerpo').innerHTML='';
+      return;
+    }
+    DIF = Inventario.diferenciasConReporte(filasParaComparar());
+    card.style.display='block';
+
+    $('dif-sub').textContent = DIF.total
+      ? nf(DIF.total)+' cosa(s) que no cuadran'
+      : 'el reporte y las fichas dicen lo mismo';
+
+    if(!DIF.total){
+      $('dif-nota').innerHTML='El reporte coincide con lo que hay guardado. Nada que hacer.';
+      $('dif-cuerpo').innerHTML='';
+      return;
+    }
+
+    $('dif-nota').innerHTML=
+      'Esto <b>no ha cambiado nada</b>. Es lo que el reporte trae distinto a la ficha '+
+      'guardada, para decidir caso por caso quién tiene razón. Lo que alguien corrigió '+
+      'a mano va marcado: ese el reporte no lo pisa hasta que se diga.';
+
+    var h='';
+
+    if(DIF.campos.length){
+      h+=bloqueDif('campos','Datos distintos', DIF.campos.length,
+        '<table><thead><tr><th>ITEM</th><th>Dato</th><th>En la ficha</th>'+
+        '<th>En el reporte</th><th></th></tr></thead><tbody>'+
+        DIF.campos.slice(0,300).map(function(c,i){
+          return '<tr data-dif="'+i+'"><td class="mono">'+esc(c.item)+'</td>'+
+            '<td>'+esc(ETIQ_DIF[c.campo]||c.campo)+
+              (c.fijado?' <span class="chip">corregido a mano</span>':'')+'</td>'+
+            '<td>'+esc(c.ficha||'—')+'</td>'+
+            '<td>'+esc(c.reporte)+'</td>'+
+            '<td style="white-space:nowrap">'+
+              '<button class="btn b-gh b-sm" data-dacc="reporte" data-i="'+i+'">Vale el reporte</button> '+
+              '<button class="btn b-gh b-sm" data-dacc="ficha" data-i="'+i+'">Vale la ficha</button>'+
+            '</td></tr>';
+        }).join('')+'</tbody></table>',
+        'El reporte llama distinto a estos productos. <b>Vale el reporte</b> copia lo suyo '+
+        'a la ficha; <b>vale la ficha</b> la deja como está y hace que el reporte no la '+
+        'vuelva a pisar.');
+    }
+
+    if(DIF.precios.length){
+      var suben=DIF.precios.filter(function(x){return x.sube;}).length;
+      h+=bloqueDif('precios','Precios distintos', DIF.precios.length,
+        '<table><thead><tr><th>ITEM</th><th>Producto</th><th>Ficha</th>'+
+        '<th>Reporte</th><th>Diferencia</th></tr></thead><tbody>'+
+        DIF.precios.slice(0,300).map(function(c){
+          return '<tr><td class="mono">'+esc(c.item)+'</td><td>'+esc(c.nombre)+'</td>'+
+            '<td class="mono">'+money(c.ficha)+'</td>'+
+            '<td class="mono"><b>'+money(c.reporte)+'</b></td>'+
+            '<td class="mono" style="color:'+(c.sube?'var(--ok)':'var(--dang)')+'">'+
+              (c.sube?'+':'')+money(c.dif)+'</td></tr>';
+        }).join('')+'</tbody></table>',
+        nf(suben)+' suben y '+nf(DIF.precios.length-suben)+' bajan. Los precios los manda el '+
+        'reporte: entran solos al aplicarlo en «Actualizar con un archivo». Esto es para '+
+        '<b>verlos antes</b>.');
+    }
+
+    if(DIF.nuevos.length){
+      h+=bloqueDif('nuevos','Productos que la ficha no tiene', DIF.nuevos.length,
+        '<table><thead><tr><th>ITEM</th><th>Producto</th><th>Precio</th></tr></thead><tbody>'+
+        DIF.nuevos.slice(0,300).map(function(c){
+          return '<tr><td class="mono">'+esc(c.item)+'</td><td>'+esc(c.nombre||'(sin nombre)')+'</td>'+
+            '<td class="mono">'+(c.precio?money(c.precio):'—')+'</td></tr>';
+        }).join('')+'</tbody></table>',
+        'Están en el reporte y no en el inventario. Entran al aplicar el archivo en '+
+        '«Actualizar con un archivo».');
+    }
+
+    if(DIF.faltan.length){
+      var conStock=DIF.faltan.filter(function(x){return x.existencia>0;});
+      h+=bloqueDif('faltan','Productos que el reporte ya no trae', DIF.faltan.length,
+        '<table><thead><tr><th>ITEM</th><th>Producto</th><th>Existencia guardada</th>'+
+        '<th>Estado</th></tr></thead><tbody>'+
+        DIF.faltan.slice(0,300).map(function(c){
+          return '<tr><td class="mono">'+esc(c.item)+'</td><td>'+esc(c.nombre)+'</td>'+
+            '<td class="mono">'+nf(c.existencia)+'</td>'+
+            '<td>'+(c.activo?'en el catálogo':'de baja')+'</td></tr>';
+        }).join('')+'</tbody></table>',
+        (conStock.length
+          ? '<b>'+nf(conStock.length)+' de estos tienen existencia guardada.</b> O se '+
+            'vendieron todos y FelTec dejó de listarlos, o falta algo en el reporte: '+
+            'conviene mirarlos antes de cargar el archivo, porque cargarlo los deja en cero.'
+          : 'Ninguno tiene existencia, así que lo normal es que ya no se trabajen.'));
+    }
+
+    $('dif-cuerpo').innerHTML=h;
+  }
+
+  function bloqueDif(id, titulo, n, tabla, nota){
+    return '<div class="grupo" data-dif-grupo="'+id+'">'+
+      '<div class="grupo-h"><span class="n">'+nf(n)+'</span>'+
+      '<span class="t"><b>'+esc(titulo)+'</b></span>'+
+      '<span style="font-size:13px;color:var(--s500)" class="ch">ver</span></div>'+
+      '<div class="grupo-b"><div class="note" style="margin:0 0 10px">'+nota+'</div>'+
+      '<div class="scroll">'+tabla+'</div></div></div>';
+  }
+
+  /* Abrir y cerrar cada bloque, igual que los demás de esta pantalla. */
+  $('dif-cuerpo').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-dacc]');
+    if(b){
+      var c=DIF && DIF.campos[+b.dataset.i];
+      if(!c) return;
+      var quien=b.dataset.dacc;
+      var hecho = quien==='reporte'
+        ? (c.campo==='codigo'
+            ? Inventario.setCodigo(c.item, c.reporte)
+            : Inventario.setFicha(c.item, (function(o){o[c.campo]=c.reporte;return o;})({}))
+          ).then(function(){ return Inventario.soltarFicha(c.item, c.campo); })
+        : Inventario.setFicha(c.item, (function(o){o[c.campo]=c.ficha||'';return o;})({}));
+
+      hecho.then(function(){
+        var tr=e.target.closest('tr');
+        if(tr){
+          tr.style.opacity='.5';
+          tr.lastElementChild.innerHTML = quien==='reporte'
+            ? '<span class="chip">se copió del reporte</span>'
+            : '<span class="chip">se queda la ficha</span>';
+        }
+        toast(quien==='reporte'
+          ? 'Copiado del reporte a la ficha.'
+          : 'La ficha manda: el reporte ya no la pisa.');
+      }).catch(function(err){ toast(err.message||'No se pudo.', true); });
+      return;
+    }
+    var h=e.target.closest('.grupo-h'); if(!h) return;
+    var g=h.parentElement;
+    g.classList.toggle('on');
+    var ch=h.querySelector('.ch'); if(ch) ch.textContent=g.classList.contains('on')?'ocultar':'ver';
+  });
 
   function bloqueGrupos(grupos, cols, resumen){
     if(!grupos.length) return '<div class="empty">Nada que sugerir con estos números.</div>';
@@ -725,6 +913,7 @@ tr:hover td{background:var(--s50)}
       var col=columnas(filas[0]);
       if(col.item<0 || col.nombre<0) throw new Error('No se encontraron las columnas ITEM y PRODUCTO.');
       datos=analizar(filas,col);
+      datos.col=col;      // para saber que columnas traia de verdad el reporte
       if(!datos.filas.length) throw new Error('No se encontraron productos en el archivo.');
 
       /* Los días del periodo salen del nombre del archivo de FelTec, que los
@@ -1018,6 +1207,18 @@ tr:hover td{background:var(--s50)}
   window.__fsjTrasLogin = function(u){
     u = u || (window.FSJAuth && FSJAuth.usuario());
     if(u && $('quien')) $('quien').textContent = u.nombre;
+    /* El inventario guardado hace falta para comparar el reporte con la
+       ficha. Pide clave hasta para leerse, así que se arranca aquí, cuando
+       ya la hay, y no al cargar la página. */
+    if(u && window.Inventario){
+      if(Inventario.setClaveServidor) Inventario.setClaveServidor(u.pin||'');
+      Inventario.init(['./inventario-data.json']).then(function(){
+        invListo = true;
+        /* Si ya había un reporte en pantalla, se rehace la comparación con
+           lo que acaba de cargarse. */
+        if(datos && datos.filas && datos.filas.length) pintarDiferencias();
+      }).catch(function(){ /* sin inventario, la tarjeta no sale y ya */ });
+    }
   };
   window.__fsjTrasLogin();
 

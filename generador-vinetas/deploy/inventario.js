@@ -93,6 +93,7 @@ window.Inventario = (function () {
     imagenesT = new Map(imgs.map((r) => [String(r.item), r.t || 0]));
     const m = await reqP(store(COLS.meta).get('meta'));
     meta = (m && m.v) ? m.v : { lastUpload: null, count: 0, baselineAt: null };
+    metaLeida = true;
     reindex();
   }
 
@@ -121,7 +122,37 @@ window.Inventario = (function () {
     }
   }
 
-  async function saveMeta() { await guardar(COLS.meta, (st) => st.put({ k: 'meta', v: meta })); }
+  /* Guardar `meta` antes de haberlo LEÍDO del disco lo dejaría en blanco: el
+     objeto de memoria arranca vacío, y escribirlo así borra de un golpe
+     `baselineAt`, la tabla de proveedores y lo que quedara pendiente de
+     mandar. Pasaba de verdad: una pantalla que pedía la tabla de proveedores
+     antes de arrancar el inventario dejaba la base creyéndose vacía, y al
+     abrirla se volvía a cargar encima el archivo publicado —viejo— pisando el
+     Excel del mes que se acababa de cargar en otra pantalla.
+
+     Por eso cualquiera que vaya a TOCAR `meta` antes de que arranque el
+     inventario llama primero a esto: se lee lo que hay y se sigue desde ahí,
+     en vez de desde el objeto vacío. */
+  let metaLeida = false;
+  let _leyendoMeta = null;
+  async function asegurarMeta() {
+    if (metaLeida) return;
+    if (!_leyendoMeta) {
+      _leyendoMeta = (async () => {
+        try {
+          const m = await reqP(store(COLS.meta).get('meta'));
+          if (m && m.v) meta = m.v;
+        } catch (e) { /* si no se puede leer, se sigue con lo que hay */ }
+        metaLeida = true;
+      })();
+    }
+    await _leyendoMeta;
+  }
+
+  async function saveMeta() {
+    await asegurarMeta();
+    await guardar(COLS.meta, (st) => st.put({ k: 'meta', v: meta }));
+  }
 
   /* --------------------- Importar Excel (.xlsx) -------------------------- */
   // Mapea encabezados del reporte FelTec a nuestros campos.
@@ -1840,6 +1871,7 @@ window.Inventario = (function () {
       for (const m of Object.keys(pend)) {
         if (pend[m]) delSitio[m] = pend[m]; else delete delSitio[m];
       }
+      await asegurarMeta();
       meta.proveedores = delSitio;
       provEstado = { comprobado: true, compartida: true,
                      actualizado: d.actualizado || '', por: d.por || '' };
@@ -1889,6 +1921,7 @@ window.Inventario = (function () {
     const v = String(proveedor || '').trim();
     /* Primero aquí, para que la pantalla responda al momento; después al
        sitio. Si el sitio no está, queda guardado en el equipo igual. */
+    await asegurarMeta();
     const mapa = Object.assign({}, meta.proveedores || {});
     if (v) mapa[m] = v; else delete mapa[m];
     meta.proveedores = mapa;
@@ -1900,6 +1933,7 @@ window.Inventario = (function () {
   }
 
   async function setProveedores(mapa) {
+    await asegurarMeta();
     const limpio = {};
     for (const k of Object.keys(mapa || {})) {
       const m = upper(k), v = String(mapa[k] || '').trim();
