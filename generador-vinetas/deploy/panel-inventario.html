@@ -202,6 +202,83 @@ tr.ficha-row>td{background:var(--s50);padding:0}
 .alta input,.alta select{height:36px;border:1px solid var(--s300);border-radius:var(--r);
   padding:0 9px;font-size:14px;background:#fff}
 .alta input:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(240,96,48,.16)}
+/* ------------------------ el pedido, como hoja --------------------------
+   Se revisa sobre la hoja tal como va a salir. En pantalla lleva casillas;
+   al imprimir se dibuja aparte (#hoja-imprimir) sin nada que tocar. */
+.ped-barra{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:6px}
+.ped-l{font-size:12.5px;color:var(--s500);display:flex;flex-direction:column;gap:4px}
+.seg{display:inline-flex;border:1px solid var(--s300);border-radius:var(--r);overflow:hidden;background:#fff}
+.seg button{border:0;background:transparent;padding:8px 12px;font:inherit;font-size:13.5px;cursor:pointer;color:var(--s600)}
+.seg button+button{border-left:1px solid var(--s300)}
+.seg button.on{background:var(--s900);color:#fff;font-weight:600}
+.ped-ayuda{font-size:13px;color:var(--s600);margin:4px 0 12px}
+.ped-agregar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.ped-res{border:1px solid var(--s200);border-radius:var(--rl);background:#fff;margin:6px 0 4px;
+  max-height:300px;overflow:auto}
+.ped-res button{display:flex;gap:10px;align-items:baseline;width:100%;text-align:left;border:0;
+  border-bottom:1px solid var(--s100);background:#fff;padding:9px 12px;font:inherit;font-size:14px;cursor:pointer}
+.ped-res button:hover,.ped-res button:focus{background:#fdf5f1;outline:none}
+.ped-res .m{font-size:12.5px;color:var(--s500);margin-left:auto;white-space:nowrap}
+.ped-res .vacio{padding:10px 12px;font-size:13.5px;color:var(--s500)}
+.ped-notas{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--s500);margin:12px 0 16px}
+.ped-notas textarea{border:1px solid var(--s300);border-radius:var(--r);padding:8px 10px;font:inherit;
+  font-size:14px;color:var(--s900);resize:vertical}
+.ped-notas textarea:focus{outline:none;border-color:var(--orange)}
+
+.hoja{background:#fff;border:1px solid var(--s200);border-radius:4px;box-shadow:0 3px 14px rgba(0,0,0,.07);
+  padding:22px 24px 18px;margin:0 0 22px;color:#111;font-size:13.5px}
+.hoja-h{display:flex;align-items:center;gap:12px;border-bottom:2px solid #111;padding-bottom:10px}
+.hoja-h img{width:46px;height:46px;object-fit:contain}
+.hoja-t{flex:1;display:flex;flex-direction:column}
+.hoja-t b{font-family:'Barlow Condensed',sans-serif;font-size:21px;text-transform:uppercase;letter-spacing:.03em}
+.hoja-t span,.hoja-tit span{font-size:12px;color:#555}
+.hoja-tit{text-align:right;display:flex;flex-direction:column}
+.hoja-tit b{font-family:'Anton',sans-serif;font-size:22px;letter-spacing:.02em;text-transform:uppercase}
+.hoja-datos{display:flex;gap:8px 26px;flex-wrap:wrap;align-items:center;padding:10px 0 8px;font-size:14px}
+.hoja .et{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#666;margin-right:4px}
+.hoja-in{border:1px dashed var(--s300);border-radius:4px;padding:4px 7px;font:inherit;font-size:14px;
+  min-width:210px;background:#fffdf8}
+.hoja-in:focus{outline:none;border-color:var(--orange);border-style:solid}
+.hoja-notas{background:#f7f7f5;border-left:3px solid #111;padding:7px 10px;margin:2px 0 10px;font-size:13.5px}
+.hoja-tb{width:100%;border-collapse:collapse;margin-top:6px}
+.hoja-tb th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#555;text-align:left;
+  border-bottom:1.5px solid #111;padding:6px 6px;background:none;position:static}
+.hoja-tb td{border-bottom:1px solid #ddd;padding:6px 6px;vertical-align:middle}
+.hoja-tb .r{text-align:right}.hoja-tb .c{text-align:center;width:30px}
+.hoja-tb td.cant b{font-size:15px}
+.hoja-tb tfoot td{border-bottom:0;border-top:1.5px solid #111;font-weight:600;padding-top:8px}
+.hoja-tb tr.no-va td{opacity:.45}
+.hoja-tb tr.no-va td.cant{opacity:1}
+.hoja-tb .sug{display:block;font-size:11.5px;color:var(--s500)}
+.hoja-tb .hoja-in.nota{min-width:0;width:100%;font-size:13px}
+.hoja-tb select{font:inherit;font-size:12px;margin-top:3px;border:1px solid var(--s200);border-radius:4px;
+  padding:2px 4px;background:#fff;max-width:230px}
+.hoja-tb .quitar{border:0;background:transparent;color:var(--s400);font-size:16px;cursor:pointer;
+  padding:2px 6px;border-radius:4px}
+.hoja-tb .quitar:hover{background:var(--dang-bg);color:var(--dang)}
+.hoja-pie{display:flex;gap:30px;flex-wrap:wrap;margin-top:26px;font-size:13px;color:#333}
+.hoja-pie .firma{flex:1;min-width:170px;border-top:1px solid #111;padding-top:5px;text-align:center}
+.hoja-pie .gracias{flex:1;font-style:italic}
+.hoja-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px dashed var(--s200)}
+.hoja-vacia{font-size:13px;color:var(--s500);padding:10px 0 2px}
+@media(max-width:640px){
+  .hoja{padding:14px 12px}
+  .hoja-tb{font-size:12.5px}
+  .hoja-tb th:nth-child(n+7),.hoja-tb td:nth-child(n+7){white-space:nowrap}
+  .hoja-scroll{overflow-x:auto}
+}
+#hoja-imprimir{display:none}
+@media print{
+  html.imprime-pedido body>*:not(#hoja-imprimir){display:none!important}
+  html.imprime-pedido body{background:#fff}
+  html.imprime-pedido #hoja-imprimir{display:block}
+  #hoja-imprimir .hoja{border:0;box-shadow:none;border-radius:0;padding:0;margin:0;
+    break-after:page;page-break-after:always}
+  #hoja-imprimir .hoja:last-child{break-after:auto;page-break-after:auto}
+  #hoja-imprimir .hoja-tb tr{break-inside:avoid}
+  @page{size:letter;margin:12mm}
+}
+
 details.plegable{border:1px solid var(--s200);border-radius:var(--rl);padding:12px 14px;margin-top:14px;background:#fff}
 details.plegable>summary{cursor:pointer;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;
   letter-spacing:.03em;font-size:15px;color:var(--s700)}
@@ -449,9 +526,9 @@ details.plegable[open]>summary{margin-bottom:12px}
 
       <!-- ------------------ armar el pedido de verdad ------------------ -->
       <div class="row" style="margin-bottom:10px">
-        <button class="btn b-gh b-sm" id="com-si">Marcar los que se ven</button>
+        <button class="btn b-gh b-sm" id="com-si">Marcar todo</button>
         <button class="btn b-gh b-sm" id="com-no">Desmarcar todo</button>
-        <button class="btn b-pri b-sm" id="com-armar" disabled>Armar pedido</button>
+        <button class="btn b-pri b-sm" id="com-armar" disabled>Revisar el pedido →</button>
         <span class="hint" id="com-marcados" style="color:var(--s500);font-size:13px">no hay nada marcado</span>
       </div>
       <div class="busca" style="margin-bottom:6px">
@@ -508,24 +585,51 @@ details.plegable[open]>summary{margin-bottom:12px}
     </div>
   </div>
 
-  <!-- ========================= PEDIDO ARMADO ========================== -->
+  <!-- ================= EL PEDIDO: REVISAR Y IMPRIMIR ================== -->
   <div class="card" id="card-pedido" data-flujo="comprar" hidden>
-    <div class="card-h"><span class="np">4</span><h2>El pedido</h2>
-      <span class="hint">Una hoja por grupo: se descarga o se imprime</span>
+    <div class="card-h"><span class="np">✓</span><h2>Revisar el pedido</h2>
+      <span class="hint">Así va a salir la hoja: corrige, quita o agrega antes de imprimir</span>
       <span class="estado" id="ped-estado"></span>
     </div>
     <div class="card-b">
-      <div class="row" style="margin-bottom:12px">
-        <button class="btn b-gh b-sm" id="ped-csv">Descargar todo (CSV)</button>
-        <button class="btn b-gh b-sm" id="ped-csv-grupos">Un CSV por grupo</button>
-        <button class="btn b-gh b-sm" id="ped-imprimir">Imprimir</button>
+      <div class="ped-barra">
+        <div class="seg" role="group" aria-label="Para quién es la hoja">
+          <button type="button" data-hoja="compras">Para el encargado de compras</button>
+          <button type="button" data-hoja="vendedor">Para el vendedor</button>
+        </div>
+        <label class="ped-l">Una hoja por
+          <select id="ped-por" class="btn b-gh b-sm">
+            <option value="prov">proveedor</option><option value="marca">marca</option>
+            <option value="cat">categoría</option><option value="uno">— todo en una sola —</option>
+          </select></label>
+        <button class="btn b-pri b-sm" id="ped-imprimir">Imprimir o guardar PDF</button>
+        <button class="btn b-gh b-sm" id="ped-csv">Descargar (CSV)</button>
         <button class="btn b-gh b-sm" id="ped-cerrar" style="margin-left:auto">Cerrar</button>
       </div>
-      <div class="note">
-        Las cantidades se pueden corregir antes de mandarlo: escribe encima y el
-        total se recalcula. Poner cero saca el producto del pedido.
+      <p class="ped-ayuda" id="ped-ayuda"></p>
+
+      <div class="ped-agregar">
+        <div class="busca">
+          <span class="lupa">＋</span>
+          <input type="text" id="ped-q" autocomplete="off"
+                 placeholder="Agregar otro producto: nombre, ITEM o código de barras…"
+                 aria-label="Agregar un producto al pedido">
+          <button class="x" id="ped-q-x" title="Limpiar" hidden>✕</button>
+        </div>
+        <button class="btn b-gh b-sm" id="ped-libre">Algo que no está en el inventario</button>
       </div>
-      <div id="ped-cuerpo"></div>
+      <div class="ped-res" id="ped-res" hidden></div>
+
+      <label class="ped-notas">Indicaciones — salen arriba en cada hoja
+        <textarea id="ped-notas" rows="2"
+          placeholder="Ej.: pedir precio antes de confirmar · entregar en el local 2 · pago al contado"></textarea></label>
+
+      <div id="ped-hojas"></div>
+      <div class="row" style="margin-top:10px">
+        <span class="hint" style="font-size:12.5px;color:var(--s500)">
+          El pedido se guarda solo en este equipo mientras lo revisas: puedes cerrar y seguir luego.</span>
+        <button class="btn b-gh b-sm" id="ped-vaciar" style="margin-left:auto">Vaciar el pedido</button>
+      </div>
     </div>
   </div>
 
@@ -1214,14 +1318,19 @@ details.plegable[open]>summary{margin-bottom:12px}
     });
 
     var grupos=Analisis.agrupar(vis,por,function(p){return p.costo;});
+    comGrupos=grupos;
     $('com-grupos').innerHTML = grupos.length ? grupos.map(function(g,i){
       var u=g.items.reduce(function(a,p){return a+p.pedir;},0);
       return '<div class="grupo'+(i===0||palc.length?' on':'')+'">'+
         '<div class="grupo-h"><span class="n">'+nf(g.items.length)+'</span>'+
         '<span class="t"><b>'+esc(g.nombre)+'</b><span>'+nf(u)+' unidades · '+Analisis.money0(g.total)+'</span></span>'+
+        '<span class="marcados"></span>'+
         '<span style="font-size:13px;color:var(--s500)" class="ch">'+(i===0||palc.length?'ocultar':'ver')+'</span></div>'+
         '<div class="grupo-b"><div class="scroll"><table><thead><tr>'+
-        '<th style="width:34px"></th><th>ITEM</th><th>Producto</th><th>Salió</th><th>Hay</th>'+
+        /* Marcar o desmarcar el grupo entero de un clic. */
+        '<th style="width:34px"><input type="checkbox" class="ckg" data-g="'+i+'" '+
+          'title="Marcar o desmarcar todo el grupo" aria-label="Marcar todo el grupo"></th>'+
+        '<th>ITEM</th><th>Producto</th><th>Salió</th><th>Hay</th>'+
         '<th>Aguanta</th><th>A pedir</th><th>Costo</th><th>A quién</th>'+
         '</tr></thead><tbody>'+
         g.items.slice(0,60).map(function(p){
@@ -1249,7 +1358,10 @@ details.plegable[open]>summary{margin-bottom:12px}
                   return '<option'+(x===p.prov?' selected':'')+'>'+esc(x)+'</option>';
                 }).join('')+'</select>'
               : '<span class="hint">'+esc(p.provs.length?p.provs[0]:'—')+'</span>')+'</td></tr>';
-        }).join('')+'</tbody></table></div></div></div>';
+        }).join('')+'</tbody></table></div>'+
+        (g.items.length>60 ? '<div class="filtro-info">Se ven 60 de '+nf(g.items.length)+
+          '. La casilla de arriba marca el grupo entero; para ver uno en concreto, búscalo.</div>' : '')+
+        '</div></div>';
     }).join('') : '<div class="empty">'+(palc.length?'Nada coincide con «'+esc(qc)+'».':'Nada que pedir con estos números.')+'</div>';
 
     resumenCom();
@@ -1382,12 +1494,11 @@ details.plegable[open]>summary{margin-bottom:12px}
      Lo marcado vive aquí, no en las casillas de la tabla: así buscar,
      cambiar el agrupamiento o los días no borra la selección.            */
   var comMarcados=new Set();      // items elegidos
-  var comCantidad=new Map();      // item -> cantidad corregida a mano
   /* A quién se le compra ESTE producto en ESTE pedido. Solo para los que
      tienen varios: la mejor oferta cambia de un pedido a otro, así que no
      se guarda en la tabla de proveedores. */
   var comProv=new Map();          // item -> proveedor elegido ahora
-  var pedidoGrupos=null;          // lo último que se armó, para descargar/imprimir
+  var comGrupos=[];               // los grupos que se ven, para «marcar el grupo»
 
   function comVisibles(){
     var pal=palabrasDe($('q-com').value.trim());
@@ -1396,14 +1507,23 @@ details.plegable[open]>summary{margin-bottom:12px}
       return coincide((p.nombre||'')+' '+(p.item||'')+' '+(p.cat||'')+' '+(p.marca||''), pal);
     });
   }
-  function cantidadDe(p){
-    var k=String(p.item);
-    return comCantidad.has(k) ? comCantidad.get(k) : p.pedir;
-  }
   function resumenCom(){
     var n=comMarcados.size;
-    $('com-marcados').textContent = n ? nf(n)+' producto(s) en el pedido' : 'no hay nada marcado';
-    $('com-armar').disabled = n===0;
+    $('com-marcados').textContent = n ? nf(n)+' producto(s) marcados para el pedido' : 'no hay nada marcado';
+    $('com-armar').disabled = n===0 && !(pedido && pedido.lineas.length);
+    /* Con una búsqueda puesta, «marcar todo» marca lo que se ve: es lo que
+       uno espera al buscar «cemento» y darle a marcar. */
+    var busca=$('q-com').value.trim();
+    $('com-si').textContent = busca ? 'Marcar los '+nf(comVisibles().length)+' que se ven' : 'Marcar todo';
+    /* La casilla de cada grupo: marcada, vacía o a medias. */
+    document.querySelectorAll('#com-grupos input.ckg').forEach(function(c){
+      var g=comGrupos[Number(c.dataset.g)]; if(!g) return;
+      var m=g.items.filter(function(p){return comMarcados.has(String(p.item));}).length;
+      c.checked = m>0 && m===g.items.length;
+      c.indeterminate = m>0 && m<g.items.length;
+      var et=c.closest('.grupo').querySelector('.grupo-h .marcados');
+      if(et) et.innerHTML = m ? '<b>'+nf(m)+'</b> de '+nf(g.items.length)+' marcados' : '';
+    });
   }
 
   $('com-grupos').addEventListener('change',function(e){
@@ -1411,6 +1531,17 @@ details.plegable[open]>summary{margin-bottom:12px}
     if(sp){
       comProv.set(sp.dataset.eligeProv, sp.value);
       if($('com-por').value==='prov') pintarCompras();
+      return;
+    }
+    var cg=e.target.closest('input.ckg');
+    if(cg){
+      var g=comGrupos[Number(cg.dataset.g)]; if(!g) return;
+      /* Todo el grupo, también los que no caben en la tabla. */
+      g.items.forEach(function(p){
+        if(cg.checked) comMarcados.add(String(p.item)); else comMarcados.delete(String(p.item));
+      });
+      cg.closest('.grupo').querySelectorAll('input.ckp').forEach(function(c){ c.checked=cg.checked; });
+      resumenCom();
       return;
     }
     var c=e.target.closest('input.ckp'); if(!c) return;
@@ -1422,96 +1553,466 @@ details.plegable[open]>summary{margin-bottom:12px}
     pintarCompras();
   });
   $('com-no').addEventListener('click',function(){
-    comMarcados.clear(); comCantidad.clear(); pintarCompras();
+    comMarcados.clear(); pintarCompras();
   });
+
+  /* ================= EL PEDIDO: REVISAR, CORREGIR E IMPRIMIR ============
+     Lo sugerido es un punto de partida. Antes de imprimir se revisa aquí,
+     sobre la hoja tal como va a salir: se corrigen cantidades, se quita lo
+     que no va, se agregan productos que el sugerido no vio —o que ni están
+     en el inventario— y se escriben indicaciones.
+
+     Dos hojas: la del ENCARGADO DE COMPRAS (con existencia, salida y costo,
+     para decidir) y la del VENDEDOR (sin nada nuestro: qué y cuánto), que se
+     puede mandar tal cual.
+
+     El borrador se guarda en este equipo: cerrar la pantalla no lo pierde. */
+  var PED_KEY='fsj-pedido-borrador';
+  var SIN_PROV='(sin proveedor asignado)';
+  var TIENDA='Ferretería San José', TIENDA_SUB='Corinto, Morazán · WhatsApp 7493-9560';
+  var pedido=leerBorrador();
+
+  function leerBorrador(){
+    try{
+      var d=JSON.parse(localStorage.getItem(PED_KEY)||'null');
+      return (d && Array.isArray(d.lineas)) ? d : null;
+    }catch(e){ return null; }
+  }
+  function guardarBorrador(){
+    try{
+      if(pedido && pedido.lineas.length) localStorage.setItem(PED_KEY,JSON.stringify(pedido));
+      else localStorage.removeItem(PED_KEY);
+    }catch(e){}
+  }
+  function nuevoPedido(){
+    return { lineas:[], notas:'', hoja:'compras', por:$('com-por').value||'prov', para:{},
+             creado:new Date().toISOString() };
+  }
+
+  function lineaDeSugerido(p, antes){
+    var k=String(p.item), inv=Inventario.porItem(k), a=antes[k];
+    var provs=Inventario.proveedoresDeProducto(p)||[];
+    var e=comProv.get(k);
+    return {
+      k:k, item:k, nombre:(inv&&inv.nombre)||p.nombre, cat:p.cat, marca:p.marca,
+      unidad:(inv&&inv.unidad)||'', codigo:(inv&&inv.codigo)||'',
+      exist:p.exist, sal:p.sal, unit:p.compra>0?p.compra:0, sugerido:p.pedir,
+      /* Si ya estaba en el borrador, se respeta lo que alguien corrigió. */
+      cant: a ? a.cant : p.pedir,
+      prov: (e && provs.indexOf(e)>=0) ? e : (a && a.prov ? a.prov : (provs[0]||'')),
+      nota: a ? (a.nota||'') : '', origen:'sugerido',
+    };
+  }
+  function lineaDeInventario(inv){
+    var k=String(inv.item);
+    var r=null;
+    if(crudo) for(var i=0;i<crudo.length;i++){ if(String(crudo[i].item)===k){ r=crudo[i]; break; } }
+    var marca=inv.marca || Analisis.marcaDe(inv.nombre);
+    var provs=Inventario.proveedoresDeProducto({ item:k, marca:marca })||[];
+    return {
+      k:k, item:k, nombre:inv.nombre, cat:inv.categoria||(r&&r.cat)||'(sin categoría)', marca:marca,
+      unidad:inv.unidad||'', codigo:inv.codigo||'',
+      exist:Number(inv.existencia)||0, sal:r?r.sal:null,
+      unit: Number(inv.costo)>0 ? Number(inv.costo) : (r && r.compra>0 ? r.compra : 0),
+      sugerido:0, cant:1, prov:provs[0]||'', nota:'', origen:'agregado',
+    };
+  }
 
   $('com-armar').addEventListener('click',function(){
     var elegidos=compras.filter(function(p){ return comMarcados.has(String(p.item)); });
-    if(!elegidos.length) return toast('No hay nada marcado.',true);
-    elegidos.forEach(function(p){ p.prov=Inventario.proveedorDeMarca(p.marca); });
-    pedidoGrupos=Analisis.agrupar(elegidos,$('com-por').value,function(p){
-      return cantidadDe(p) * (p.pedir>0 ? p.costo/p.pedir : 0);
+    if(!elegidos.length && !(pedido && pedido.lineas.length)) return toast('No hay nada marcado.',true);
+    /* Se rehace con lo marcado, pero sin perder lo que ya se revisó: las
+       cantidades corregidas, las notas y lo que se agregó a mano. */
+    var antes={}, extra=[];
+    if(pedido) pedido.lineas.forEach(function(l){
+      antes[l.k]=l;
+      if(l.origen!=='sugerido' && !comMarcados.has(l.k)) extra.push(l);
     });
+    var base=pedido||nuevoPedido();
+    base.lineas=elegidos.map(function(p){ return lineaDeSugerido(p,antes); }).concat(extra);
+    if(!pedido) base.por=$('com-por').value;
+    pedido=base;
+    guardarBorrador();
+    abrirPedido();
+  });
+
+  function abrirPedido(){
     $('card-pedido').hidden=false;
     pintarPedido();
     $('card-pedido').scrollIntoView({behavior:'smooth',block:'start'});
-  });
+  }
   $('ped-cerrar').addEventListener('click',function(){ $('card-pedido').hidden=true; });
 
-  function unitario(p){ return p.pedir>0 ? p.costo/p.pedir : 0; }
+  function claveHoja(l){
+    var por=pedido.por;
+    if(por==='uno') return 'Pedido';
+    if(por==='prov') return l.prov||SIN_PROV;
+    if(por==='marca') return l.marca||'(sin marca)';
+    return l.cat||'(sin categoría)';
+  }
+  function hojasDelPedido(){
+    var g={}, orden=[];
+    pedido.lineas.forEach(function(l){
+      var k=claveHoja(l);
+      if(!g[k]){ g[k]={ nombre:k, lineas:[], total:0 }; orden.push(k); }
+      g[k].lineas.push(l);
+      if(l.cant>0) g[k].total+=l.cant*(l.unit||0);
+    });
+    return orden.map(function(k){ return g[k]; }).sort(function(a,b){
+      var sa=a.nombre===SIN_PROV, sb=b.nombre===SIN_PROV;
+      if(sa!==sb) return sa?1:-1;
+      return b.total-a.total || b.lineas.length-a.lineas.length;
+    });
+  }
+  function paraDe(h){
+    var v=pedido.para[h.nombre];
+    if(v!=null) return v;
+    return (pedido.por==='prov' && h.nombre!==SIN_PROV) ? h.nombre : '';
+  }
+  function fechaLarga(){
+    return new Date().toLocaleDateString('es-SV',{day:'numeric',month:'long',year:'numeric'});
+  }
+  function todosLosProveedores(){
+    var s={};
+    var m=Inventario.proveedores()||{};
+    Object.keys(m).forEach(function(k){
+      String(m[k]||'').split('|').forEach(function(x){ x=x.trim(); if(x) s[x]=1; });
+    });
+    pedido.lineas.forEach(function(l){ if(l.prov) s[l.prov]=1; });
+    return Object.keys(s).sort(function(a,b){ return a.localeCompare(b,'es'); });
+  }
+  function selectProv(l, todos){
+    var provs=l.item ? (Inventario.proveedoresDeProducto({item:l.item, marca:l.marca})||[]) : [];
+    var lista=provs.concat(todos.filter(function(x){ return provs.indexOf(x)<0; }));
+    if(l.prov && lista.indexOf(l.prov)<0) lista.unshift(l.prov);
+    return '<select data-f="prov" title="A quién se le pide">'+
+      '<option value=""'+(l.prov?'':' selected')+'>— a quién: sin asignar —</option>'+
+      lista.map(function(x,i){
+        return '<option'+(x===l.prov?' selected':'')+'>'+esc(x)+'</option>'+
+          (i===provs.length-1 && provs.length && lista.length>provs.length
+            ? '<option disabled>──────────</option>' : '');
+      }).join('')+'</select>';
+  }
+
+  /* Una hoja. `imprimir` la dibuja sin casillas, para papel o PDF. */
+  function hojaHTML(h, imprimir){
+    var deCompras=pedido.hoja!=='vendedor';
+    var van=h.lineas.filter(function(l){ return l.cant>0; });
+    if(imprimir && !van.length) return '';
+    var filas=imprimir ? van : h.lineas;
+    var conCodigo=filas.some(function(l){ return l.codigo; });
+    var u=van.reduce(function(a,l){ return a+l.cant; },0);
+    var d=van.reduce(function(a,l){ return a+l.cant*(l.unit||0); },0);
+    var sinCosto=van.filter(function(l){ return !l.unit; }).length;
+    var todos=(!imprimir && pedido.por==='prov') ? todosLosProveedores() : null;
+    var para=paraDe(h), k=esc(h.nombre), n=0;
+    var cols=1+(deCompras?1:0)+(conCodigo?1:0)+3+(deCompras?4:0)+1+(imprimir?0:1);
+    var queGrupo={cat:'Categoría',marca:'Marca'}[pedido.por];
+
+    return '<section class="hoja" data-hoja-g="'+k+'">'+
+      '<header class="hoja-h"><img src="assets/emblem.png" alt="" onerror="this.style.display=\'none\'">'+
+        '<div class="hoja-t"><b>'+TIENDA+'</b><span>'+TIENDA_SUB+'</span></div>'+
+        '<div class="hoja-tit"><b>'+(deCompras?'Pedido a comprar':'Pedido')+'</b>'+
+          '<span>'+fechaLarga()+'</span></div></header>'+
+      '<div class="hoja-datos">'+
+        '<div><span class="et">Para</span>'+(imprimir
+          ? '<b>'+(esc(para)||'______________________________')+'</b>'
+          : '<input class="hoja-in" data-para="'+k+'" value="'+esc(para)+'" '+
+            'placeholder="proveedor o vendedor">')+'</div>'+
+        (queGrupo ? '<div><span class="et">'+queGrupo+'</span>'+k+'</div>' : '')+
+        (empleado ? '<div><span class="et">Preparó</span>'+esc(empleado)+'</div>' : '')+
+      '</div>'+
+      (pedido.notas ? '<div class="hoja-notas"><span class="et">Indicaciones</span>'+
+        esc(pedido.notas).replace(/\n/g,'<br>')+'</div>' : '')+
+      '<div class="hoja-scroll"><table class="hoja-tb"><thead><tr><th class="c">#</th>'+
+        (deCompras?'<th>ITEM</th>':'')+(conCodigo?'<th>Código</th>':'')+
+        '<th>Producto</th><th>Unidad</th><th class="r">Cantidad</th>'+
+        (deCompras?'<th class="r">Hay</th><th class="r">Salió</th><th class="r">Costo u.</th><th class="r">Total</th>':'')+
+        '<th>Nota</th>'+(imprimir?'':'<th></th>')+
+      '</tr></thead><tbody>'+
+      filas.map(function(l){
+        var va=l.cant>0; if(va) n++;
+        var marcaChip='';
+        if(!imprimir){
+          if(l.origen==='agregado') marcaChip=' <span class="chip oferta">agregado</span>';
+          else if(l.origen==='libre') marcaChip=' <span class="chip oferta">no está en el inventario</span>';
+          if(!va) marcaChip+=' <span class="chip baja">no va</span>';
+        }
+        return '<tr'+(va?'':' class="no-va"')+' data-l="'+esc(l.k)+'">'+
+          '<td class="c mono">'+(va?n:'—')+'</td>'+
+          (deCompras?'<td class="mono">'+esc(l.item||'—')+'</td>':'')+
+          (conCodigo?'<td class="mono">'+esc(l.codigo||'')+'</td>':'')+
+          '<td>'+esc(l.nombre)+marcaChip+(todos ? '<br>'+selectProv(l,todos) : '')+'</td>'+
+          '<td>'+esc(l.unidad||'')+'</td>'+
+          '<td class="r cant">'+(imprimir
+            ? '<b>'+nf(l.cant)+'</b>'
+            : '<input class="pin" style="width:74px" inputmode="numeric" data-f="cant" value="'+l.cant+'">'+
+              (l.origen==='sugerido' && l.sugerido!==l.cant
+                ? '<span class="sug">sugerido '+nf(l.sugerido)+'</span>' : ''))+'</td>'+
+          (deCompras
+            ? '<td class="r mono">'+(l.exist==null?'—':nf(l.exist))+'</td>'+
+              '<td class="r mono">'+(l.sal==null?'—':nf(l.sal))+'</td>'+
+              '<td class="r mono">'+(l.unit?money(l.unit):'—')+'</td>'+
+              '<td class="r mono">'+(l.unit&&va?money(l.cant*l.unit):'—')+'</td>'
+            : '')+
+          '<td>'+(imprimir ? esc(l.nota||'')
+            : '<input class="hoja-in nota" data-f="nota" value="'+esc(l.nota||'')+'" placeholder="—">')+'</td>'+
+          (imprimir?'':'<td class="c"><button type="button" class="quitar" data-quitar title="Quitar del pedido">✕</button></td>')+
+        '</tr>';
+      }).join('')+
+      '</tbody><tfoot><tr><td colspan="'+cols+'">'+
+        nf(van.length)+' producto(s) · '+nf(u)+' unidades'+
+        (deCompras && d ? ' · costo estimado <b>'+money(d)+'</b>'+
+          (sinCosto?' <span style="font-weight:400;color:#666">('+sinCosto+' sin costo conocido)</span>':'') : '')+
+      '</td></tr></tfoot></table></div>'+
+      (!van.length && !imprimir ? '<div class="hoja-vacia">Todas las cantidades de esta hoja están en cero: no se imprime.</div>' : '')+
+      '<div class="hoja-pie">'+(deCompras
+        ? '<div class="firma">Revisó</div><div class="firma">Autorizó</div>'
+        : '<div class="gracias">Por favor confírmenos disponibilidad, precio y fecha de entrega. ¡Gracias!</div>')+
+      '</div>'+
+      (imprimir ? '' : '<div class="hoja-acc">'+
+        '<button type="button" class="btn b-gh b-sm" data-imp-hoja>Imprimir solo esta hoja</button>'+
+        '<button type="button" class="btn b-gh b-sm" data-copiar-hoja title="Para pegar en WhatsApp o en un correo">Copiar para mandar (sin costos)</button>'+
+        '<button type="button" class="btn b-gh b-sm" data-csv-hoja>CSV de esta hoja</button></div>')+
+    '</section>';
+  }
 
   function pintarPedido(){
-    if(!pedidoGrupos) return;
-    var comoSeParte={cat:'categoría',marca:'marca',prov:'proveedor'}[$('com-por').value];
-    var totU=0, totD=0, lineas=0;
-    var html=pedidoGrupos.map(function(g){
-      var items=g.items.filter(function(p){ return cantidadDe(p)>0; });
-      if(!items.length) return '';
-      var u=items.reduce(function(a,p){return a+cantidadDe(p);},0);
-      var d=items.reduce(function(a,p){return a+cantidadDe(p)*unitario(p);},0);
-      totU+=u; totD+=d; lineas+=items.length;
-      return '<div class="grupo on" style="margin-bottom:12px">'+
-        '<div class="grupo-h"><span class="n">'+nf(items.length)+'</span>'+
-        '<span class="t"><b>'+esc(g.nombre)+'</b><span>'+nf(u)+' unidades · '+
-          Analisis.money0(d)+'</span></span></div>'+
-        '<div class="grupo-b"><div class="scroll"><table><thead><tr>'+
-        '<th>ITEM</th><th>Producto</th><th>Hay</th><th>Cantidad</th><th>Costo unit.</th><th>Total</th>'+
-        '</tr></thead><tbody>'+
-        items.map(function(p){
-          return '<tr><td class="mono">'+esc(p.item)+'</td><td>'+esc(p.nombre)+'</td>'+
-            '<td class="mono">'+nf(p.exist)+'</td>'+
-            '<td><input class="pin" style="width:80px" inputmode="numeric" data-ped="'+esc(p.item)+'" '+
-              'value="'+cantidadDe(p)+'"></td>'+
-            '<td class="mono">'+(unitario(p)?money(unitario(p)):'—')+'</td>'+
-            '<td class="mono">'+(unitario(p)?money(cantidadDe(p)*unitario(p)):'—')+'</td></tr>';
-        }).join('')+'</tbody></table></div></div></div>';
-    }).join('');
-    $('ped-estado').textContent=nf(lineas)+' línea(s) · '+nf(totU)+' unidades · '+Analisis.money0(totD);
-    $('ped-cuerpo').innerHTML=
-      '<p style="font-size:13.5px;color:var(--s600);margin:10px 0 14px">Partido por <b>'+comoSeParte+
-      '</b> · '+new Date().toLocaleDateString('es-SV',{day:'numeric',month:'long',year:'numeric'})+
-      (empleado?' · pedido por <b>'+esc(empleado)+'</b>':'')+'</p>'+
-      (html || '<div class="empty">Todas las cantidades quedaron en cero.</div>');
+    if(!pedido){ $('card-pedido').hidden=true; return; }
+    document.querySelectorAll('#card-pedido .seg button').forEach(function(b){
+      b.classList.toggle('on', b.dataset.hoja===(pedido.hoja||'compras'));
+    });
+    $('ped-por').value=pedido.por||'prov';
+    if(document.activeElement!==$('ped-notas')) $('ped-notas').value=pedido.notas||'';
+    $('ped-ayuda').innerHTML = pedido.hoja==='vendedor'
+      ? '<b>Hoja para el vendedor:</b> sin costos ni existencias, solo qué y cuánto. Se puede mandar tal cual.'
+      : '<b>Hoja para el encargado de compras:</b> con lo que hay, lo que salió y el costo, para decidir. '+
+        'Para mandarla al vendedor, cambia arriba a «Para el vendedor».';
+
+    var hojas=hojasDelPedido();
+    var van=pedido.lineas.filter(function(l){ return l.cant>0; });
+    var u=van.reduce(function(a,l){ return a+l.cant; },0);
+    var d=van.reduce(function(a,l){ return a+l.cant*(l.unit||0); },0);
+    $('ped-estado').textContent = nf(van.length)+' producto(s) · '+nf(u)+' unidades · '+
+      nf(hojas.length)+' hoja(s)'+(d?' · '+Analisis.money0(d):'');
+    $('ped-hojas').innerHTML = hojas.length
+      ? hojas.map(function(h){ return hojaHTML(h,false); }).join('')
+      : '<div class="empty">El pedido está vacío. Marca productos arriba o agrégalos con el buscador.</div>';
+    resumenCom();
   }
 
-  $('ped-cuerpo').addEventListener('change',function(e){
-    var i=e.target.closest('input[data-ped]'); if(!i) return;
-    var n=parseInt(String(i.value).replace(/[^\d]/g,''),10);
-    if(!isFinite(n)||n<0) n=0;
-    comCantidad.set(i.dataset.ped,n);
-    pintarPedido();
+  function lineaPorK(k){
+    for(var i=0;i<pedido.lineas.length;i++) if(pedido.lineas[i].k===k) return pedido.lineas[i];
+    return null;
+  }
+  function cambiado(){ guardarBorrador(); pintarPedido(); }
+
+  document.querySelectorAll('#card-pedido .seg button').forEach(function(b){
+    b.addEventListener('click',function(){ if(!pedido) return; pedido.hoja=b.dataset.hoja; cambiado(); });
+  });
+  $('ped-por').addEventListener('change',function(){ if(!pedido) return; pedido.por=this.value; cambiado(); });
+  $('ped-notas').addEventListener('input',function(){
+    if(!pedido) return; pedido.notas=this.value; guardarBorrador();
+  });
+  $('ped-notas').addEventListener('change',function(){ if(pedido) pintarPedido(); });
+
+  $('ped-hojas').addEventListener('change',function(e){
+    var t=e.target;
+    if(t.dataset.para!=null){ pedido.para[t.dataset.para]=t.value.trim(); guardarBorrador(); return; }
+    var tr=t.closest('tr[data-l]'); if(!tr) return;
+    var l=lineaPorK(tr.dataset.l); if(!l) return;
+    if(t.dataset.f==='cant'){
+      var n=parseInt(String(t.value).replace(/[^\d]/g,''),10);
+      l.cant = (isFinite(n) && n>0) ? n : 0;
+    }else if(t.dataset.f==='nota'){
+      l.nota=t.value.trim().slice(0,120);
+    }else if(t.dataset.f==='prov'){
+      l.prov=t.value;
+      /* Lo que se elige aquí vale para este pedido; si vuelve a armarse, se
+         respeta. */
+      if(l.item) comProv.set(l.item, l.prov);
+    }else return;
+    cambiado();
+  });
+  $('ped-hojas').addEventListener('click',function(e){
+    var hoja=e.target.closest('.hoja'); if(!hoja) return;
+    var g=hoja.dataset.hojaG;
+    var h=hojasDelPedido().find(function(x){ return x.nombre===g; });
+    if(e.target.closest('[data-quitar]')){
+      var tr=e.target.closest('tr[data-l]'); if(!tr) return;
+      var k=tr.dataset.l;
+      pedido.lineas=pedido.lineas.filter(function(l){ return l.k!==k; });
+      comMarcados.delete(k);
+      cambiado();
+      if(compras.length) pintarCompras();
+      return;
+    }
+    if(!h) return;
+    if(e.target.closest('[data-imp-hoja]')) return imprimirPedido(g);
+    if(e.target.closest('[data-copiar-hoja]')) return copiarTexto(textoHoja(h));
+    if(e.target.closest('[data-csv-hoja]')){
+      var f=filasCSV([h]);
+      if(f.length<2) return toast('Esta hoja está vacía.',true);
+      bajarCSV(f,'pedido-'+nombreArchivo(paraDe(h)||h.nombre)+'-'+hoyArchivo()+'.csv');
+    }
   });
 
-  function filasDelPedido(g){
-    return g.items.filter(function(p){return cantidadDe(p)>0;}).map(function(p){
-      return [g.nombre,p.item,p.nombre,p.cat,p.marca,p.prov||'',p.exist,cantidadDe(p),
-              unitario(p)?unitario(p).toFixed(2):'', unitario(p)?(cantidadDe(p)*unitario(p)).toFixed(2):''];
-    });
+  /* -------- agregar lo que el sugerido no vio -------- */
+  var relojPed;
+  $('ped-q').addEventListener('input',function(){
+    $('ped-q-x').hidden=!this.value;
+    clearTimeout(relojPed); relojPed=setTimeout(buscarParaPedido,160);
+  });
+  $('ped-q').addEventListener('keydown',function(e){
+    if(e.key==='Enter'){
+      e.preventDefault();
+      var b=$('ped-res').querySelector('button[data-agrega]');
+      if(b) b.click();
+    }else if(e.key==='Escape'){ limpiarBusquedaPed(); }
+  });
+  $('ped-q-x').addEventListener('click',limpiarBusquedaPed);
+  function limpiarBusquedaPed(){
+    $('ped-q').value=''; $('ped-q-x').hidden=true; $('ped-res').hidden=true; $('ped-res').innerHTML='';
   }
-  var CAB_PEDIDO=['Grupo','ITEM','Producto','Categoría','Marca','Proveedor','Existencia',
-                  'Cantidad','Costo unitario','Total'];
+  function buscarParaPedido(){
+    var q=$('ped-q').value.trim();
+    if(q.length<2){ $('ped-res').hidden=true; return; }
+    var r=Inventario.buscar(q,10)||[];
+    var ya={}; (pedido?pedido.lineas:[]).forEach(function(l){ ya[l.k]=l; });
+    $('ped-res').hidden=false;
+    $('ped-res').innerHTML = r.length ? r.map(function(p){
+      var k=String(p.item), esta=ya[k];
+      return '<button type="button" data-agrega="'+esc(k)+'"><span>'+esc(p.nombre)+
+        (p.activo===false?' <span class="chip baja">de baja</span>':'')+'</span>'+
+        '<span class="m">'+esc(k)+' · hay '+nf(Number(p.existencia)||0)+
+        (esta?' · <b>ya está en el pedido ('+nf(esta.cant)+')</b>':'')+'</span></button>';
+    }).join('') : '<div class="vacio">No se encontró «'+esc(q)+'» en el inventario. '+
+      'Si es algo nuevo, usa «Algo que no está en el inventario».</div>';
+  }
+  $('ped-res').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-agrega]'); if(!b) return;
+    var k=b.dataset.agrega;
+    if(!pedido) pedido=nuevoPedido();
+    var l=lineaPorK(k);
+    if(l){ if(!(l.cant>0)) l.cant=1; }
+    else{
+      var inv=Inventario.porItem(k); if(!inv) return;
+      l=lineaDeInventario(inv);
+      pedido.lineas.push(l);
+    }
+    limpiarBusquedaPed();
+    cambiado();
+    $('card-pedido').hidden=false;
+    enfocarCantidad(l.k);
+    toast('Agregado: '+l.nombre+'. Corrige la cantidad si hace falta.');
+  });
+  function enfocarCantidad(k){
+    var sel='#ped-hojas tr[data-l="'+(window.CSS&&CSS.escape?CSS.escape(k):k)+'"] input[data-f="cant"]';
+    var i=document.querySelector(sel);
+    if(i){ i.scrollIntoView({block:'center',behavior:'smooth'}); i.focus(); i.select(); }
+  }
+  $('ped-libre').addEventListener('click',function(){
+    var nombre=(prompt('¿Qué producto? (tal como se lo pedirías al vendedor)')||'').trim();
+    if(!nombre) return;
+    var n=parseInt(prompt('¿Cuántos?','1'),10);
+    if(!pedido) pedido=nuevoPedido();
+    var l={ k:'L'+Date.now().toString(36), item:'', nombre:nombre.slice(0,120), cat:'(fuera del inventario)',
+            marca:'', unidad:'', codigo:'', exist:null, sal:null, unit:0, sugerido:0,
+            cant:(isFinite(n)&&n>0)?n:1, prov:'', nota:'', origen:'libre' };
+    pedido.lineas.push(l);
+    cambiado();
+    $('card-pedido').hidden=false;
+    enfocarCantidad(l.k);
+  });
+  $('ped-vaciar').addEventListener('click',function(){
+    if(!pedido || !confirm('¿Vaciar el pedido? Se borra lo revisado, las notas y lo agregado.')) return;
+    pedido=null; comMarcados.clear();
+    guardarBorrador();
+    $('card-pedido').hidden=true;
+    if(compras.length) pintarCompras(); else resumenCom();
+    toast('Pedido vaciado.');
+  });
 
+  /* -------- imprimir / PDF -------- */
+  function imprimirPedido(solo){
+    if(!pedido) return;
+    var hojas=hojasDelPedido().filter(function(h){ return !solo || h.nombre===solo; });
+    var html=hojas.map(function(h){ return hojaHTML(h,true); }).join('');
+    if(!html) return toast('No hay nada que imprimir: las cantidades están en cero.',true);
+    $('hoja-imprimir').innerHTML=html;
+    document.documentElement.classList.add('imprime-pedido');
+    setTimeout(function(){ window.print(); },80);
+  }
+  $('ped-imprimir').addEventListener('click',function(){ imprimirPedido(null); });
+  /* Si alguien pulsa Ctrl+P con el pedido abierto, que salga la hoja y no
+     la pantalla entera. */
+  window.addEventListener('beforeprint',function(){
+    if(document.documentElement.classList.contains('imprime-pedido')) return;
+    if(!pedido || $('card-pedido').hidden) return;
+    $('hoja-imprimir').innerHTML=hojasDelPedido().map(function(h){ return hojaHTML(h,true); }).join('');
+    document.documentElement.classList.add('imprime-pedido');
+  });
+  window.addEventListener('afterprint',function(){
+    document.documentElement.classList.remove('imprime-pedido');
+    $('hoja-imprimir').innerHTML='';
+  });
+
+  /* -------- mandar al vendedor: texto sin costos -------- */
+  function textoHoja(h){
+    var van=h.lineas.filter(function(l){ return l.cant>0; });
+    var para=paraDe(h);
+    var L=['*Pedido — '+TIENDA+'*', fechaLarga()+(para?' · Para: '+para:'')];
+    if(pedido.notas) L.push('', pedido.notas);
+    L.push('');
+    van.forEach(function(l,i){
+      L.push((i+1)+'. '+nf(l.cant)+' × '+l.nombre+(l.unidad?' ('+l.unidad+')':'')+
+        (l.codigo?' · cód. '+l.codigo:'')+(l.nota?' — '+l.nota:''));
+    });
+    L.push('', 'Por favor confírmenos disponibilidad, precio y fecha de entrega. ¡Gracias!');
+    return L.join('\n');
+  }
+  function copiarTexto(t){
+    var hecho=function(){ toast('Copiado. Pégalo en WhatsApp o en un correo.'); };
+    var aMano=function(){
+      var a=document.createElement('textarea'); a.value=t; a.style.position='fixed'; a.style.opacity='0';
+      document.body.appendChild(a); a.select();
+      try{ document.execCommand('copy'); hecho(); }catch(e){ toast('No se pudo copiar.',true); }
+      a.remove();
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(hecho,aMano);
+    else aMano();
+  }
+
+  /* -------- CSV -------- */
+  function filasCSV(hojas){
+    var deCompras=pedido.hoja!=='vendedor';
+    var cab=['Hoja','Para','ITEM','Código','Producto','Unidad','Proveedor','Cantidad','Nota'];
+    if(deCompras) cab=cab.concat(['Existencia','Salió','Costo unitario','Total']);
+    var filas=[cab];
+    hojas.forEach(function(h){
+      h.lineas.forEach(function(l){
+        if(!(l.cant>0)) return;
+        var f=[h.nombre,paraDe(h),l.item,l.codigo,l.nombre,l.unidad,l.prov,l.cant,l.nota];
+        if(deCompras) f=f.concat([l.exist==null?'':l.exist, l.sal==null?'':l.sal,
+          l.unit?l.unit.toFixed(2):'', l.unit?(l.cant*l.unit).toFixed(2):'']);
+        filas.push(f);
+      });
+    });
+    return filas;
+  }
   $('ped-csv').addEventListener('click',function(){
-    if(!pedidoGrupos) return;
-    var filas=[CAB_PEDIDO];
-    pedidoGrupos.forEach(function(g){ filas=filas.concat(filasDelPedido(g)); });
-    if(filas.length<2) return toast('El pedido está vacío.',true);
-    bajarCSV(filas,'pedido-'+hoyArchivo()+'.csv');
-    toast('Pedido descargado ('+(filas.length-1)+' líneas).');
+    if(!pedido) return;
+    var f=filasCSV(hojasDelPedido());
+    if(f.length<2) return toast('El pedido está vacío.',true);
+    bajarCSV(f,'pedido-'+hoyArchivo()+'.csv');
+    toast('Pedido descargado ('+(f.length-1)+' líneas).');
   });
-  $('ped-csv-grupos').addEventListener('click',function(){
-    if(!pedidoGrupos) return;
-    var n=0;
-    pedidoGrupos.forEach(function(g,i){
-      var f=filasDelPedido(g); if(!f.length) return;
-      setTimeout(function(){
-        bajarCSV([CAB_PEDIDO].concat(f),'pedido-'+nombreArchivo(g.nombre)+'-'+hoyArchivo()+'.csv');
-      }, i*350);      // escalonado: si van de golpe, el navegador bloquea las descargas
-      n++;
-    });
-    toast(n?'Descargando '+n+' archivo(s), uno por grupo.':'El pedido está vacío.',!n);
-  });
-  $('ped-imprimir').addEventListener('click',function(){ window.print(); });
+
+  /* Si quedó un pedido a medio revisar, se ofrece seguir con él. */
+  if(pedido && pedido.lineas.length){
+    pedido.lineas.forEach(function(l){ if(l.origen==='sugerido') comMarcados.add(l.k); });
+    setTimeout(function(){ resumenCom(); pintarPedido(); $('card-pedido').hidden=false; },0);
+  }
 
   function hoyArchivo(){ return new Date().toISOString().slice(0,10); }
   function nombreArchivo(s){
@@ -2365,6 +2866,8 @@ details.plegable[open]>summary{margin-bottom:12px}
 
   Inventario.init(['./inventario-data.json']).then(function(){
     pintarMarcas(); pintarEstado(); pintarProductos();
+    /* El pedido a medio revisar necesita la tabla de proveedores. */
+    if(pedido) pintarPedido();
   }).catch(function(){
     $('est-sub').textContent='No se pudo cargar el inventario.';
   });
@@ -2373,5 +2876,7 @@ details.plegable[open]>summary{margin-bottom:12px}
   });
 })();
 </script>
+<!-- Lo que se imprime del pedido: se llena justo antes de imprimir. -->
+<div id="hoja-imprimir"></div>
 </body>
 </html>
