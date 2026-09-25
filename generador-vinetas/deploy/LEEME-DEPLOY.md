@@ -30,10 +30,12 @@ netlify/functions/       Funciones del servidor: entrada de empleados, fotos,
                          cambios de inventario compartidos, la base del
                          inventario guardada en el sitio (base.mjs) —lo que
                          quita el paso de publicar tras el Excel mensual— y
-                         NUEVO · config.mjs, los ajustes que comparten todos
-                         los equipos (hoy: quién le vende cada marca).
-sincronia.js             NUEVO · La línea de arriba de las pantallas internas
-                         que dice si los cambios se están compartiendo.
+                         config.mjs, los ajustes que comparten todos los
+                         equipos (proveedores, equivalentes, combos…), y
+                         NUEVO · visitas.mjs, que cuenta qué productos se
+                         miran en el catálogo (para el carrusel de la portada).
+sincronia.js             La barra de arriba de las pantallas internas, con el
+                         único botón Guardar.
 recuperar-fotos.js       TEMPORAL · Sube al sitio las fotos que se quedaron
                          guardadas en un equipo. Ver «Fotos varadas» abajo.
 inventario-admin.html    NUEVO · Precios, fotos, historial y actualización con
@@ -67,6 +69,46 @@ assets/vendor/           NUEVO · React, que antes se bajaba de un servidor
 ---
 
 ## Qué cambió en esta versión
+
+### Lo último (septiembre)
+
+**Un solo botón: Guardar.** Arriba de cada pantalla interna (panel, cargar
+archivos, administrar productos, fotos e historial, viñetas) hay una barra fija
+con **un solo botón, Guardar**. La barra dice la verdad: en verde, *«Todo
+guardado. Lo que ves aquí es lo que ve el cliente»*; en amarillo, *«El cliente
+todavía no ve todo»* y **qué falta** (una carga del Excel, fotos que solo están
+en este equipo, cambios hechos sin internet…). Guardar lo deja todo al día y de
+paso trae lo que hicieron los demás. Si intentas cerrar con algo pendiente, el
+navegador pregunta. Los botones viejos de «Publicar» y «Traer cambios» ya no
+están; la descarga de archivos queda como salida de emergencia.
+
+**Por qué había productos que solo se veían con la sesión abierta.** En el
+navegador de un empleado el catálogo comparte la base del panel, que lo tiene
+todo; el del cliente no. Tres cosas se quedaban por el camino:
+1. Un producto que **volvía** al catálogo (se le ponía precio, o se daba de alta
+   a mano) viajaba solo como «activo: sí». El cliente no lo tenía, no sabía ni
+   cómo se llamaba, y lo descartaba. Ahora viaja con su ficha pública entera.
+2. **Lo cargado del Excel**, las **fotos que no terminaban de subir** y los
+   **cambios hechos sin internet** se quedaban en el equipo sin que nada lo
+   dijera. Ahora la barra lo cuenta y Guardar lo manda.
+3. **Cargar el Excel borraba datos**: cada producto se reescribía con cuatro
+   datos del reporte y perdía marca, costo, especificaciones, presentaciones,
+   ofertas y **las bajas** (lo dado de baja volvía a aparecer). Al guardar la
+   base, se perdía para todos. Ahora se conserva todo y lo corregido a mano en
+   la ficha manda sobre el reporte.
+
+**Generador de pedidos:** «Marcar todo» / «Desmarcar todo», una casilla por grupo,
+y una pantalla para **revisar el pedido antes de imprimirlo** (ver *Armar el
+pedido de verdad*).
+
+**Ficha del producto en el catálogo del cliente:** al tocar un producto se abre
+su ficha con **hasta 3 fotos** para verlas de cerca, especificaciones, formas de
+venta, los combos debajo y un carrusel de sugeridos (ver *Catálogo*).
+
+**El carrusel de la portada enseña lo más visto** del catálogo en los últimos 30
+días (ver *Showcase del inicio*).
+
+### Antes de eso
 
 **Lo primero, porque cambia el día a día: se acabó descargar archivos y volver
 a subir el sitio.** Cuando Carlos corrige un precio en su teléfono, o pone una
@@ -149,6 +191,35 @@ Ferretería San José
 ```
 
 > Para cambiar el número de WhatsApp: en `catalogo.html`, busca `var WA =`.
+
+### La ficha de cada producto
+
+Al tocar la **foto o el nombre** de un producto se abre su **ficha**:
+
+- **Las fotos de cerca** (hasta 3): en la computadora, al pasar el ratón la foto
+  se agranda donde apuntas; al tocarla se abre **a pantalla completa**, donde se
+  acerca con otro toque y se pasa de foto con las flechas o deslizando el dedo.
+- Nombre, marca, código, si hay existencia, **precio** (con la oferta si la
+  tiene) y las **formas de venta** (quintal, tarima…) con lo que se ahorra.
+- Cantidad y **Agregar a mi cotización**, y un enlace para **preguntar por ese
+  producto por WhatsApp** (el mensaje lleva el enlace a la ficha).
+- Las **especificaciones** completas, tal como se escribieron en la ficha del
+  panel.
+- Debajo, las **ofertas con este producto**: sus combos con las fotos de lo que
+  lleva, el precio del combo y lo que se ahorra. **«Agregar el combo»** lo pone
+  en la cotización **a precio de combo**, como una sola línea.
+- Y debajo, **«También te puede interesar»**, en el mismo formato del carrusel
+  de la portada: primero **el mismo producto de otras marcas** (los grupos de
+  «es lo mismo» del panel), luego lo que va en sus combos, y después lo más
+  parecido de su categoría (primero lo que tiene foto y existencia).
+
+La dirección cambia a `catalogo.html?item=…`: **se puede compartir**, y el botón
+«atrás» del teléfono cierra la ficha. Las sugerencias del buscador también
+abren la ficha directamente.
+
+> Para poder sugerir «otra marca», los grupos de productos que son lo mismo
+> ahora **se leen sin clave** (son solo listas de ITEM). Escribirlos sigue
+> pidiendo clave. La tabla de proveedores sigue siendo privada.
 
 ---
 
@@ -333,17 +404,17 @@ vistazo a cuáles les falta.
 plegado. Se le pone nombre y precio y queda igual que los demás: entra al
 catálogo si tiene precio.
 
-> **Ningún botón dice ya «Actualizar».** El de la barra verde y el de la
-> tarjeta de estado se llaman ahora **«Traer cambios»**, porque es lo que
-> hacen: traen lo que hicieron los demás. **No guardan nada** — lo tuyo se
-> guarda solo al salir de la casilla, o con Enter. La ficha del producto lleva
-> además su propio **«Guardar ficha»** al lado, con un «Guardado ✓», para que
-> se vea; no hace falta pulsarlo, está ahí para que no quede duda.
+> **Hay un solo botón de guardar: el de la barra de arriba.** Lo que cambias
+> en una casilla sale al salir de ella (o con Enter); la barra dice si al
+> cliente todavía le falta algo y **Guardar** lo manda todo —también el
+> inventario entero después del Excel— y trae lo de los demás. La ficha del
+> producto lleva su **«Guardar ficha»** con un «Guardado ✓» solo para que se
+> vea; no hace falta pulsarlo.
 
-**Paso 4 · Guardar el inventario completo.** Solo después del Excel mensual. Un botón: el
-inventario entero sale hacia el sitio y los demás equipos lo recogen solos. No
-se descarga ni se sube nada. Ahí mismo se lee qué base tiene el sitio ahora
-—cuántos productos, de qué día, quién la guardó.
+**Ya no hay paso 4.** Después del Excel mensual la barra se pone en amarillo
+(*«hay una carga del Excel que el sitio todavía no tiene»*) y basta con pulsar
+**Guardar**. La descarga de archivos sigue ahí, pero solo aparece si Guardar
+falla: es la salida de emergencia.
 
 ### Lo que absorbió de las otras ventanas
 
@@ -414,11 +485,34 @@ mano, no la verdad.
 ### Armar el pedido de verdad
 
 El sugerido dice qué pedir; ahora se convierte en **un pedido que se manda**.
-Marcas lo que entra —con el buscador, y «marcar los que se ven» alcanza a todos
-los que coinciden— y pulsas **Armar pedido**. Sale una hoja por grupo, con las
-cantidades editables: escribes encima y el total se recalcula; poner **cero**
-saca ese producto. De ahí se descarga en CSV (todo junto o **un archivo por
-grupo**, para mandarle a cada quien lo suyo) o se imprime.
+
+**Marcar.** «Marcar todo» y «Desmarcar todo» arriba (con una búsqueda puesta,
+el botón dice *«Marcar los N que se ven»*), y en cada grupo una casilla en la
+cabecera de la tabla que marca **el grupo entero** —también lo que no cabe en
+las 60 filas que se enseñan—. Cada grupo dice cuántos lleva marcados.
+
+**Revisar el pedido →** abre la hoja **tal como va a salir**, y ahí se trabaja:
+- **Cantidades**: escribes encima; se ve cuánto sugería el sistema. En **cero**,
+  la línea queda marcada «no va» y no se imprime. Con la **✕** se quita.
+- **Agregar** productos que el sugerido no vio: buscador por nombre, ITEM o
+  código. Y **«Algo que no está en el inventario»** para lo nuevo que te ofrece
+  el vendedor.
+- **Indicaciones** que salen arriba en cada hoja (*«pedir precio antes de
+  confirmar», «entregar en el local 2»*).
+- **Una hoja por** proveedor, marca, categoría, o todo en una. Partido por
+  proveedor, cada línea se puede pasar a otro; y el campo **Para** de cada hoja
+  se corrige a mano.
+- **Dos tipos de hoja**: *para el encargado de compras* (con lo que hay, lo que
+  salió, el costo y firmas de Revisó / Autorizó) o *para el vendedor* (solo qué
+  y cuánto: **sin costos ni existencias**, se puede mandar tal cual).
+
+**Imprimir o guardar PDF** saca solo las hojas, limpias, una por página (en la
+ventana de imprimir elige *Guardar como PDF*). Cada hoja tiene además
+**Imprimir solo esta hoja**, **CSV de esta hoja** y **Copiar para mandar**: un
+texto listo para pegar en WhatsApp o en un correo, que **nunca lleva costos**.
+
+El pedido a medio revisar **se guarda en el equipo**: si cierras y vuelves, sigue
+ahí. «Vaciar el pedido» lo borra.
 
 **Se parte por categoría, por marca o por proveedor.** Lo de proveedor tiene
 truco: el reporte de FelTec **no trae esa columna** —trae ITEM, producto,
@@ -744,17 +838,20 @@ la evolución en Excel, y botones para quitar un informe o borrar todo.
 
 ## 3) Showcase del inicio (15 productos, 5 a la vez)
 
-La página de inicio ya no muestra el catálogo completo: ahora tiene un
-**carrusel limpio con 15 productos, 5 visibles a la vez** (flechas y puntos),
-bajo el título **“Lo más reciente”**.
+La página de inicio tiene un **carrusel con 15 productos, 5 visibles a la vez**
+(flechas y puntos), bajo el título **“Lo más visto”**.
 
-- Se eligen por **actividad**: los últimos productos cuyo **precio se modificó**,
-  a los que **se les subió foto**, se **destacaron**, o que un cliente
-  **abrió/agregó** en el catálogo.
-- Sale de `showcase-data.json`, un archivo **pequeño (unos pocos KB)** para que
-  el inicio cargue rápido; incluye miniaturas reducidas de las fotos.
-- Para actualizarlo: **Panel interno → Inventario y catálogo → Publicar al sitio
-  → “Descargar showcase-data.json (inicio)”** y súbelo a la raíz del sitio.
+- Se eligen por **lo que más se mira en el catálogo**: cada vez que un cliente
+  abre la ficha de un producto cuenta como una visita (una por producto y por
+  visita al sitio). Manda lo de los **últimos 30 días**, y el orden se rehace
+  cada 15 minutos. Solo se guarda el ITEM y cuántas veces: nada de quién.
+- Solo entra lo que se puede vender: dado de baja o sin precio, no sale.
+- Cada tarjeta abre **la ficha de su producto** en el catálogo.
+- Mientras no haya visitas suficientes (al principio), el carrusel se completa
+  con `showcase-data.json` y dice **“Lo más reciente”**, como antes. Si el sitio
+  no respondiera, sale solo con ese archivo: la portada nunca se queda vacía.
+- Lo lleva la función nueva `netlify/functions/visitas.mjs` (se sube sola con la
+  carpeta; no hay que configurar nada).
 - Técnicamente el carrusel vive en `showcase-embed.html` y el home lo muestra
   dentro de un marco (iframe). Se hizo así a propósito: el home usa React y, si
   se le inserta contenido por fuera, la página puede romperse
@@ -784,6 +881,14 @@ con el aviso, y al subirles una foto el sistema te lo recuerda.
 ---
 
 ## Fotos de producto: qué tener en cuenta
+
+- **Hasta 3 fotos por producto** (no hacen falta en todos). En la ficha del
+  panel, la grande es la **principal** —la de la tarjeta del catálogo— y debajo
+  van la 2 y la 3 con **«+ foto»**. Cada una se quita con su ✕; si quitas una,
+  las de detrás se corren. La principal funciona como siempre (también sin
+  internet, y Guardar la sube); **la 2 y la 3 van directas al sitio**, así que
+  para subirlas hace falta internet.
+- En el catálogo, las tarjetas avisan *«3 fotos»* y en la ficha se ven de cerca.
 
 - Formatos que funcionan: **JPG, PNG y WEBP**.
 - **Fotos de iPhone (HEIC) no se pueden abrir en el navegador.** Si te pasa, la
@@ -861,17 +966,20 @@ el sitio. Ahora los cambios sueltos se comparten solos.
 | **Foto** de producto | **Todos, al instante.** |
 | **Cargar el Excel mensual completo** (miles de filas) | **Todos**, en cuanto pulses *Guardar en el sitio*. |
 
-Arriba de cada pantalla interna hay una línea que lo dice sin adornos:
+Arriba de cada pantalla interna hay una barra fija, con **un solo botón:
+Guardar**. Dice sin adornos lo que el cliente todavía no ve:
 
-- 🟢 **«Se comparte al instante»** — lo que hagas lo ven los demás y el catálogo.
-- 🟡 **«N cambios sin mandar»** — casi siempre es el internet. Se reintenta solo,
-  incluso si cierras el navegador y vuelves mañana. Nada se pierde.
-- 🟡 **«Solo en este equipo»** — no hay servidor (o el sitio corre sin Netlify).
-  Todo funciona igual, pero toca publicar para compartir.
+- 🟢 **«Todo guardado. Lo que ves aquí es lo que ve el cliente.»** El botón dice
+  *«Guardar y traer lo de los demás»*: sirve para recoger lo nuevo sin recargar.
+- 🟡 **«El cliente todavía no ve todo»** y debajo **qué falta**: una carga del
+  Excel, *N fotos que solo están en este equipo*, *N cambios sin mandar* (casi
+  siempre el internet), proveedores o combos que no llegaron… **Pulsa Guardar.**
+- 🔴 **«No se pudo guardar todo»** — dice qué faltó. Vuelve a pulsar; si sigue,
+  revisa el internet. Solo entonces aparece la salida de emergencia de
+  descargar archivos.
 - 🔴 **«Tu clave no fue aceptada»** — sal y vuelve a entrar.
 
-El botón **Actualizar** de esa misma línea trae lo que hayan hecho los demás sin
-tener que recargar.
+Si cierras la pantalla con algo pendiente, el navegador pregunta antes.
 
 ### ¿Y entonces cuándo hay que publicar?
 
@@ -881,9 +989,8 @@ Excel mensual. Es lo último que cambió, y era lo que faltaba.
 (Queda una sola cosa que sigue siendo un archivo: la tira de **15 productos
 recientes de la portada**, con sus fotitos. Se hace aparte a propósito, para que
 el cliente no tenga que bajarse el catálogo entero solo para ver la portada. Se
-refresca de vez en cuando desde el paso 4 → *Descargar los tres* → subir
-`showcase-data.json`. Si no la refrescas, la portada simplemente enseña
-productos de antes; no se rompe nada.)
+ahora solo hace de relleno mientras no haya visitas suficientes: el carrusel
+enseña lo más visto del catálogo. Si no lo refrescas, no se rompe nada.)
 
 Antes, la carga del mes tocaba miles de filas y eso no cabía como “cambios
 sueltos”: había que descargar dos `.json`, meterlos en la carpeta del sitio y
@@ -892,9 +999,10 @@ y los demás equipos —y el catálogo del cliente— lo recogen solos.
 
 ### Guardar el inventario en el sitio (1 paso)
 
-Después de aplicar el Excel del mes, en el tablero ve a **Ajustar y publicar →
-paso 4** y pulsa **Guardar en el sitio**. Ya está: no se descarga nada, no se
-sube nada.
+Después de aplicar el Excel del mes, la barra de arriba se pone en amarillo:
+pulsa **Guardar**. Ya está: no se descarga nada, no se sube nada. (Guardar
+también manda la base entera si el sitio todavía no tiene ninguna, o si se han
+juntado muchos cambios sueltos.)
 
 Mientras se manda verás *“parte 3 de 6”*. Va por partes porque son 11.267
 productos, unos 3 MB, y de un solo golpe no pasa. Tarda unos segundos.
@@ -905,12 +1013,11 @@ productos, unos 3 MB, y de un solo golpe no pasa. Tarda unos segundos.
 > se pudo y vuelves a pulsar.
 
 Cada equipo la recoge en cuanto entra un empleado, y el cliente en cuanto abre
-el catálogo. En el paso 4 se lee qué base tiene el sitio ahora mismo: cuántos
-productos, de qué día y quién la guardó.
+el catálogo.
 
 **Los archivos publicados no desaparecen: quedan de respaldo.** Si algún día el
-sitio no respondiera, todo sigue funcionando con ellos, y dentro del paso 4
-sigue estando —plegado— el método antiguo de descargar los tres `.json`.
+sitio no respondiera, todo sigue funcionando con ellos, y si Guardar falla
+aparece —plegado— el método antiguo de descargar los tres `.json`.
 
 > El costo de compra **no se manda**. La parte que baja el cliente se sirve sin
 > clave, así que ahí solo van los datos que se le enseñan; la del panel pide la

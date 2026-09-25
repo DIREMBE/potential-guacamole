@@ -70,7 +70,9 @@ const SECCIONES = { marcador: 60 * 1024, planilla: 400 * 1024, equivalencias: 12
    negocio. Los combos NO: son una oferta, y el catalogo del cliente —que no
    tiene clave ninguna— tiene que poder enseñarlos. Escribirlos si pide clave,
    como todo lo demas. */
-const PUBLICAS = ['combos'];
+/* Los grupos de productos que son lo mismo tampoco: son listas de ITEM, y
+   el catalogo los usa para sugerir «otra marca» en la ficha del producto. */
+const PUBLICAS = ['combos', 'equivalencias'];
 const MAX_SECCION = 60 * 1024;      // por defecto, para secciones sin tope propio
 const MAX_LARGO = 80;           // lo que cabe en un nombre de marca
 /* A casi todo le venden varios y se le compra al que mejor este en ese

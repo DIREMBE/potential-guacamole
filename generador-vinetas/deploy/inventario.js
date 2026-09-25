@@ -26,6 +26,8 @@ window.Inventario = (function () {
   let imagenes = new Map();      // item -> data URI (foto del producto)
   let imagenesT = new Map();     // item -> cuándo se guardó la foto
   let fotosServidor = new Set(); // items cuya foto ya está en el servidor (Netlify)
+  let fotosMas = {};              // item -> cuántas fotos tiene en el sitio, si son más de una
+  let fotosVer = {};              // item -> versión de sus fotos (para no enseñar una vieja)
   let servidorActivo = false;    // ¿hay función de fotos disponible?
   let claveServidor = '';        // clave de entrada del empleado (compatibilidad)
   let claveFotos = '';           // clave EXCLUSIVA para subir fotos (no está en el código)
@@ -1873,6 +1875,8 @@ window.Inventario = (function () {
       const d = await r.json();
       if (!d || !Array.isArray(d.items)) return false;
       fotosServidor = new Set(d.items.map(String));
+      fotosMas = (d.mas && typeof d.mas === 'object') ? d.mas : {};
+      fotosVer = (d.ver && typeof d.ver === 'object') ? d.ver : {};
       servidorActivo = true;
       return true;
     } catch (e) { return false; }
@@ -1904,17 +1908,37 @@ window.Inventario = (function () {
       if (!r.ok) { _ultimoErrorServidor = (r.status === 401 || r.status === 403) ? 'clave' : 'red'; return false; }
       _ultimoErrorServidor = '';
       fotosServidor.add(String(item));
+      const d = await r.json().catch(() => null);
+      if (d) _anotarFotos(item, d);
       return true;
     } catch (e) { _ultimoErrorServidor = 'red'; return false; }
   }
 
-  async function _borrarFotoServidor(item) {
+  /* Lo que contesta el sitio al tocar las fotos de un producto: cuántas le
+     quedan y su versión nueva. */
+  function _anotarFotos(item, d) {
+    const k = String(item);
+    const n = Number(d && d.fotos);
+    if (!isFinite(n)) return;
+    if (n > 0) fotosServidor.add(k); else fotosServidor.delete(k);
+    if (n > 1) fotosMas[k] = n; else delete fotosMas[k];
+    if (d.ver) fotosVer[k] = d.ver; else if (n <= 0) delete fotosVer[k];
+  }
+
+  async function _borrarFotoServidor(item, n) {
     if (!servidorActivo) return false;
     try {
-      const r = await fetch(API_FOTOS + '/' + encodeURIComponent(item), {
+      const r = await fetch(API_FOTOS + '/' + encodeURIComponent(item) + (n > 1 ? '/' + n : ''), {
         method: 'DELETE', headers: { 'x-fsj-clave': _claveEnvio() },
       });
-      if (r.ok) { fotosServidor.delete(String(item)); return true; }
+      if (r.ok) {
+        const d = await r.json().catch(() => null);
+        /* Si tenía más fotos, la 2 pasa a ser la principal: el producto
+           sigue teniendo foto en el sitio. */
+        if (d && d.fotos !== undefined) _anotarFotos(item, d);
+        else fotosServidor.delete(String(item));
+        return true;
+      }
     } catch (e) {}
     return false;
   }
@@ -1930,7 +1954,7 @@ window.Inventario = (function () {
     await guardar(COLS.imagenes, (st) => st.delete(key));
     imagenes.delete(key);
     imagenesT.delete(key);
-    await _borrarFotoServidor(key);
+    await _borrarFotoServidor(key, 1);
     meta.cambioSinPublicar = Date.now();
     await saveMeta();
     emitir('imagen', { item: key });
@@ -1941,8 +1965,87 @@ window.Inventario = (function () {
     const k = String(item);
     const local = imagenes.get(k);
     if (local) return local;
-    if (fotosServidor.has(k)) return API_FOTOS + '/' + encodeURIComponent(k);
+    if (fotosServidor.has(k)) return _urlFoto(k, 1);
     return null;
+  }
+  function _urlFoto(k, n) {
+    const v = fotosVer[k];
+    return API_FOTOS + '/' + encodeURIComponent(k) + (n > 1 ? '/' + n : '') + (v ? '?v=' + v : '');
+  }
+
+  /* ======================= HASTA 3 FOTOS POR PRODUCTO ====================
+     La principal es la de siempre: se guarda en este equipo y en el sitio, y
+     funciona sin internet. La 2 y la 3 son para ver el producto de más
+     cerca en su ficha del catálogo; esas van DIRECTAS al sitio (no se
+     quedan en el equipo), así que para subirlas hace falta internet.     */
+  const MAX_FOTOS_PRODUCTO = 3;
+
+  function cuantasFotos(item) {
+    const k = String(item);
+    const hay = imagenes.has(k) || fotosServidor.has(k);
+    if (!hay) return 0;
+    const m = Number(fotosMas[k]) || 0;
+    return fotosServidor.has(k) && m > 1 ? Math.min(m, MAX_FOTOS_PRODUCTO) : 1;
+  }
+  /* Las fotos del producto, en orden: la principal primero. */
+  function fotosDe(item) {
+    const k = String(item);
+    const n = cuantasFotos(k);
+    const l = [];
+    if (!n) return l;
+    l.push(getImagen(k));
+    for (let i = 2; i <= n; i++) l.push(_urlFoto(k, i));
+    return l;
+  }
+
+  async function subirFotoExtra(item, file) {
+    const k = String(item);
+    if (!byItem.get(k)) throw new Error('El producto ya no está en el inventario (ITEM ' + k + ').');
+    /* Sin principal, la primera que se sube ES la principal. */
+    if (!cuantasFotos(k)) return guardarImagen(k, file);
+    if (!_claveEnvio()) throw new Error('Entra con tu nombre y clave para subir fotos.');
+    await _cargarIndiceServidor();
+    if (!servidorActivo) throw new Error('El sitio no responde: las fotos 2 y 3 necesitan internet. Inténtalo en un momento.');
+    /* La principal que solo estuviera en este equipo sube primero: si no, la
+       nueva quedaría de principal en el sitio. */
+    if (!fotosServidor.has(k) && imagenes.has(k)) {
+      if (!(await _subirFotoServidor(k, imagenes.get(k)))) {
+        throw new Error('No se pudo subir la foto principal primero. Revisa el internet.');
+      }
+    }
+    const n = cuantasFotos(k);
+    if (n >= MAX_FOTOS_PRODUCTO) throw new Error('Ya tiene ' + MAX_FOTOS_PRODUCTO + ' fotos. Quita una para poner otra.');
+    const data = await _procesarImagen(file);
+    const tipo = (/^data:([^;,]+)/i.exec(String(data)) || [, 'image/jpeg'])[1];
+    let r;
+    try {
+      r = await fetch(API_FOTOS + '/' + encodeURIComponent(k) + '/' + (n + 1), {
+        method: 'POST',
+        headers: { 'content-type': tipo, 'x-fsj-clave': _claveEnvio() },
+        body: _dataUriABlob(data),
+      });
+    } catch (e) { throw new Error('No se pudo conectar con el sitio. Revisa el internet.'); }
+    const d = await r.json().catch(() => null);
+    if (!r.ok) {
+      if (r.status === 401 || r.status === 403) throw new Error('Tu clave no fue aceptada.');
+      throw new Error((d && d.error) ? 'El sitio dijo: ' + d.error : 'No se pudo subir la foto.');
+    }
+    _anotarFotos(k, d);
+    tocar(k);
+    emitir('imagen', { item: k, servidor: true, n: d && d.n });
+    return { ok: true, n: d && d.n, fotos: cuantasFotos(k) };
+  }
+
+  /* Quita la foto n (1 = la principal). Las de detrás se corren. */
+  async function quitarFoto(item, n) {
+    const k = String(item);
+    n = Number(n) || 1;
+    if (n === 1) return quitarImagen(k);
+    if (!_claveEnvio()) throw new Error('Entra con tu nombre y clave para quitar fotos.');
+    await _cargarIndiceServidor();
+    if (!(await _borrarFotoServidor(k, n))) throw new Error('No se pudo quitar la foto. Revisa el internet.');
+    emitir('imagen', { item: k });
+    return true;
   }
   function tieneImagen(item) {
     const k = String(item);
@@ -2363,14 +2466,22 @@ window.Inventario = (function () {
   }
 
   async function _bajarEquiv() {
+    /* Se leen también sin clave: el catálogo del cliente los usa para
+       sugerir «otra marca». Sin clave solo se lee; nunca se siembra ni se
+       manda nada. */
     const clave = _claveEnvio();
-    if (!clave) return false;
     try {
       const r = await fetch(API_CONFIG + '?que=equivalencias',
-        { headers: { 'x-fsj-clave': clave }, cache: 'no-store' });
+        { headers: clave ? { 'x-fsj-clave': clave } : {}, cache: 'no-store' });
       if (!r.ok) throw new Error('http ' + r.status);
       const d = await r.json();
       if (!d || !d.ok) throw new Error('respuesta rara');
+      if (!clave) {
+        if (d.datos && Array.isArray(d.datos.grupos)) {
+          EQUIV = { grupos: d.datos.grupos.filter((g) => g && g.id && Array.isArray(g.items)) };
+        }
+        return true;
+      }
       if (meta.equivSinMandar) {
         /* Lo de aquí no llegó la otra vez: gana, y se manda ahora. Lo que
            diga el envío es lo que vale para el estado. */
@@ -3087,6 +3198,10 @@ window.Inventario = (function () {
        tiene que poder enseñarlos—, así que se piden siempre, también en la
        parte pública, donde nunca hay clave. */
     _bajarCombos().catch(() => {});
+    /* Los grupos de «es lo mismo» también: el catálogo los usa para sugerir
+       otra marca. Sin clave solo se leen. Con clave los recoge el arranque
+       del empleado, que además puede tener que mandar los suyos. */
+    if (!_claveEnvio()) _bajarEquiv().catch(() => {});
 
     /* Primero, la base guardada EN EL SITIO: es la que puede ser más nueva
        que los archivos publicados, porque no hace falta publicar para
@@ -3169,6 +3284,7 @@ window.Inventario = (function () {
     palabrasDe, coincideTexto,
     guardarBaseEnServidor, estadoBaseServidor, bajarBaseServidor: _bajarBaseServidor,
     guardarTodo, pendientesDelCliente,
+    fotosDe, cuantasFotos, subirFotoExtra, quitarFoto, MAX_FOTOS_PRODUCTO,
     estadoEtiqueta, marcarEtiqueta, sinEtiqueta,
     proveedores, setProveedorDeMarca, setProveedores, proveedorDeMarca, SIN_PROVEEDOR,
     proveedoresDeMarca, proveedoresDeProducto, proveedorDeProducto, tieneProveedorPropio,

@@ -4,10 +4,22 @@
    sin volver a subir archivos al sitio.
 
    Rutas (ver netlify.toml):
-     GET  /api/fotos            -> { items: ["14971", ...], actualizado }
-     GET  /api/fotos/<item>     -> la foto (image/jpeg)
-     POST /api/fotos/<item>     -> guarda la foto   (requiere clave)
-     DELETE /api/fotos/<item>   -> borra la foto    (requiere clave)
+     GET  /api/fotos              -> { items: ["14971", ...], mas, ver, actualizado }
+     GET  /api/fotos/<item>       -> la foto principal (image/jpeg)
+     GET  /api/fotos/<item>/<n>   -> la foto n (2 o 3)
+     POST /api/fotos/<item>[/<n>] -> guarda la foto   (requiere clave)
+     DELETE /api/fotos/<item>[/<n>] -> borra la foto  (requiere clave)
+
+   HASTA 3 FOTOS POR PRODUCTO. La principal sigue donde siempre (f_<item>),
+   así que todo lo que ya estaba guardado y las páginas viejas siguen
+   funcionando. La 2 y la 3 van en f_<item>~2 y f_<item>~3.
+   En el índice:
+     items -> los que tienen foto (como antes)
+     mas   -> { item: 2|3 } solo los que tienen más de una
+     ver   -> { item: 'versión' } cambia cada vez que se tocan sus fotos, para
+              que el navegador no se quede enseñando una foto vieja
+   Las fotos van siempre seguidas: si se borra la 2 de 3, la 3 pasa a ser la
+   2. Así nunca hay huecos y el catálogo no tiene que adivinar.
    ========================================================================== */
 import { getStore } from '@netlify/blobs';
 
@@ -76,16 +88,45 @@ function tipoImagen(buf) {
   return 'image/webp';
 }
 
-const MAX_FOTOS = 3000;   // tope de fotos distintas guardadas
-/* true si guardar esta foto pasaría del tope (las que ya existen se pueden
-   reemplazar siempre). */
-function idxTope(idx, item) {
-  return idx.items.length >= MAX_FOTOS && idx.items.indexOf(item) < 0;
+const MAX_FOTOS = 6000;          // tope de fotos guardadas, contando las 2 y 3
+const MAX_POR_PRODUCTO = 3;
+
+function claveFoto(item, n) { return n > 1 ? 'f_' + item + '~' + n : 'f_' + item; }
+
+/* Cuántas fotos tiene un producto según el índice. */
+function cuantas(idx, item) {
+  if (idx.items.indexOf(item) < 0) return 0;
+  const m = Number(idx.mas && idx.mas[item]) || 0;
+  return m > 1 ? Math.min(m, MAX_POR_PRODUCTO) : 1;
+}
+function totalFotos(idx) {
+  let t = idx.items.length;
+  for (const k of Object.keys(idx.mas || {})) t += Math.max(0, (Number(idx.mas[k]) || 1) - 1);
+  return t;
+}
+/* Deja el índice diciendo que `item` tiene `n` fotos, y le cambia la
+   versión para que nadie se quede con una vieja en caché. */
+function ponerCuantas(idx, item, n) {
+  idx.mas = idx.mas || {};
+  idx.ver = idx.ver || {};
+  if (n <= 0) {
+    idx.items = idx.items.filter((x) => x !== item);
+    delete idx.mas[item];
+    delete idx.ver[item];
+  } else {
+    if (idx.items.indexOf(item) < 0) idx.items.push(item);
+    if (n > 1) idx.mas[item] = n; else delete idx.mas[item];
+    idx.ver[item] = Date.now().toString(36);
+  }
+  idx.actualizado = new Date().toISOString();
 }
 
 async function leerIndice(store) {
   const idx = await store.get(INDICE, { type: 'json' });
-  return idx && Array.isArray(idx.items) ? idx : { items: [], actualizado: null };
+  const ok = idx && Array.isArray(idx.items) ? idx : { items: [], actualizado: null };
+  if (!ok.mas || typeof ok.mas !== 'object') ok.mas = {};
+  if (!ok.ver || typeof ok.ver !== 'object') ok.ver = {};
+  return ok;
 }
 
 export default async (req, context) => {
@@ -95,6 +136,9 @@ export default async (req, context) => {
   const partes = url.pathname.split('/').filter(Boolean);
   const iFotos = partes.lastIndexOf('fotos');
   const item = (iFotos >= 0 && partes[iFotos + 1]) ? decodeURIComponent(partes[iFotos + 1]) : '';
+  /* /api/fotos/<item>/<n>: qué foto del producto (1, 2 o 3). */
+  const nTxt = (iFotos >= 0 && partes[iFotos + 2]) ? partes[iFotos + 2] : '1';
+  const n = /^[1-3]$/.test(nTxt) ? Number(nTxt) : 0;
 
   try {
     /* ------------------------------- LEER ------------------------------- */
@@ -103,8 +147,8 @@ export default async (req, context) => {
         const idx = await leerIndice(store);
         return json(idx, 200, { 'cache-control': 'public, max-age=30' });
       }
-      if (!itemValido(item)) return json({ error: 'ITEM no válido' }, 400);
-      const foto = await store.get('f_' + item, { type: 'arrayBuffer' });
+      if (!itemValido(item) || !n) return json({ error: 'ITEM no válido' }, 400);
+      const foto = await store.get(claveFoto(item, n), { type: 'arrayBuffer' });
       if (!foto) return json({ error: 'sin foto' }, 404);
       return new Response(foto, {
         status: 200,
@@ -129,29 +173,50 @@ export default async (req, context) => {
         return json({ error: 'la foto pesa demasiado (máx. ' + Math.round(MAX_BYTES / 1024) + ' KB)' }, 413);
       }
       if (!esImagen(cuerpo)) return json({ error: 'el archivo no es una imagen (JPG, PNG o WEBP)' }, 415);
-      if (idxTope(await leerIndice(store), item)) {
+      if (!n) return json({ error: 'solo caben ' + MAX_POR_PRODUCTO + ' fotos por producto' }, 400);
+
+      const idx = await leerIndice(store);
+      const tiene = cuantas(idx, item);
+      /* Sin huecos: la foto 3 de un producto que tiene una sola pasa a ser
+         la 2. Y un producto sin fotos empieza por la principal. */
+      const pos = Math.min(n, tiene + 1);
+      if (pos > MAX_POR_PRODUCTO) {
+        return json({ error: 'solo caben ' + MAX_POR_PRODUCTO + ' fotos por producto' }, 409);
+      }
+      if (pos > tiene && totalFotos(idx) >= MAX_FOTOS) {
         return json({ error: 'ya hay demasiadas fotos guardadas' }, 409);
       }
 
-      await store.set('f_' + item, cuerpo);
-      const idx = await leerIndice(store);
-      if (idx.items.indexOf(item) < 0) idx.items.push(item);
-      idx.actualizado = new Date().toISOString();
+      await store.set(claveFoto(item, pos), cuerpo);
+      ponerCuantas(idx, item, Math.max(tiene, pos));
       await store.setJSON(INDICE, idx);
-      return json({ ok: true, item, bytes: cuerpo.byteLength, total: idx.items.length });
+      return json({ ok: true, item, n: pos, fotos: cuantas(idx, item), ver: idx.ver[item],
+                    bytes: cuerpo.byteLength, total: idx.items.length });
     }
 
     /* ------------------------------ BORRAR ------------------------------ */
     if (req.method === 'DELETE') {
       if (!autorizado(req)) return json({ error: 'no autorizado' }, 401);
       if (!item) return json({ error: 'falta el ITEM' }, 400);
-      if (!itemValido(item)) return json({ error: 'ITEM no válido' }, 400);
-      await store.delete('f_' + item);
+      if (!itemValido(item) || !n) return json({ error: 'ITEM no válido' }, 400);
       const idx = await leerIndice(store);
-      idx.items = idx.items.filter((x) => x !== item);
-      idx.actualizado = new Date().toISOString();
+      const tiene = cuantas(idx, item);
+      if (n > tiene) {
+        /* Nada que borrar ahí. Si el índice no lo tenía pero la foto existe
+           (un índice viejo), se borra igual. */
+        if (n === 1) await store.delete(claveFoto(item, 1));
+        return json({ ok: true, item, fotos: tiene, total: idx.items.length });
+      }
+      /* Las de detrás se corren un puesto: la 3 pasa a 2, la 2 a principal. */
+      for (let k = n; k < tiene; k++) {
+        const sig = await store.get(claveFoto(item, k + 1), { type: 'arrayBuffer' });
+        if (sig) await store.set(claveFoto(item, k), sig);
+      }
+      await store.delete(claveFoto(item, tiene));
+      ponerCuantas(idx, item, tiene - 1);
       await store.setJSON(INDICE, idx);
-      return json({ ok: true, item, total: idx.items.length });
+      return json({ ok: true, item, fotos: tiene - 1, ver: idx.ver[item] || '',
+                    total: idx.items.length });
     }
 
     return json({ error: 'método no permitido' }, 405);

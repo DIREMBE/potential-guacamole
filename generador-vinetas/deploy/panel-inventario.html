@@ -195,6 +195,15 @@ tr.ficha-row>td{background:var(--s50);padding:0}
 .pres-fila input:focus{outline:none;border-color:var(--orange)}
 .combo-fila{border:1px solid var(--s200);border-radius:var(--r);padding:8px 10px;margin-bottom:6px}
 .combo-fila .hint{font-size:12.5px;color:var(--s500);margin:3px 0 5px}
+.fotos-mas{display:flex;gap:8px;margin-top:8px}
+.fotos-mas .mini{width:52px;height:52px;border:1px solid var(--s200);border-radius:6px;
+  background:#fff center/cover no-repeat;position:relative;flex:none}
+.fotos-mas .mini button{position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;
+  border:1px solid var(--s200);background:#fff;color:var(--dang);font-size:11px;line-height:1;
+  cursor:pointer;padding:0}
+.fotos-mas .mini.mas{display:flex;align-items:center;justify-content:center;border-style:dashed;
+  cursor:pointer;color:var(--s500);font-size:11.5px;text-align:center}
+.fotos-mas .mini.mas:hover{border-color:var(--orange);color:var(--orange)}
 @media(max-width:640px){ .ficha{grid-template-columns:1fr} .ficha .foto{width:100%;height:200px} }
 
 .alta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
@@ -2635,19 +2644,38 @@ details.plegable[open]>summary{margin-bottom:12px}
   function fichaHTML(item){
     var p=Inventario.porItem(item);
     if(!p) return '<div class="empty">Este producto ya no está.</div>';
-    var url=Inventario.getImagen(item);
+    var fotos=Inventario.fotosDe ? Inventario.fotosDe(item) : [];
+    var url=fotos[0]||Inventario.getImagen(item);
     var enServidor=Inventario.fotoEnServidor(item);
     var hist=Inventario.historial(String(item)).slice(0,8);
+    /* Hasta 3 fotos: la principal (la de la tarjeta del catálogo) y dos más
+       para ver el producto de cerca en su ficha. */
+    var MAXF=Inventario.MAX_FOTOS_PRODUCTO||3, mas='';
+    if(url){
+      for(var i=1;i<MAXF;i++){
+        if(fotos[i]){
+          mas+='<div class="mini" style="background-image:url(\''+fotos[i]+'\')" title="Foto '+(i+1)+'">'+
+            '<button type="button" data-fic="quitarfoto" data-n="'+(i+1)+'" data-item="'+esc(item)+'" '+
+            'title="Quitar esta foto" aria-label="Quitar la foto '+(i+1)+'">✕</button></div>';
+        }else if(i===fotos.length){
+          mas+='<label class="mini mas" title="Agregar otra foto">+ foto'+
+            '<input type="file" accept="image/*" data-foto-extra="'+esc(item)+'" hidden></label>';
+        }
+      }
+    }
     return '<div class="ficha">'+
       '<div>'+
         '<div class="foto" style="'+(url?'background-image:url(\''+url+'\')':'')+'">'+
           (url?'':'sin foto')+'</div>'+
+        (mas?'<div class="fotos-mas">'+mas+'</div>':'')+
         '<div class="row" style="margin-top:8px">'+
-          '<label class="btn b-sec b-sm" style="cursor:pointer">'+(url?'Cambiar foto':'Subir foto')+
+          '<label class="btn b-sec b-sm" style="cursor:pointer">'+(url?'Cambiar la principal':'Subir foto')+
             '<input type="file" accept="image/*" data-foto="'+esc(item)+'" hidden></label>'+
-          (url?'<button class="btn b-dg b-sm" data-fic="quitarfoto" data-item="'+esc(item)+'">Quitar</button>':'')+
+          (url?'<button class="btn b-dg b-sm" data-fic="quitarfoto" data-n="1" data-item="'+esc(item)+'">Quitar</button>':'')+
         '</div>'+
-        '<div class="dato" style="margin-top:6px">'+(enServidor?'La foto ya está en el sitio.':(url?'Foto solo en este equipo todavía.':'El catálogo la enseña sin foto.'))+'</div>'+
+        '<div class="dato" style="margin-top:6px">'+(enServidor?'La foto ya está en el sitio.':(url?'Foto solo en este equipo todavía: pulsa Guardar arriba.':'El catálogo la enseña sin foto.'))+'</div>'+
+        (url?'<div class="dato" style="font-size:12px">Hasta '+MAXF+' fotos: la principal y '+(MAXF-1)+
+          ' más para verlo de cerca en el catálogo. No hacen falta en todos.</div>':'')+
       '</div>'+
       '<div>'+
         '<div class="row" style="margin-bottom:8px"><h3>'+esc(p.nombre)+'</h3>'+
@@ -2726,6 +2754,16 @@ details.plegable[open]>summary{margin-bottom:12px}
       return;
     }
 
+    var fx=e.target.closest('input[data-foto-extra]');
+    if(fx){
+      var itx=fx.dataset.fotoExtra, filex=fx.files&&fx.files[0];
+      if(!filex) return;
+      toast('Subiendo la foto…');
+      Inventario.subirFotoExtra(itx,filex).then(function(r){
+        toast('Foto '+((r&&r.n)||'')+' guardada en el sitio.'); refrescarFicha(itx);
+      }).catch(function(err){ toast(err.message||'No se pudo subir la foto.',true); });
+      return;
+    }
     var f=e.target.closest('input[data-foto]');
     if(f){
       var item=f.dataset.foto, file=f.files&&f.files[0];
@@ -2804,10 +2842,14 @@ details.plegable[open]>summary{margin-bottom:12px}
     }
 
     if(b.dataset.fic==='quitarfoto'){
-      if(!confirm('¿Quitar la foto de este producto?')) return;
-      Inventario.quitarImagen(item).then(function(){
-        toast('Foto quitada.'); refrescarFicha(item); pintarProductos();
-      });
+      var nf_=Number(b.dataset.n)||1;
+      var cuantas=Inventario.cuantasFotos ? Inventario.cuantasFotos(item) : 1;
+      if(!confirm(nf_===1
+        ? (cuantas>1 ? '¿Quitar la foto principal? La siguiente pasa a ser la principal.' : '¿Quitar la foto de este producto?')
+        : '¿Quitar la foto '+nf_+'?')) return;
+      Inventario.quitarFoto(item,nf_).then(function(){
+        toast('Foto quitada.'); refrescarFicha(item); if(nf_===1) pintarProductos();
+      }).catch(function(err){ toast(err.message||'No se pudo quitar.',true); });
     }
   });
 
