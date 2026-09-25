@@ -251,8 +251,6 @@ details.plegable[open]>summary{margin-bottom:12px}
   <div class="card">
     <div class="card-h"><h2>Cómo está el inventario</h2>
       <span class="hint" id="est-sub">Cargando…</span>
-      <button class="btn b-gh b-sm" id="refrescar" style="margin-left:auto"
-              title="Trae lo que hayan cambiado los demás equipos. Lo tuyo se guarda solo.">Traer cambios</button>
     </div>
     <div class="card-b"><div class="sum" id="est-kpis"></div></div>
   </div>
@@ -343,13 +341,11 @@ details.plegable[open]>summary{margin-bottom:12px}
         <tbody id="p-body"></tbody></table></div>
       <datalist id="marcas-conocidas"></datalist>
       <div class="note">
-        El <b>precio</b> y el <b>código</b> se guardan al salir de la casilla, y se
-        comparten con los demás equipos al instante. Cambiar un precio queda en el
-        historial con tu nombre. Con <b>Ficha</b> abres la foto y el historial del
-        producto sin salir de esta lista.
-        <br><b>No hay que pulsar nada para guardar</b>: al salir de la casilla —o
-        con Enter— ya quedó guardado y compartido. El botón «Traer cambios» de
-        arriba no guarda, <b>trae</b> lo que hayan hecho los demás.
+        El <b>precio</b> y el <b>código</b> se mandan al salir de la casilla. Cambiar
+        un precio queda en el historial con tu nombre. Con <b>Ficha</b> abres la
+        foto, el historial y todo lo que ve el cliente sin salir de esta lista.
+        <br>Al terminar, mira la barra de arriba: si dice que al cliente le falta
+        algo, pulsa <b>Guardar</b>. Es el único botón de guardar y deja todo al día.
       </div>
 
       <details class="plegable" id="det-alta">
@@ -372,28 +368,17 @@ details.plegable[open]>summary{margin-bottom:12px}
   </div>
 
   <!-- =============================== PASO 4 =========================== -->
-  <div class="card paso" id="paso4" data-flujo="archivo ajustar">
-    <div class="card-h"><span class="np">4</span><h2>Guardar el inventario completo</h2>
-      <span class="hint">Solo tras cargar el Excel mensual — los cambios sueltos NO lo necesitan</span>
+  <!-- ================ SI EL SITIO NO RESPONDE ======================
+       Guardar es UN botón, el de la barra de arriba. Esto solo sale cuando
+       ese botón no pudo guardar: es la salida de emergencia, no otra forma
+       de guardar. -->
+  <div class="card" id="card-emergencia" hidden>
+    <div class="card-h"><h2>Si el sitio no responde</h2>
+      <span class="hint">Solo si «Guardar» falló y hay prisa</span>
       <span class="estado" id="p4-estado"></span>
     </div>
     <div class="card-b">
-      <div class="row">
-        <button class="btn b-pri" id="pub-sitio">Guardar en el sitio</button>
-        <span class="estado" id="pub-prog"></span>
-      </div>
-      <div class="note" id="pub-ayuda">
-        <b>Esto es para después de cargar el Excel de FelTec</b>, cuando cambiaron
-        miles de productos de un golpe. Manda el inventario entero al sitio y los
-        demás equipos lo recogen solos, sin descargar ni subir nada. Mientras se
-        manda, todo el mundo sigue viendo la versión anterior completa; el cambio
-        ocurre de golpe al final.
-        <br><br>
-        <b>Si solo corregiste un precio, un código o una ficha, no pulses esto:
-        eso ya se guardó y ya lo vieron los demás</b> en cuanto saliste de la
-        casilla.
-      </div>
-      <details class="note" id="pub-viejo">
+      <details class="note" id="pub-viejo" open>
         <summary>Si el sitio no responde: descargar los archivos (método antiguo)</summary>
         <div class="row" style="margin-top:8px">
           <button class="btn b-gh b-sm" id="pub-todo">Descargar los tres</button>
@@ -1007,7 +992,9 @@ details.plegable[open]>summary{margin-bottom:12px}
     }
     p.then(function(msg){
       b.disabled=false; b.textContent='Aplicar lo marcado';
-      toast(msg);
+      /* Lo que se aplica del archivo queda en este equipo hasta Guardar: se
+         dice claro, que era justo lo que se quedaba sin llegar al cliente. */
+      toast(msg+' Pulsa Guardar arriba para que el cliente lo vea.');
       cerrarPaso2(); pintarEstado(); pintarProductos();
       paso('paso3','activo');
       $('paso3').scrollIntoView({behavior:'smooth',block:'start'});
@@ -2344,45 +2331,12 @@ details.plegable[open]>summary{margin-bottom:12px}
   });
 
   /* ==================================================================== */
-  /*  PASO 4 — GUARDAR EN EL SITIO                                        */
+  /*  GUARDAR                                                             */
   /* ==================================================================== */
-  var guardando=false;
-  $('pub-sitio').addEventListener('click',function(){
-    if(guardando) return;
-    var st=Inventario.stats();
-    if(!st.count) return toast('No hay inventario que guardar.',true);
-    if(!confirm('Se va a mandar el inventario completo ('+nf(st.count)+' productos) al sitio.\n'+
-                'Los demás equipos lo verán en cuanto termine.\n\n¿Seguimos?')) return;
-
-    guardando=true;
-    var b=$('pub-sitio'); b.disabled=true; b.textContent='Guardando…';
-    Inventario.guardarBaseEnServidor(function(p){
-      $('pub-prog').textContent = p.fase==='cerrando'
-        ? 'terminando…'
-        : 'parte '+p.parte+' de '+p.partes+' ('+nf(p.enviados)+' de '+nf(p.total)+')';
-    }).then(function(r){
-      if(r.ok){
-        $('pub-prog').textContent='';
-        toast('Guardado en el sitio: '+nf(r.count)+' productos. Ya no hace falta publicar nada.');
-        pintarEstado();
-      }else{
-        $('pub-prog').textContent='';
-        var por={'sin-clave':'Hay que entrar con tu clave de empleado primero.',
-                 'sin-datos':'No hay inventario que guardar.',
-                 'sin-servidor':'El sitio no respondió. Usa la descarga de archivos, abajo.',
-                 'clave':'La clave no sirve para guardar. Vuelve a entrar.',
-                 'rechazado':'El sitio rechazó los datos.',
-                 'incompleta':'Se cortó a la mitad; no se cambió nada. Intenta de nuevo.'};
-        toast(por[r.motivo]||('No se pudo guardar ('+(r.motivo||'red')+'). No se cambió nada en el sitio.'),true);
-        $('pub-viejo').open=true;
-      }
-    }).catch(function(e){
-      $('pub-prog').textContent='';
-      toast(e.message||'No se pudo guardar.',true);
-    }).then(function(){
-      guardando=false; b.disabled=false; b.textContent='Guardar en el sitio';
-    });
-  });
+  /* Guardar ya no está aquí: es UN solo botón, en la barra fija de arriba
+     (sincronia.js), igual en todas las pantallas internas. Lo que queda es
+     que esta pantalla se entere cuando se guardó, para redibujar. */
+  document.addEventListener('fsj-guardado',function(){ pintarEstado(); });
 
   function publicar(cuales){
     var n=0;
@@ -2402,12 +2356,9 @@ details.plegable[open]>summary{margin-bottom:12px}
   $('pub-show').addEventListener('click',function(){ publicar({show:true}); toast('showcase-data.json descargado.'); });
 
   /* ==================================================================== */
-  $('refrescar').addEventListener('click',function(){
-    Inventario.sincronizar().then(function(r){
-      pintarEstado(); pintarProductos();
-      toast(r.recibidos ? 'Llegaron '+r.recibidos+' cambio(s) de otros equipos.' : 'Todo al día.');
-    });
-  });
+  /* «Traer cambios» ya no existe como botón aparte: Guardar, arriba, manda
+     lo de aquí y trae lo de los demás. Un solo botón. */
+  document.addEventListener('fsj-guardado',function(){ pintarProductos(); });
 
   try{ verFlujo(localStorage.getItem('fsj-panel-flujo')||'archivo'); }
   catch(e){ verFlujo('archivo'); }

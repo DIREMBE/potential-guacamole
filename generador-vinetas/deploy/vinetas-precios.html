@@ -264,6 +264,8 @@ table.productos input.err{border-color:var(--danger); background:var(--danger-bg
 </header>
 
 <div class="wrap">
+  <!-- Un solo botón para dejar al cliente al día (sincronia.js) -->
+  <div id="sync-estado"></div>
   <div class="layout">
 
     <!-- ============ COLUMNA IZQUIERDA: datos y configuración ============ -->
@@ -279,7 +281,6 @@ table.productos input.err{border-color:var(--danger); background:var(--danger-bg
           <div class="inv-controls">
             <label class="btn btn-secondary btn-sm" for="inv-file"><span class="ic">⬆</span> Actualizar inventario (Excel)</label>
             <input id="inv-file" type="file" accept=".xlsx,.xls,.csv" style="display:none">
-            <button class="btn btn-ghost btn-sm" id="inv-publish" disabled title="Genera inventario-data.json para subir al sitio y compartir con todos"><span class="ic">☁</span> Publicar al sitio</button>
             <button class="btn btn-ghost btn-sm" id="inv-changes" disabled title="Descarga el registro de cambios de precio (CSV)">Cambios de precio</button>
           </div>
           <p class="inv-stats" id="inv-stats">Cargando inventario…</p>
@@ -495,6 +496,8 @@ table.productos input.err{border-color:var(--danger); background:var(--danger-bg
      un Excel con reglas viejas sobre la misma base y borraba precios ya
      corregidos a mano. Una sola copia, un solo comportamiento. -->
 <script src="inventario.js"></script>
+<!-- La barra de arriba con el botón Guardar: el mismo en todas las pantallas. -->
+<script src="sincronia.js"></script>
 <script>
 /* ==========================================================================
    Generador de viñetas de precio — Ferretería San José
@@ -1348,16 +1351,11 @@ table.productos input.err{border-color:var(--danger); background:var(--danger-bg
       try {
         const r = await Inventario.importarExcel(f);
         renderInvStats();
-        toast(`Inventario cargado: ${Number(r.count).toLocaleString('es-SV')} productos.`);
+        toast(`Inventario cargado: ${Number(r.count).toLocaleString('es-SV')} productos. Pulsa Guardar arriba para que el cliente lo vea.`);
       } catch (err) {
         toast('No se pudo leer el archivo: ' + err.message, true);
       }
       e.target.value = '';
-    });
-    const pub = $('inv-publish');
-    if (pub) pub.addEventListener('click', () => {
-      const n = Inventario.publicar();
-      toast(`Se descargó inventario-data.json (${Number(n).toLocaleString('es-SV')} productos). Súbelo al sitio para compartir.`);
     });
     const chg = $('inv-changes');
     if (chg) chg.addEventListener('click', () => {

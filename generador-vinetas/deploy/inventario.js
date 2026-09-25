@@ -242,11 +242,16 @@ window.Inventario = (function () {
          le ponga precio. Si una persona lo reactivó a mano, se respeta. */
       const bajaPorPrecio = precio <= 0 && !(ant && ant.activoManual);
       if (bajaPorPrecio) bajasSinPrecio++;
-      st.put({
+      /* Lo que se corrigió a mano en la ficha manda sobre el archivo, y lo
+         que el archivo no trae (especificaciones, presentaciones…) se
+         conserva: el Object.assign de abajo parte de lo que ya había. */
+      const fijados = ant ? fijadosDe(ant) : [];
+      const delArchivo = (k, v) => (ant && fijados.indexOf(k) >= 0 && ant[k]) ? ant[k] : v;
+      st.put(Object.assign({}, ant || {}, {
         item,
-        nombre: String(row[col.nombre] == null ? '' : row[col.nombre]).trim(),
-        categoria: col.categoria >= 0 ? String(row[col.categoria] || '').trim() : '',
-        unidad: col.unidad >= 0 ? String(row[col.unidad] || '').trim() : '',
+        nombre: delArchivo('nombre', String(row[col.nombre] == null ? '' : row[col.nombre]).trim()),
+        categoria: delArchivo('categoria', col.categoria >= 0 ? String(row[col.categoria] || '').trim() : ''),
+        unidad: delArchivo('unidad', col.unidad >= 0 ? String(row[col.unidad] || '').trim() : ''),
         existencia: numOf(row[col.existencia]),
         precio,
         codigo,
@@ -259,7 +264,7 @@ window.Inventario = (function () {
         destacado: prevDest.has(item),
         activo: bajaPorPrecio ? false : (ant ? ant.activo !== false : true),
         tocadoEn: prevToc.get(item) || 0,
-      });
+      }));
       count++;
     }
     await txDone(st.transaction);
@@ -335,6 +340,7 @@ window.Inventario = (function () {
     const st = store(COLS.productos, 'readwrite');
     const nuevosCambios = [];
     let actualizados = 0, agregados = 0, quitados = 0;
+    const reactivados = new Set(), quitadosAhora = new Set();
     // ITEM que el empleado marcó para dar de baja (se calcula una sola vez)
     const marcadosBaja = sel.quitar ? new Set(sel.quitar.map(String)) : null;
 
@@ -349,22 +355,31 @@ window.Inventario = (function () {
           if (p.activo !== false) {
             p.activo = false; p.tocadoEn = Date.now();
             st.put(p); quitados++;
+            quitadosAhora.add(item);
           }
         }
         continue;
       }
-      // Datos que no son precio se actualizan siempre (nombre, categoría, stock)
-      const actualizado = {
+      /* Del reporte se toma lo que el reporte sabe (nombre, categoría,
+         unidad, existencia) y TODO lo demás se conserva: marca, costo,
+         especificaciones, presentaciones, oferta, si está de baja…
+         Antes el producto se reescribía solo con esos pocos datos, y cada
+         carga del Excel borraba en este equipo la marca, el costo, la ficha y
+         las bajas; al guardar la base, se borraban para todos. Y lo que se
+         corrigió a mano en la ficha manda sobre el reporte. */
+      const fijados = fijadosDe(p);
+      const delReporte = (k) => (fijados.indexOf(k) < 0 && f[k]) ? f[k] : p[k];
+      const actualizado = Object.assign({}, p, {
         item,
-        nombre: f.nombre || p.nombre,
-        categoria: f.categoria || p.categoria,
-        unidad: f.unidad || p.unidad,
+        nombre: delReporte('nombre'),
+        categoria: delReporte('categoria'),
+        unidad: delReporte('unidad'),
         existencia: f.existencia,
         precio: numOf(p.precio),
         codigo: p.codigo || f.codigo || '',
         destacado: !!p.destacado,
         tocadoEn: p.tocadoEn || 0,
-      };
+      });
       // El precio solo si el empleado lo aprobó
       if (okPrecio.has(item) && f.precio > 0) {
         const anterior = numOf(p.precio);
@@ -372,15 +387,25 @@ window.Inventario = (function () {
           actualizado.precio = f.precio;
           nuevosCambios.push({ item, nombre: actualizado.nombre, anterior, nuevo: f.precio, fecha: new Date().toISOString(), empleado, origen: 'archivo' });
           actualizados++;
+          /* Estaba de baja solo por no tener precio: con precio, vuelve. */
+          if (actualizado.activo === false && actualizado.bajaMotivo === 'sin-precio') {
+            actualizado.activo = true;
+            actualizado.bajaMotivo = '';
+            reactivados.add(item);
+          }
         }
       }
       st.put(actualizado);
     }
     for (const f of analisis.nuevos) {
       if (!okNuevo.has(f.item)) continue;
+      /* Sin precio no se puede vender: entra de baja hasta que lo tenga,
+         igual que en la carga completa. */
+      const conPrecio = numOf(f.precio) > 0;
       st.put({
         item: f.item, nombre: f.nombre, categoria: f.categoria, unidad: f.unidad,
         existencia: f.existencia, precio: f.precio, codigo: f.codigo || '', destacado: false,
+        activo: conPrecio, bajaMotivo: conPrecio ? '' : 'sin-precio',
         tocadoEn: Date.now(),
       });
       agregados++;
@@ -405,16 +430,25 @@ window.Inventario = (function () {
     const paraCompartir = [];
     for (const c of nuevosCambios) {
       const p = byItem.get(String(c.item));
-      if (p) paraCompartir.push({ item: p.item, precio: numOf(p.precio) });
+      if (!p) continue;
+      /* El que vuelve al catálogo viaja con su ficha entera: el cliente no
+         lo tiene y con solo el precio no lo podría crear. */
+      if (reactivados.has(String(p.item))) paraCompartir.push(Object.assign(_fichaPublica(p), { bajaMotivo: '' }));
+      else paraCompartir.push({ item: p.item, precio: numOf(p.precio) });
     }
     for (const it of okNuevo) {
       const p = byItem.get(String(it));
-      if (p) {
-        paraCompartir.push({
-          item: p.item, alta: true, nombre: p.nombre, categoria: p.categoria,
-          unidad: p.unidad, existencia: p.existencia, precio: p.precio,
-          codigo: p.codigo || '', marca: p.marca || '', activo: true,
-        });
+      if (!p) continue;
+      if (p.activo !== false) paraCompartir.push(_fichaPublica(p));
+      else paraCompartir.push({ item: p.item, alta: true, nombre: p.nombre, categoria: p.categoria,
+        unidad: p.unidad, existencia: p.existencia, precio: numOf(p.precio),
+        codigo: p.codigo || '', activo: false, bajaMotivo: 'sin-precio' });
+    }
+    for (const p of productos) {
+      /* Los que se dieron de baja con esta carga también tienen que
+         desaparecer para el cliente, no solo en este equipo. */
+      if (p.activo === false && quitadosAhora.has(String(p.item))) {
+        paraCompartir.push({ item: p.item, activo: false });
       }
     }
     if (paraCompartir.length) _empujar(paraCompartir);
@@ -904,6 +938,14 @@ window.Inventario = (function () {
 
     await txDone(st.transaction);
     meta.cambioSinPublicar = Date.now();
+    /* Las altas de la hoja de conteo (y los códigos, si son demasiados para
+       mandarlos sueltos) solo llegan a los demás guardando la base. Se marca
+       como una carga nueva y Guardar se encarga. El costo no: ese nunca sale
+       de este equipo. */
+    if (altas || nuevosCodigos.length > INV_MAX_DE_GOLPE) {
+      meta.lastUpload = new Date().toISOString();
+      meta.baselineAt = meta.lastUpload;
+    }
     await saveMeta();
     await loadAll();
     emitir('conteo', { codigos: codigos, costos: costos, altas: altas });
@@ -916,6 +958,33 @@ window.Inventario = (function () {
     }
 
     return { codigos: codigos, costos: costos, altas: altas };
+  }
+
+  /* ================ CUANDO UN PRODUCTO VUELVE A VERSE ====================
+     Al cliente no se le mandan los productos de baja: su catálogo solo tiene
+     los visibles. Así que si un producto estaba de baja cuando se guardó la
+     base y luego se activa —se le pone precio, o alguien lo da de alta a
+     mano—, un cambio que diga solo «activo: sí» no le sirve de nada al
+     cliente: no tiene ese producto, no sabe cómo se llama ni cuánto vale, y
+     lo descarta.
+
+     Eso es lo que hacía que algunos productos solo se vieran en el catálogo
+     con una sesión de empleado abierta EN ESE MISMO NAVEGADOR: ahí el
+     catálogo comparte la base del panel, que sí lo tiene todo.
+
+     Por eso, al volverse visible, el cambio viaja con la ficha pública
+     entera y marcado como alta: cualquier navegador que no lo tenga lo crea.
+     El costo de compra NO va: esto lo lee cualquiera.                    */
+  function _fichaPublica(p) {
+    return {
+      item: p.item, alta: true, activo: true,
+      nombre: p.nombre || '', categoria: p.categoria || '', unidad: p.unidad || '',
+      existencia: numOf(p.existencia), precio: numOf(p.precio),
+      codigo: p.codigo || '', marca: p.marca || '',
+      especificaciones: p.especificaciones || '', presentaciones: p.presentaciones || '',
+      promoAntes: numOf(p.promoAntes), promoHasta: p.promoHasta || '',
+      destacado: !!p.destacado,
+    };
   }
 
   /* ---------------------- Dar de baja / de alta -------------------------
@@ -931,7 +1000,8 @@ window.Inventario = (function () {
       p.bajaMotivo = '';
       await guardar(COLS.productos, (st) => st.put(p));
       emitir('activo', { item: p.item, activo: true });
-      _empujar([{ item: p.item, activo: true, bajaMotivo: '' }]);
+      /* Vuelve al catálogo: viaja entero, o el cliente no lo puede crear. */
+      _empujar([Object.assign(_fichaPublica(p), { bajaMotivo: '' })]);
       return true;
     }
     return false;
@@ -951,8 +1021,12 @@ window.Inventario = (function () {
     await saveMeta();
     _editado(p);
     emitir('activo', { item: p.item, activo: p.activo });
-    _empujar([{ item: p.item, activo: p.activo, activoManual: p.activoManual,
-                bajaMotivo: p.bajaMotivo || '' }]);
+    /* Al darlo de alta viaja entero (el cliente puede no tenerlo); al darlo
+       de baja basta con decirlo: quien lo tenga, lo esconde. */
+    _empujar([p.activo
+      ? Object.assign(_fichaPublica(p), { activoManual: p.activoManual, bajaMotivo: '' })
+      : { item: p.item, activo: false, activoManual: p.activoManual,
+          bajaMotivo: p.bajaMotivo || '' }]);
     return true;
   }
   function esActivo(p) { return !p || p.activo !== false; }
@@ -1378,9 +1452,14 @@ window.Inventario = (function () {
     if (!o || !o.item) return false;
     const cuando = Date.parse(o.fecha || '') || 0;
     let p = byItem.get(String(o.item));
+    let esNuevo = false;
 
     if (!p) {
       if (!o.alta) return false;              // no está y no es un alta: nada que hacer
+      /* Se crea con lo mínimo y luego se le aplica TODO lo que trae el
+         cambio (especificaciones, presentaciones, oferta…), por el mismo
+         camino que a cualquier producto. Antes se quedaba en nombre y precio
+         y el cliente veía la ficha a medias. */
       p = {
         item: String(o.item), nombre: String(o.nombre || ''),
         categoria: String(o.categoria || ''), unidad: String(o.unidad || 'Unidad'),
@@ -1388,8 +1467,7 @@ window.Inventario = (function () {
         costo: 0, marca: String(o.marca || ''), codigo: String(o.codigo || ''),
         destacado: false, activo: o.activo !== false, tocadoEn: Date.now(),
       };
-      await guardar(COLS.productos, (st) => st.put(p));
-      return true;
+      esNuevo = true;
     }
 
     /* Aquí había una comparación entre DOS RELOJES DISTINTOS: `cuando` es la
@@ -1416,7 +1494,9 @@ window.Inventario = (function () {
       p[k] = nuevo;
       toco = true;
     }
-    if (!toco) return false;
+    /* Uno recién creado se guarda siempre, aunque ningún campo haya
+       cambiado respecto a lo mínimo con que se creó: si no, se perdía. */
+    if (!toco && !esNuevo) return false;
     await guardar(COLS.productos, (st) => st.put(p));
     return true;
   }
@@ -1566,6 +1646,157 @@ window.Inventario = (function () {
     } else {
       await _enCurso.catch(function () {});
     }
+  }
+
+  /* ======================= GUARDAR, CON UN SOLO BOTÓN ======================
+     Antes había varias formas de que algo llegara al sitio —el cambio suelto
+     que se mandaba solo, «Guardar en el sitio» para después del Excel, las
+     fotos que se subían al elegirlas, los archivos a mano si todo fallaba— y
+     ninguna pantalla decía de verdad qué le faltaba al cliente. El resultado
+     era lo que se vio: cosas que solo aparecían en el navegador del empleado.
+
+     Ahora hay una cuenta honrada de lo que el cliente todavía no ve, y un
+     botón que lo deja todo al día. Por debajo hace lo que haga falta, en este
+     orden:
+       1. manda los cambios sueltos que quedaron esperando (sin internet,
+          clave vencida, el sitio lleno…)
+       2. sube las fotos que se quedaron solo en este equipo
+       3. vuelve a mandar proveedores, grupos de equivalentes y combos si la
+          última vez no llegaron
+       4. guarda la base entera en el sitio SI HACE FALTA: si aquí hay una
+          carga del Excel que el sitio no tiene, si el sitio no tiene base, o
+          si el registro de cambios sueltos ya es demasiado largo
+       5. trae lo que hayan cambiado los demás                              */
+  const UMBRAL_REGISTRO = 1500;   // cambios sueltos acumulados: a partir de aquí, consolidar
+
+  function _fotosSoloAqui() {
+    const l = [];
+    imagenes.forEach((_, item) => {
+      if (!byItem.has(String(item))) return;              // producto que ya no está
+      if (fotosServidor.has(String(item))) return;        // ya está en línea
+      l.push(String(item));
+    });
+    return l;
+  }
+
+  /* ¿Hace falta mandar la base entera? Devuelve el motivo, o '' si no. */
+  function _motivoBase() {
+    /* Un equipo que solo tiene la base del cliente —la que no trae los dados
+       de baja ni los datos internos— NUNCA debe subirla: borraría para todos
+       lo que le falta. Primero tiene que bajar la completa. */
+    if (meta.baselineParcial) return '';
+    if (!productos.length) return '';
+    if (!baseEstado.comprobado || !baseEstado.disponible) return '';
+    if (!baseEstado.hay) return 'el sitio todavía no tiene la base guardada';
+    if ((meta.baselineAt || '') > (baseEstado.generatedAt || '')) {
+      return 'hay una carga del Excel que el sitio todavía no tiene';
+    }
+    if ((invEstado.count || 0) > UMBRAL_REGISTRO) {
+      return 'hay muchos cambios sueltos acumulados y conviene juntarlos';
+    }
+    return '';
+  }
+
+  function pendientesDelCliente() {
+    const cola = _porMandar.size + _colaGuardada().length;
+    const fotos = servidorActivo ? _fotosSoloAqui().length : 0;
+    const motivoBase = _motivoBase();
+    /* Solo lo que tiene cambios de aquí sin mandar. Un fallo al LEER no es
+       algo que le falte al cliente. */
+    const secciones = [];
+    if (Object.keys(_provPendientes()).length) secciones.push('proveedores');
+    if (meta.equivSinMandar) secciones.push('equivalentes');
+    if (meta.combosSinMandar) secciones.push('combos');
+    return {
+      cola, fotos, base: !!motivoBase, motivoBase, secciones,
+      /* Lo que el cliente no ve, contado de verdad. La base cuenta como una
+         cosa aunque lleve miles de productos dentro. */
+      total: cola + fotos + (motivoBase ? 1 : 0) + secciones.length,
+      sinClave: !_claveEnvio(),
+      baseParcial: !!meta.baselineParcial,
+      sitio: invActivo,
+      comprobado: invComprobado && baseEstado.comprobado,
+    };
+  }
+
+  let _guardando = null;
+  function guardarTodo(onPaso) {
+    /* Uno a la vez: dos clics seguidos no suben la base dos veces. */
+    if (_guardando) return _guardando;
+    _guardando = _guardarTodoYa(onPaso).finally(() => { _guardando = null; });
+    return _guardando;
+  }
+
+  async function _guardarTodoYa(onPaso) {
+    const paso = (fase, extra) => {
+      if (typeof onPaso === 'function') { try { onPaso(Object.assign({ fase }, extra || {})); } catch (e) {} }
+    };
+    const inf = { ok: true, cambios: 0, fotos: 0, fotosFallaron: 0, secciones: [],
+                  base: false, baseMotivo: '', recibidos: 0, faltan: [] };
+
+    if (!_claveEnvio()) {
+      return Object.assign(inf, { ok: false, faltan: ['no hay sesión: entra con tu nombre y clave'] });
+    }
+
+    // 1) cambios sueltos
+    paso('cambios');
+    await _mandarPendiente();
+    const cola = _colaGuardada();
+    if (cola.length) {
+      const r = await _mandarYa(cola);
+      inf.cambios += (r && r.enviados) || 0;
+    }
+
+    // 2) fotos que solo están aquí
+    await _cargarIndiceServidor();
+    if (servidorActivo) {
+      const pend = _fotosSoloAqui();
+      for (let i = 0; i < pend.length; i++) {
+        paso('fotos', { hechas: i, total: pend.length });
+        const ok = await _subirFotoServidor(pend[i], imagenes.get(pend[i]));
+        if (ok) inf.fotos++; else inf.fotosFallaron++;
+      }
+    }
+
+    // 3) lo compartido que no llegó
+    paso('ajustes');
+    if (Object.keys(_provPendientes()).length) {
+      if (await _bajarProveedores().catch(() => false)) inf.secciones.push('proveedores');
+    }
+    if (meta.equivSinMandar) {
+      if (await _mandarEquiv()) inf.secciones.push('equivalentes');
+    }
+    if (meta.combosSinMandar) {
+      if (await _mandarCombos()) inf.secciones.push('combos');
+    }
+
+    // 4) la base entera, solo si hace falta
+    await _metaBaseServidor();
+    const motivo = _motivoBase();
+    if (motivo) {
+      inf.baseMotivo = motivo;
+      const r = await guardarBaseEnServidor((p) => paso('base', {
+        etapa: p.fase, parte: p.parte, partes: p.partes, enviados: p.enviados, total: p.total }));
+      if (r && r.ok) inf.base = true;
+      else inf.faltan.push('la base no se pudo guardar (' + ((r && r.motivo) || 'red') + ')');
+    }
+
+    // 5) lo de los demás
+    paso('trayendo');
+    try { const s = await sincronizar(); inf.recibidos = (s && s.recibidos) || 0; } catch (e) {}
+
+    // lo que, aun así, sigue sin llegar
+    const quedan = pendientesDelCliente();
+    if (quedan.cola) inf.faltan.push(quedan.cola + ' cambio(s) sin mandar');
+    if (inf.fotosFallaron) inf.faltan.push(inf.fotosFallaron + ' foto(s) no se pudieron subir');
+    if (quedan.secciones.length) inf.faltan.push('no llegó: ' + quedan.secciones.join(', '));
+    if (quedan.baseParcial) {
+      inf.faltan.push('este equipo tiene la base a medias; se completa sola en cuanto entres');
+    }
+    inf.ok = !inf.faltan.length;
+    paso('listo', { informe: inf });
+    emitir('guardado', inf);
+    return inf;
   }
 
   /* Para las pantallas: ¿esto se está compartiendo o no? */
@@ -2119,9 +2350,14 @@ window.Inventario = (function () {
       if (!r.ok || !d || !d.ok) throw new Error((d && d.error) || ('http ' + r.status));
       equivEstado = { comprobado: true, compartida: true,
                       actualizado: d.actualizado || '', por: d.por || '' };
+      if (meta.equivSinMandar) { meta.equivSinMandar = 0; await saveMeta(); }
       return true;
     } catch (e) {
       equivEstado = Object.assign({}, equivEstado, { comprobado: true, compartida: false });
+      /* Se apunta que hay cambios de aquí sin mandar, para que «Guardar» los
+         mande —y no confunda esto con un simple fallo al leer, en el que
+         mandar la copia de aquí pisaría lo que cambiaron los demás—. */
+      meta.equivSinMandar = Date.now(); await saveMeta();
       return false;
     }
   }
@@ -2135,7 +2371,11 @@ window.Inventario = (function () {
       if (!r.ok) throw new Error('http ' + r.status);
       const d = await r.json();
       if (!d || !d.ok) throw new Error('respuesta rara');
-      if (d.datos && Array.isArray(d.datos.grupos)) {
+      if (meta.equivSinMandar) {
+        /* Lo de aquí no llegó la otra vez: gana, y se manda ahora. Lo que
+           diga el envío es lo que vale para el estado. */
+        return await _mandarEquiv();
+      } else if (d.datos && Array.isArray(d.datos.grupos)) {
         EQUIV = { grupos: d.datos.grupos.filter((g) => g && g.id && Array.isArray(g.items)) };
         await asegurarMeta();
         meta.equivalencias = EQUIV;
@@ -2322,9 +2562,11 @@ window.Inventario = (function () {
       if (!r.ok || !d || !d.ok) throw new Error((d && d.error) || ('http ' + r.status));
       combosEstado = { comprobado: true, compartida: true,
                        actualizado: d.actualizado || '', por: d.por || '' };
+      if (meta.combosSinMandar) { meta.combosSinMandar = 0; await saveMeta(); }
       return true;
     } catch (e) {
       combosEstado = Object.assign({}, combosEstado, { comprobado: true, compartida: false });
+      meta.combosSinMandar = Date.now(); await saveMeta();
       return false;
     }
   }
@@ -2337,7 +2579,9 @@ window.Inventario = (function () {
       if (!r.ok) throw new Error('http ' + r.status);
       const d = await r.json();
       if (!d || !d.ok) throw new Error('respuesta rara');
-      if (d.datos && Array.isArray(d.datos.lista)) {
+      if (meta.combosSinMandar && _claveEnvio()) {
+        return await _mandarCombos();
+      } else if (d.datos && Array.isArray(d.datos.lista)) {
         COMBOS = { lista: d.datos.lista.filter((c) => c && c.id && Array.isArray(c.items)) };
         await asegurarMeta();
         meta.combos = COMBOS;
@@ -2609,6 +2853,9 @@ window.Inventario = (function () {
   async function guardarBaseEnServidor(onPaso) {
     if (!_claveEnvio()) return { ok: false, motivo: 'sin-clave' };
     if (!productos.length) return { ok: false, motivo: 'sin-datos' };
+    /* Si este equipo solo tiene la base del cliente —sin los dados de baja
+       ni los datos internos—, subirla borraría para todos lo que le falta. */
+    if (meta.baselineParcial) return { ok: false, motivo: 'base-parcial' };
 
     const d = await _metaBaseServidor();
     if (!baseEstado.disponible && !d) return { ok: false, motivo: 'sin-servidor' };
@@ -2921,6 +3168,7 @@ window.Inventario = (function () {
     setClaveFotos, getClaveFotos, tieneClaveFotos, ultimoErrorServidor,
     palabrasDe, coincideTexto,
     guardarBaseEnServidor, estadoBaseServidor, bajarBaseServidor: _bajarBaseServidor,
+    guardarTodo, pendientesDelCliente,
     estadoEtiqueta, marcarEtiqueta, sinEtiqueta,
     proveedores, setProveedorDeMarca, setProveedores, proveedorDeMarca, SIN_PROVEEDOR,
     proveedoresDeMarca, proveedoresDeProducto, proveedorDeProducto, tieneProveedorPropio,

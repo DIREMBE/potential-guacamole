@@ -426,7 +426,8 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
     }
     p.then(function(msg){
       b.disabled=false; b.textContent='Aplicar lo marcado';
-      toast(msg);
+      /* Lo que viene de un archivo se queda en este equipo hasta Guardar. */
+      toast(msg+' Pulsa Guardar arriba para que el cliente lo vea.');
       analisis=null; $('rev').style.display='none'; $('fname').textContent='';
     }).catch(function(err){
       b.disabled=false; b.textContent='Aplicar lo marcado';

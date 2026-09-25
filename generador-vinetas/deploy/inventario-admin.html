@@ -163,7 +163,7 @@ input[type=checkbox]{accent-color:var(--orange);width:16px;height:16px;cursor:po
     <button class="tab" data-p="historial">Historial de precios</button>
     <button class="tab" data-p="actualizar">Actualizar inventario</button>
     <button class="tab" data-p="admin">Administrar productos</button>
-    <button class="tab" data-p="publicar">Publicar al sitio</button>
+    <button class="tab" data-p="publicar">Respaldo en archivos</button>
   </div>
 
   <!-- ============ PRODUCTOS ============ -->
@@ -404,11 +404,15 @@ input[type=checkbox]{accent-color:var(--orange);width:16px;height:16px;cursor:po
 
   <section class="panel" id="p-publicar">
     <div class="card">
-      <div class="card-h"><h2>Publicar al sitio</h2><span class="hint">Para que todos los equipos y el catálogo público vean lo mismo</span></div>
+      <div class="card-h"><h2>Respaldo en archivos</h2><span class="hint">Solo si el sitio no deja guardar</span></div>
       <div class="card-b">
+        <div class="note" style="margin-bottom:14px">
+          <b>Lo normal es pulsar Guardar en la barra de arriba:</b> deja al cliente al día sin
+          descargar nada. Esto de aquí es la salida de emergencia, por si el sitio falla varios días:
+          descarga los archivos para subirlos a mano a Netlify.
+        </div>
         <div class="row" style="margin-bottom:14px">
-          <button class="btn b-pri" id="pub-todo" style="font-size:15px;padding:12px 20px">📤 Publicar todo (descarga los 3 archivos)</button>
-          <span style="font-size:13px;color:var(--s500)">Recomendado</span>
+          <button class="btn b-gh" id="pub-todo" style="font-size:15px;padding:12px 20px">📤 Descargar todo (los 3 archivos)</button>
         </div>
         <div style="border-top:1px solid var(--s100);padding-top:14px;margin-bottom:6px;font-size:13px;color:var(--s500)">O uno por uno:</div>
         <div class="row">
@@ -556,8 +560,8 @@ input[type=checkbox]{accent-color:var(--orange);width:16px;height:16px;cursor:po
     var pend = (Inventario.pendientes && Inventario.pendientes()) || { fotos:0 };
     var fotosManual = !auto || (pend.fotos > 0);
     if($('pub-todo')) $('pub-todo').textContent = fotosManual
-      ? '📤 Publicar todo (descarga los 3 archivos)'
-      : '📤 Publicar (descarga 2 archivos)';
+      ? '📤 Descargar todo (los 3 archivos)'
+      : '📤 Descargar los 2 archivos';
     if($('pub-imgs')) $('pub-imgs').style.display = fotosManual ? '' : 'none';
     if($('pub-ayuda-img')) $('pub-ayuda-img').style.display = fotosManual ? '' : 'none';
     if($('pub-auto')) $('pub-auto').style.display = auto ? '' : 'none';
@@ -866,7 +870,7 @@ input[type=checkbox]{accent-color:var(--orange);width:16px;height:16px;cursor:po
       analisis=null; $('diff-wrap').style.display='none'; $('xls-name').textContent='';
       $('aplicar').disabled=false; $('aplicar').textContent='Aplicar cambios seleccionados';
       renderStats(); renderProductos(); renderHist(); renderPub(); renderPend();
-      toast('Listo: '+r.actualizados+' precio(s), '+r.agregados+' nuevo(s)'+(r.quitados?', '+r.quitados+' quitado(s)':'')+'.');
+      toast('Listo: '+r.actualizados+' precio(s), '+r.agregados+' nuevo(s)'+(r.quitados?', '+r.quitados+' quitado(s)':'')+'. Pulsa Guardar arriba para que el cliente lo vea.');
     }).catch(function(err){
       $('aplicar').disabled=false; $('aplicar').textContent='Aplicar cambios seleccionados';
       toast(err.message||'No se pudo aplicar.', true);
@@ -878,9 +882,14 @@ input[type=checkbox]{accent-color:var(--orange);width:16px;height:16px;cursor:po
   function autoFotos(){ return !!(window.Inventario && Inventario.servidorDisponible && Inventario.servidorDisponible()); }
 
   function renderPend(){
+    /* Este aviso ya no sale: lo que falta por llegar al cliente lo cuenta la
+       barra de arriba (sincronia.js), y se arregla con su botón Guardar. Dos
+       avisos distintos con dos botones distintos era justo el lío. */
+    var box = $('pend');
+    box.style.display='none';
+    return;
     if(!window.Inventario || !Inventario.pendientes) return;
     var p = Inventario.pendientes();
-    var box = $('pend');
     if(!p.total || pendOculto){ box.style.display='none'; return; }
     var auto = autoFotos();
     var partes=[];
