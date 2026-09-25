@@ -136,6 +136,35 @@ export default async (req, context) => {
   const partes = url.pathname.split('/').filter(Boolean);
   const iFotos = partes.lastIndexOf('fotos');
   const item = (iFotos >= 0 && partes[iFotos + 1]) ? decodeURIComponent(partes[iFotos + 1]) : '';
+  /* /api/fotos/logo/<marca>: el logo de una marca de la franja del catálogo.
+     Va aparte de las fotos de producto: no entra en el índice ni cuenta
+     para el tope. La versión la lleva la lista de marcas (?v=…). */
+  if (item === 'logo') {
+    const marca = (iFotos >= 0 && partes[iFotos + 2]) ? decodeURIComponent(partes[iFotos + 2]) : '';
+    if (!/^[a-z0-9-]{1,40}$/.test(marca)) return json({ error: 'marca no válida' }, 400);
+    const llave = 'l_' + marca;
+    try {
+      if (req.method === 'GET') {
+        const foto = await store.get(llave, { type: 'arrayBuffer' });
+        if (!foto) return json({ error: 'sin logo' }, 404);
+        return new Response(foto, { status: 200, headers: {
+          'content-type': tipoImagen(foto), 'x-content-type-options': 'nosniff',
+          'cache-control': 'public, max-age=86400' } });
+      }
+      if (!autorizado(req)) return json({ error: 'no autorizado' }, 401);
+      if (req.method === 'POST' || req.method === 'PUT') {
+        const cuerpo = await req.arrayBuffer();
+        if (!cuerpo || !cuerpo.byteLength) return json({ error: 'archivo vacío' }, 400);
+        if (cuerpo.byteLength > MAX_BYTES) return json({ error: 'el logo pesa demasiado' }, 413);
+        if (!esImagen(cuerpo)) return json({ error: 'el archivo no es una imagen (JPG, PNG o WEBP)' }, 415);
+        await store.set(llave, cuerpo);
+        return json({ ok: true, marca, ver: Date.now().toString(36) });
+      }
+      if (req.method === 'DELETE') { await store.delete(llave); return json({ ok: true, marca }); }
+      return json({ error: 'método no permitido' }, 405);
+    } catch (e) { return json({ error: 'error del servidor' }, 500); }
+  }
+
   /* /api/fotos/<item>/<n>: qué foto del producto (1, 2 o 3). */
   const nTxt = (iFotos >= 0 && partes[iFotos + 2]) ? partes[iFotos + 2] : '1';
   const n = /^[1-3]$/.test(nTxt) ? Number(nTxt) : 0;

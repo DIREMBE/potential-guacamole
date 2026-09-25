@@ -65,14 +65,16 @@ const LLAVE = 'proveedores';
 /* 'equivalencias' son los grupos de productos que son lo mismo con nombres
    distintos. Cabe de sobra en 60 KB: son listas de numeros de producto. */
 const SECCIONES = { marcador: 60 * 1024, planilla: 400 * 1024, equivalencias: 120 * 1024,
-                    combos: 60 * 1024 };
+                    combos: 60 * 1024, marcas: 40 * 1024, variantes: 120 * 1024 };
 /* Casi todo aqui pide clave hasta para leerse, porque es informacion del
    negocio. Los combos NO: son una oferta, y el catalogo del cliente —que no
    tiene clave ninguna— tiene que poder enseñarlos. Escribirlos si pide clave,
    como todo lo demas. */
 /* Los grupos de productos que son lo mismo tampoco: son listas de ITEM, y
    el catalogo los usa para sugerir «otra marca» en la ficha del producto. */
-const PUBLICAS = ['combos', 'equivalencias'];
+/* Las marcas de la franja del catalogo (nombre y logo) y los productos
+   agrupados por medida tambien: el catalogo los necesita para pintarse. */
+const PUBLICAS = ['combos', 'equivalencias', 'marcas', 'variantes'];
 const MAX_SECCION = 60 * 1024;      // por defecto, para secciones sin tope propio
 const MAX_LARGO = 80;           // lo que cabe en un nombre de marca
 /* A casi todo le venden varios y se le compra al que mejor este en ese

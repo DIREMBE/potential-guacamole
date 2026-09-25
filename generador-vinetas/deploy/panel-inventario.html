@@ -134,8 +134,9 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
   border:1px solid var(--s300);background:#fff;font-size:15px;color:var(--s900)}
 .busca input:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(240,96,48,.16)}
 .busca .lupa{position:absolute;left:12px;top:11px;color:var(--s400);font-size:16px;pointer-events:none}
-.busca .x{position:absolute;right:8px;top:8px;border:0;background:transparent;color:var(--s400);
-  font-size:18px;cursor:pointer;line-height:1;padding:3px 6px;border-radius:4px}
+.busca .x{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;
+  color:var(--s400);cursor:pointer;line-height:0;padding:6px;border-radius:4px;
+  display:inline-flex;align-items:center;justify-content:center}
 .busca .x:hover{background:var(--s100);color:var(--s700)}
 .filtro-info{font-size:13px;color:var(--s500);padding:2px 0 8px}
 .filtro-info b{color:var(--s700)}
@@ -181,6 +182,9 @@ tr.ficha-row>td{background:var(--s50);padding:0}
   padding:6px 9px;font:inherit;font-size:13.5px;background:#fff;color:var(--s900);width:100%;
   resize:vertical}
 .fic-campo input:focus,.fic-campo textarea:focus{outline:none;border-color:var(--orange)}
+.fic-campo select{border:1px solid var(--s200);border-radius:var(--r);padding:6px 9px;font:inherit;
+  font-size:13.5px;background:#fff;color:var(--s900);width:100%}
+.fic-campo select:focus{outline:none;border-color:var(--orange)}
 /* --- presentaciones y combos dentro de la ficha --- */
 .fic-extra{margin:14px 0 4px;padding-top:12px;border-top:1px solid var(--s100)}
 .fic-extra h3{font-size:13px;margin:0 0 7px}
@@ -195,12 +199,42 @@ tr.ficha-row>td{background:var(--s50);padding:0}
 .pres-fila input:focus{outline:none;border-color:var(--orange)}
 .combo-fila{border:1px solid var(--s200);border-radius:var(--r);padding:8px 10px;margin-bottom:6px}
 .combo-fila .hint{font-size:12.5px;color:var(--s500);margin:3px 0 5px}
+/* --- marcas del catálogo --- */
+.mc-fila{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--s100);flex-wrap:wrap}
+.mc-tile{width:118px;height:56px;border:1px solid var(--s200);border-radius:8px;background:#fff;flex:none;
+  display:flex;align-items:center;justify-content:center;padding:6px 10px;overflow:hidden}
+.mc-tile img{max-width:100%;max-height:34px;object-fit:contain}
+.mc-tile.sq img{max-height:44px}
+.mc-tile .t{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:17px;letter-spacing:.04em;
+  color:#0C2036;text-align:center;line-height:1.05;text-transform:uppercase}
+.mc-fila .n{flex:1;min-width:140px}
+.mc-fila .n b{display:block}
+.mc-fila .n span{font-size:12.5px;color:var(--s500)}
+.mc-fila .acc{display:flex;gap:6px;flex-wrap:wrap}
+/* --- medidas en la ficha --- */
+.var-tabla{width:100%;font-size:13px;margin-bottom:6px}
+.var-tabla input{border:1px solid var(--s200);border-radius:var(--r);padding:4px 7px;font:inherit;font-size:13px;width:110px}
+.var-sug{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.var-sug button{border:1px dashed var(--s300);background:#fff;border-radius:999px;padding:4px 10px;font:inherit;
+  font-size:12.5px;cursor:pointer;color:var(--s700)}
+.var-sug button:hover{border-color:var(--orange);color:var(--orange)}
+.var-res{border:1px solid var(--s200);border-radius:var(--r);background:#fff;max-height:220px;overflow:auto;margin-top:4px}
+.var-res button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--s100);background:#fff;
+  padding:7px 10px;font:inherit;font-size:13px;cursor:pointer}
+.var-res button:hover{background:#fdf5f1}
+/* Los botones que solo llevan la «x»: cuadrados y con la x al centro. */
+.btn.btn-x{display:inline-flex;align-items:center;justify-content:center;padding:0;width:32px;height:32px;line-height:0}
+.btn.btn-x svg{width:14px;height:14px}
+.chip-x{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-left:3px;
+  color:inherit;line-height:0}
+.chip-x svg{width:11px;height:11px}
 .fotos-mas{display:flex;gap:8px;margin-top:8px}
 .fotos-mas .mini{width:52px;height:52px;border:1px solid var(--s200);border-radius:6px;
   background:#fff center/cover no-repeat;position:relative;flex:none}
-.fotos-mas .mini button{position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;
-  border:1px solid var(--s200);background:#fff;color:var(--dang);font-size:11px;line-height:1;
-  cursor:pointer;padding:0}
+.fotos-mas .mini button{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;
+  border:1px solid var(--s200);background:#fff;color:var(--dang);line-height:0;
+  cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}
+.fotos-mas .mini button svg{width:12px;height:12px}
 .fotos-mas .mini.mas{display:flex;align-items:center;justify-content:center;border-style:dashed;
   cursor:pointer;color:var(--s500);font-size:11.5px;text-align:center}
 .fotos-mas .mini.mas:hover{border-color:var(--orange);color:var(--orange)}
@@ -262,8 +296,8 @@ tr.ficha-row>td{background:var(--s50);padding:0}
 .hoja-tb .hoja-in.nota{min-width:0;width:100%;font-size:13px}
 .hoja-tb select{font:inherit;font-size:12px;margin-top:3px;border:1px solid var(--s200);border-radius:4px;
   padding:2px 4px;background:#fff;max-width:230px}
-.hoja-tb .quitar{border:0;background:transparent;color:var(--s400);font-size:16px;cursor:pointer;
-  padding:2px 6px;border-radius:4px}
+.hoja-tb .quitar{border:0;background:transparent;color:var(--s400);cursor:pointer;line-height:0;
+  padding:6px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center}
 .hoja-tb .quitar:hover{background:var(--dang-bg);color:var(--dang)}
 .hoja-pie{display:flex;gap:30px;flex-wrap:wrap;margin-top:26px;font-size:13px;color:#333}
 .hoja-pie .firma{flex:1;min-width:170px;border-top:1px solid #111;padding-top:5px;text-align:center}
@@ -295,6 +329,8 @@ details.plegable[open]>summary{margin-bottom:12px}
 </style>
 </head>
 <body>
+<!-- Pantalla de carga: solo se ve si la página tarda -->
+<script src="cargando.js" data-espera="inventario" data-tema="claro"></script>
 
 <header class="bar">
   <div class="bar-in">
@@ -377,7 +413,7 @@ details.plegable[open]>summary{margin-bottom:12px}
           <span class="lupa">🔍</span>
           <input type="text" id="q-rev" placeholder="Buscar por nombre, ITEM o código de barras…"
                  autocomplete="off" aria-label="Buscar dentro de los cambios">
-          <button class="x" id="q-rev-x" title="Limpiar" hidden>✕</button>
+          <button class="x" id="q-rev-x" title="Limpiar" hidden><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
         </div>
         <button class="btn b-gh b-sm" id="todo-si">Marcar todo</button>
         <button class="btn b-gh b-sm" id="todo-no">Desmarcar todo</button>
@@ -407,7 +443,7 @@ details.plegable[open]>summary{margin-bottom:12px}
           <span class="lupa">🔍</span>
           <input type="text" id="q-prod" placeholder="Escribe o escanea: nombre, ITEM o código…"
                  autocomplete="off" aria-label="Buscar un producto">
-          <button class="x" id="q-prod-x" title="Limpiar" hidden>✕</button>
+          <button class="x" id="q-prod-x" title="Limpiar" hidden><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
         </div>
         <select id="f-prod" class="btn b-gh b-sm" style="padding-right:26px">
           <option value="">Todo el inventario</option>
@@ -438,7 +474,8 @@ details.plegable[open]>summary{margin-bottom:12px}
         <summary>Crear un producto que no viene en ningún archivo</summary>
         <div class="alta">
           <label>Nombre <input type="text" id="a-nombre" placeholder="MARTILLO UÑA 16 OZ TRUPER"></label>
-          <label>Categoría <input type="text" id="a-cat" placeholder="HERRAMIENTA MANUAL"></label>
+          <label>Categoría <select id="a-cat" data-nueva="categoría"><option value="">— sin categoría —</option></select></label>
+          <label>Marca <select id="a-marca" data-nueva="marca"><option value="">— sin marca —</option></select></label>
           <label>Precio <input type="text" id="a-precio" placeholder="0.00" inputmode="decimal"></label>
           <label>Existencia <input type="text" id="a-exist" placeholder="0" inputmode="numeric"></label>
           <label>Unidad <input type="text" id="a-unidad" placeholder="Unidad"></label>
@@ -449,6 +486,36 @@ details.plegable[open]>summary{margin-bottom:12px}
           <button class="btn b-pri b-sm" id="a-crear">Crear producto</button>
           <span class="hint" style="color:var(--s500);font-size:13px">Queda igual que los demás: entra al catálogo si tiene precio.</span>
         </div>
+      </details>
+
+      <details class="plegable" id="det-marcas">
+        <summary>Marcas del catálogo — la franja de logos de arriba</summary>
+        <p style="margin:0 0 10px;font-size:13.5px;color:var(--s600)">
+          Son las marcas que el cliente ve arriba del catálogo; al tocar una, ve sus
+          productos. Si la marca tiene logo sale el logo, y si no, <b>su nombre</b>.
+          El orden de aquí es el orden de la franja. Una marca creada en la ficha
+          de un producto se agrega aquí sola.
+        </p>
+        <div class="row" style="margin-bottom:12px">
+          <input type="text" id="mc-nombre" class="txt pin" style="width:220px;text-align:left"
+                 placeholder="Nombre de la marca nueva" maxlength="40">
+          <label class="btn b-gh b-sm" style="cursor:pointer">Con logo (opcional)
+            <input type="file" id="mc-logo" accept="image/*" hidden></label>
+          <span class="hint" id="mc-logo-nombre" style="font-size:12.5px;color:var(--s500)"></span>
+          <button class="btn b-pri b-sm" id="mc-crear">Agregar marca</button>
+        </div>
+        <div id="mc-lista"></div>
+      </details>
+
+      <details class="plegable" id="det-vistos">
+        <summary>Lo que más miran los clientes — el carrusel de la portada</summary>
+        <p style="margin:0 0 10px;font-size:13.5px;color:var(--s600)">
+          Cada ficha que un cliente abre en el catálogo cuenta una visita, y agregar a la
+          cotización cuenta tres. La portada enseña los más vistos de los últimos 30 días;
+          mientras haya pocas visitas se completa con destacados, ofertas y productos con
+          foto, que cambian cada día. <span id="vis-estado"></span>
+        </p>
+        <div id="vis-lista"><div class="empty">Ábrelo para cargarlo.</div></div>
       </details>
     </div>
   </div>
@@ -505,7 +572,7 @@ details.plegable[open]>summary{margin-bottom:12px}
         <span class="lupa">🔍</span>
         <input type="text" id="q-err" placeholder="¿Está este producto en algún error? Nombre, ITEM o categoría…"
                autocomplete="off" aria-label="Buscar dentro de los errores">
-        <button class="x" id="q-err-x" title="Limpiar" hidden>✕</button>
+        <button class="x" id="q-err-x" title="Limpiar" hidden><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
       </div>
       <div class="filtro-info" id="q-err-info"></div>
       <div id="errores"><div class="empty">Carga un reporte arriba para ver qué trae mal.</div></div>
@@ -544,7 +611,7 @@ details.plegable[open]>summary{margin-bottom:12px}
         <span class="lupa">🔍</span>
         <input type="text" id="q-com" placeholder="¿Entró este producto al pedido? Nombre, ITEM, categoría o marca…"
                autocomplete="off" aria-label="Buscar dentro del pedido sugerido">
-        <button class="x" id="q-com-x" title="Limpiar" hidden>✕</button>
+        <button class="x" id="q-com-x" title="Limpiar" hidden><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
       </div>
       <div class="filtro-info" id="q-com-info"></div>
       <div class="sum" id="com-kpis"></div>
@@ -623,7 +690,7 @@ details.plegable[open]>summary{margin-bottom:12px}
           <input type="text" id="ped-q" autocomplete="off"
                  placeholder="Agregar otro producto: nombre, ITEM o código de barras…"
                  aria-label="Agregar un producto al pedido">
-          <button class="x" id="ped-q-x" title="Limpiar" hidden>✕</button>
+          <button class="x" id="ped-q-x" title="Limpiar" hidden><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
         </div>
         <button class="btn b-gh b-sm" id="ped-libre">Algo que no está en el inventario</button>
       </div>
@@ -654,7 +721,7 @@ details.plegable[open]>summary{margin-bottom:12px}
           <span class="lupa">🔍</span>
           <input type="text" id="q-cong" placeholder="¿Está este producto parado? Nombre, ITEM, categoría o marca…"
                  autocomplete="off" aria-label="Buscar dentro de lo parado">
-          <button class="x" id="q-cong-x" title="Limpiar" hidden>✕</button>
+          <button class="x" id="q-cong-x" title="Limpiar" hidden><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
         </div>
         <button class="btn b-gh b-sm" id="cong-si">Marcar los que se ven</button>
         <button class="btn b-gh b-sm" id="cong-no">Desmarcar todo</button>
@@ -709,6 +776,9 @@ details.plegable[open]>summary{margin-bottom:12px}
   var $=function(id){return document.getElementById(id);};
   var nf=function(n){return Number(n||0).toLocaleString('es-SV');};
   var money=function(n){return 'US$'+(Number(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  /* La «x» de quitar, dibujada: el carácter ✕ cae descentrado según la
+     fuente de cada equipo. */
+  var ICONO_X='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
   var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
     return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});};
   var tt; function toast(m,e){var t=$('toast');t.textContent=m;t.className='toast on'+(e?' err':'');
@@ -1421,8 +1491,8 @@ details.plegable[open]>summary{margin-bottom:12px}
           '<td>'+ps.map(function(p){
               return '<span class="chip" style="margin:2px 3px 2px 0">'+esc(p.nombre)+
                 (p.marca?' · '+esc(p.marca):'')+
-                ' <a href="#" data-equiv-quita="'+esc(p.item)+'" title="Sacar del grupo" '+
-                'style="text-decoration:none">✕</a></span>';
+                ' <a href="#" class="chip-x" data-equiv-quita="'+esc(p.item)+'" title="Sacar del grupo" '+
+                'aria-label="Sacar del grupo">'+ICONO_X+'</a></span>';
             }).join('')+
             (ps.length<g.items.length
               ? '<span class="chip" style="opacity:.6">'+(g.items.length-ps.length)+' ya no están</span>'
@@ -1766,7 +1836,7 @@ details.plegable[open]>summary{margin-bottom:12px}
             : '')+
           '<td>'+(imprimir ? esc(l.nota||'')
             : '<input class="hoja-in nota" data-f="nota" value="'+esc(l.nota||'')+'" placeholder="—">')+'</td>'+
-          (imprimir?'':'<td class="c"><button type="button" class="quitar" data-quitar title="Quitar del pedido">✕</button></td>')+
+          (imprimir?'':'<td class="c"><button type="button" class="quitar" data-quitar title="Quitar del pedido">'+ICONO_X+'</button></td>')+
         '</tr>';
       }).join('')+
       '</tbody><tfoot><tr><td colspan="'+cols+'">'+
@@ -2523,6 +2593,48 @@ details.plegable[open]>summary{margin-bottom:12px}
 
   /* Una casilla de la ficha. Se guarda al salir de ella, como el resto de la
      pantalla; el botón «Guardar ficha» solo obliga a soltarla y confirma. */
+  /* Categoría y marca se ELIGEN de las que ya existen: escritas a mano salían
+     «HERRAMIENTAS» y «HERRAMIENTA» como dos categorías distintas. La última
+     opción deja agregar una nueva. */
+  function opcionesLista(valor, opciones, etiqueta, nueva){
+    var v=String(valor==null?'':valor).trim();
+    var ops=opciones.slice();
+    if(v && !ops.some(function(o){ return o.toUpperCase()===v.toUpperCase(); })) ops.unshift(v);
+    return '<option value="">— sin '+esc(etiqueta.toLowerCase())+' —</option>'+
+      ops.map(function(o){
+        return '<option'+(v && o.toUpperCase()===v.toUpperCase()?' selected':'')+'>'+esc(o)+'</option>';
+      }).join('')+
+      '<option value="__nueva__">＋ Agregar '+esc(nueva)+' nueva…</option>';
+  }
+  function campoLista(item, campo, etiqueta, valor, opciones, nueva){
+    return '<label class="fic-campo"><span>'+esc(etiqueta)+'</span>'+
+      '<select data-ficha-campo="'+esc(campo)+'" data-item="'+esc(item)+'" data-nueva="'+esc(nueva)+'">'+
+        opcionesLista(valor, opciones, etiqueta, nueva)+
+      '</select></label>';
+  }
+  /* Si se eligió «Agregar … nueva», se pide el nombre y se deja elegido.
+     Devuelve false si la persona se arrepintió. */
+  function resolverNueva(sel, antes){
+    if(sel.value!=='__nueva__') return true;
+    var que=sel.dataset.nueva||'opción';
+    var n=(prompt('Nombre de la '+que+' nueva:')||'').trim().toUpperCase().slice(0,80);
+    if(!n){ sel.value=antes||''; return false; }
+    var ya=[].some.call(sel.options,function(o){ return o.value.toUpperCase()===n; });
+    if(!ya){
+      var op=document.createElement('option'); op.textContent=n;
+      sel.insertBefore(op, sel.options[sel.options.length-1]);
+    }
+    sel.value=n;
+    /* Una marca nueva sale también en la franja de marcas del catálogo. */
+    if(que==='marca' && Inventario.setMarcaCatalogo){
+      Inventario.setMarcaCatalogo(n).then(function(){
+        pintarMarcasCatalogo();
+        toast('«'+n+'» también sale ahora en la franja de marcas del catálogo.');
+      }).catch(function(){});
+    }
+    return true;
+  }
+
   function campoFicha(item, campo, etiqueta, valor, ayuda, largo){
     var v = String(valor==null?'':valor);
     return '<label class="fic-campo'+(largo?' ancho':'')+'">'+
@@ -2533,6 +2645,65 @@ details.plegable[open]>summary{margin-bottom:12px}
         : '<input class="txt" data-ficha-campo="'+esc(campo)+'" data-item="'+esc(item)+'" '+
           'value="'+esc(v)+'" placeholder="'+esc(ayuda)+'" maxlength="160">')+
       '</label>';
+  }
+
+  /* ---- el mismo producto en varias medidas ----
+     El hierro corrugado de 1/4, 3/8 y 1/2 son tres productos, pero el cliente
+     los busca como uno: en el catálogo salen en UNA tarjeta con un selector
+     de medida. Aquí se arma el grupo y se le pone a cada uno su medida. */
+  function bloqueVariantes(item, p){
+    var g=Inventario.varianteDe(item);
+    var h='<div class="fic-extra" data-var-bloque="'+esc(item)+'">'+
+      '<h3>Otras medidas del mismo producto <span class="hint">— en el catálogo salen en una sola tarjeta y el cliente elige la medida</span></h3>';
+    if(g){
+      h+='<label class="dato" style="display:flex;gap:7px;align-items:center;margin:4px 0 8px">Nombre del grupo '+
+        '<input class="txt pin" style="width:260px;text-align:left" data-var-nombre="'+esc(g.id)+'" data-item="'+esc(item)+'" value="'+esc(g.nombre)+'"></label>'+
+        '<table class="var-tabla"><thead><tr><th>Medida (lo que ve el cliente)</th><th>Producto</th><th>Precio</th><th></th></tr></thead><tbody>'+
+        g.items.map(function(x){
+          var q=Inventario.porItem(x.item)||{};
+          return '<tr><td><input data-var-etq="'+esc(x.item)+'" data-item="'+esc(item)+'" value="'+esc(x.etiqueta)+'" maxlength="30"></td>'+
+            '<td>'+esc(q.nombre||x.item)+(String(x.item)===String(item)?' <span class="hint">(este)</span>':'')+'</td>'+
+            '<td class="mono">'+(Number(q.precio)>0?money(q.precio):'—')+'</td>'+
+            '<td><button type="button" class="btn b-gh b-sm btn-x" data-var-quita="'+esc(x.item)+'" data-item="'+esc(item)+'" '+
+              'title="Sacar del grupo" aria-label="Sacar del grupo">'+ICONO_X+'</button></td></tr>';
+        }).join('')+'</tbody></table>';
+    }else{
+      h+='<div class="hint" style="padding:2px 0 6px">No está agrupado con otras medidas.</div>';
+    }
+    var ya={}; if(g) g.items.forEach(function(x){ ya[String(x.item)]=1; }); ya[String(item)]=1;
+    var sug=(Inventario.parecidosPorMedida(item,10)||[]).filter(function(q){ return !ya[String(q.item)]; });
+    if(sug.length){
+      h+='<div class="hint" style="font-size:12.5px">Se le parecen (toca para agregar):</div>'+
+        '<div class="var-sug">'+sug.map(function(q){
+          return '<button type="button" data-var-add="'+esc(q.item)+'" data-item="'+esc(item)+'">＋ '+esc(q.nombre)+'</button>';
+        }).join('')+'</div>';
+    }
+    h+='<input class="txt pin" style="width:100%;max-width:420px;text-align:left" data-var-buscar="'+esc(item)+'" '+
+        'placeholder="Agregar otra medida: busca por nombre o ITEM…" autocomplete="off">'+
+      '<div class="var-res" data-var-res="'+esc(item)+'" hidden></div>'+
+    '</div>';
+    return h;
+  }
+  /* Lo que tienen en común dos nombres: el nombre del grupo. */
+  function nombreComun(a,b){
+    var sb={}; String(b||'').toUpperCase().split(/\s+/).forEach(function(w){ sb[w]=1; });
+    var l=String(a||'').toUpperCase().split(/\s+/).filter(function(w){ return w && sb[w]; });
+    return l.join(' ') || String(a||'');
+  }
+  function agregarMedida(item, otro){
+    var g=Inventario.varianteDe(item), p=Inventario.porItem(item), q=Inventario.porItem(otro);
+    if(!p||!q) return;
+    var gOtro=Inventario.varianteDe(otro);
+    if(gOtro && (!g || gOtro.id!==g.id) &&
+       !confirm('«'+q.nombre+'» ya está en el grupo «'+gOtro.nombre+'». ¿Pasarlo a este?')) return;
+    var datos = g
+      ? { id:g.id, nombre:g.nombre, items:g.items.concat([{ item:String(otro) }]) }
+      : { nombre:nombreComun(p.nombre,q.nombre),
+          items:[{ item:String(item), etiqueta:Inventario.etiquetaSugerida(otro,item) },
+                 { item:String(otro), etiqueta:Inventario.etiquetaSugerida(item,otro) }] };
+    Inventario.setVariante(datos).then(function(){
+      refrescarFicha(item); toast('Agregado: '+q.nombre+'. Revisa cómo se llama la medida.');
+    }).catch(function(err){ toast(err.message||'No se pudo.',true); });
   }
 
   /* ---- se vende por varilla y por quintal ----
@@ -2563,8 +2734,8 @@ details.plegable[open]>summary{margin-bottom:12px}
         '</label>'+
       '<label>a $<input type="number" min="0" step="0.01" data-pres="precio" '+
         'data-item="'+esc(item)+'" data-i="'+i+'" value="'+(x.precio||'')+'"></label>'+
-      '<button class="btn b-gh b-sm" data-pres-quita="'+esc(item)+'" data-i="'+i+'" '+
-        'title="Quitar">✕</button>'+
+      '<button class="btn b-gh b-sm btn-x" data-pres-quita="'+esc(item)+'" data-i="'+i+'" '+
+        'title="Quitar" aria-label="Quitar esta presentación">'+ICONO_X+'</button>'+
       '</div>';
   }
 
@@ -2656,7 +2827,7 @@ details.plegable[open]>summary{margin-bottom:12px}
         if(fotos[i]){
           mas+='<div class="mini" style="background-image:url(\''+fotos[i]+'\')" title="Foto '+(i+1)+'">'+
             '<button type="button" data-fic="quitarfoto" data-n="'+(i+1)+'" data-item="'+esc(item)+'" '+
-            'title="Quitar esta foto" aria-label="Quitar la foto '+(i+1)+'">✕</button></div>';
+            'title="Quitar esta foto" aria-label="Quitar la foto '+(i+1)+'">'+ICONO_X+'</button></div>';
         }else if(i===fotos.length){
           mas+='<label class="mini mas" title="Agregar otra foto">+ foto'+
             '<input type="file" accept="image/*" data-foto-extra="'+esc(item)+'" hidden></label>';
@@ -2696,9 +2867,9 @@ details.plegable[open]>summary{margin-bottom:12px}
         '<div class="fic-campos">'+
           campoFicha(item,'nombre','Nombre',p.nombre,'como se llama el producto')+
           campoFicha(item,'codigo','Código de barras',p.codigo,'sin código')+
-          campoFicha(item,'categoria','Categoría',p.categoria,'sin categoría')+
+          campoLista(item,'categoria','Categoría',p.categoria,Inventario.categoriasTodas(),'categoría')+
           campoFicha(item,'unidad','Unidad',p.unidad,'Unidad')+
-          campoFicha(item,'marca','Marca',p.marca,'sin marca')+
+          campoLista(item,'marca','Marca',p.marca,Inventario.marcasTodas(),'marca')+
           campoFicha(item,'especificaciones','Especificaciones',p.especificaciones,
             'medidas, material, para qué sirve — lo que el nombre no dice', true)+
         '</div>'+
@@ -2706,6 +2877,7 @@ details.plegable[open]>summary{margin-bottom:12px}
           '<input type="checkbox" data-fic="destacado" data-item="'+esc(item)+'"'+(p.destacado?' checked':'')+'>'+
           'Destacado en la portada del sitio</label>'+
         bloquePresentaciones(item,p)+
+        bloqueVariantes(item,p)+
         bloqueCombos(item,p)+
         '<h3 style="margin-top:10px">Historial de precio</h3>'+
         (hist.length
@@ -2726,8 +2898,10 @@ details.plegable[open]>summary{margin-bottom:12px}
        chocar con el de otro producto y hay que avisar. */
     var c=e.target.closest('[data-ficha-campo]');
     if(c){
-      var it=c.dataset.item, campo=c.dataset.fichaCampo, val=c.value.trim();
+      var it=c.dataset.item, campo=c.dataset.fichaCampo;
       var antes=Inventario.porItem(it) || {};
+      if(c.tagName==='SELECT' && !resolverNueva(c, String(antes[campo]||''))) return;
+      var val=c.value.trim();
       if(String(antes[campo]||'')===val) return;
 
       var hecho = campo==='codigo'
@@ -2776,6 +2950,20 @@ details.plegable[open]>summary{margin-bottom:12px}
       }).catch(function(err){ toast(err.message||'No se pudo guardar la foto.',true); });
       return;
     }
+    var ve=e.target.closest('[data-var-etq]');
+    if(ve){
+      var gv=Inventario.varianteDe(ve.dataset.varEtq); if(!gv) return;
+      gv.items.forEach(function(x){ if(String(x.item)===ve.dataset.varEtq) x.etiqueta=ve.value.trim(); });
+      Inventario.setVariante(gv).then(function(){ toast('Medida guardada.'); });
+      return;
+    }
+    var vn=e.target.closest('[data-var-nombre]');
+    if(vn){
+      var gn=Inventario.varianteDe(vn.dataset.item); if(!gn) return;
+      gn.nombre=vn.value.trim()||gn.nombre;
+      Inventario.setVariante(gn).then(function(){ toast('Nombre del grupo guardado.'); });
+      return;
+    }
     /* Cualquier casilla de una presentación guarda la lista entera: es una
        sola cosa, y guardar campo a campo dejaría filas a medias. */
     var pr=e.target.closest('[data-pres]');
@@ -2789,8 +2977,31 @@ details.plegable[open]>summary{margin-bottom:12px}
     }
   });
 
+  /* Buscar otra medida para el grupo. */
+  var relojVar;
+  $('p-body').addEventListener('input',function(e){
+    var i=e.target.closest('[data-var-buscar]'); if(!i) return;
+    clearTimeout(relojVar);
+    relojVar=setTimeout(function(){
+      var res=$('p-body').querySelector('[data-var-res="'+String(i.dataset.varBuscar).replace(/"/g,'\\"')+'"]');
+      if(!res) return;
+      var q=i.value.trim();
+      if(q.length<2){ res.hidden=true; res.innerHTML=''; return; }
+      var l=(Inventario.buscar(q,8)||[]).filter(function(p){ return String(p.item)!==i.dataset.varBuscar; });
+      res.hidden=false;
+      res.innerHTML=l.length ? l.map(function(p){
+        return '<button type="button" data-var-add="'+esc(p.item)+'" data-item="'+esc(i.dataset.varBuscar)+'">'+
+          esc(p.nombre)+' <span class="hint">· '+esc(p.item)+(Number(p.precio)>0?' · '+money(p.precio):'')+'</span></button>';
+      }).join('') : '<div class="hint" style="padding:8px 10px">Nada coincide.</div>';
+    },160);
+  });
+
   $('p-body').addEventListener('click',function(e){
-    var b=e.target.closest('button[data-fic]'); if(!b) return;
+    /* Todos los botones de la ficha: los de siempre y los de presentaciones,
+       combos y medidas, que antes se quedaban sin escuchar. */
+    var b=e.target.closest('button[data-fic], button[data-pres-add], button[data-pres-quita], '+
+      'button[data-combo-add], button[data-combo-borra], button[data-var-add], button[data-var-quita]');
+    if(!b) return;
     var item=b.dataset.item;
     if(b.dataset.fic==='cerrar'){ verFicha(item); return; }
     if(b.dataset.fic==='guardar'){
@@ -2806,6 +3017,15 @@ details.plegable[open]>summary{margin-bottom:12px}
         if(e){ e.textContent='Guardado ✓'; e.classList.add('ok'); }
         toast('Ficha guardada y compartida con los demás equipos.');
       },120);
+      return;
+    }
+    /* ---- medidas ---- */
+    if(b.dataset.varAdd){ agregarMedida(b.dataset.item, b.dataset.varAdd); return; }
+    if(b.dataset.varQuita){
+      var base=b.dataset.item;
+      Inventario.quitarDeVariante(b.dataset.varQuita).then(function(){
+        refrescarFicha(base); toast('Fuera del grupo.');
+      });
       return;
     }
     /* ---- presentaciones y combos ---- */
@@ -2853,10 +3073,104 @@ details.plegable[open]>summary{margin-bottom:12px}
     }
   });
 
+  /* ---------------------- marcas del catálogo --------------------------
+     La franja de logos de arriba del catálogo del cliente. */
+  function tileMarca(m){
+    return '<span class="mc-tile'+(m.sq?' sq':'')+'">'+(m.logo
+      ? '<img src="'+esc(m.logo)+'" alt="'+esc(m.nombre)+'" loading="lazy">'
+      : '<span class="t">'+esc(m.nombre)+'</span>')+'</span>';
+  }
+  function pintarMarcasCatalogo(){
+    var cont=$('mc-lista'); if(!cont || !Inventario.marcasCatalogo) return;
+    var l=Inventario.marcasCatalogo();
+    if(!l.length){ cont.innerHTML='<div class="empty">No hay marcas en la franja.</div>'; return; }
+    cont.innerHTML=l.map(function(m,i){
+      var n=Inventario.disponible() ? Inventario.catalogo({ q:m.q||m.nombre }).length : 0;
+      return '<div class="mc-fila" data-mc="'+esc(m.id)+'">'+tileMarca(m)+
+        '<div class="n"><b>'+esc(m.nombre)+'</b><span>'+nf(n)+' producto(s) en el catálogo'+
+          (m.logo?'':' · sin logo: sale el nombre')+'</span></div>'+
+        '<div class="acc">'+
+          '<button class="btn b-gh b-sm" data-mc-mover="-1"'+(i===0?' disabled':'')+' title="Más a la izquierda">↑</button>'+
+          '<button class="btn b-gh b-sm" data-mc-mover="1"'+(i===l.length-1?' disabled':'')+' title="Más a la derecha">↓</button>'+
+          '<label class="btn b-gh b-sm" style="cursor:pointer">'+(m.logo?'Cambiar logo':'Subir logo')+
+            '<input type="file" accept="image/*" data-mc-logo hidden></label>'+
+          (m.logo?'<button class="btn b-gh b-sm" data-mc-sinlogo>Quitar logo</button>':'')+
+          '<button class="btn b-dg b-sm" data-mc-quitar>Quitar de la franja</button>'+
+        '</div></div>';
+    }).join('');
+  }
+  var logoNuevo=null;
+  $('mc-logo').addEventListener('change',function(e){
+    logoNuevo=e.target.files&&e.target.files[0]||null;
+    $('mc-logo-nombre').textContent=logoNuevo?logoNuevo.name:'';
+  });
+  $('mc-crear').addEventListener('click',function(){
+    var n=$('mc-nombre').value.trim(); if(!n) return toast('Escribe el nombre de la marca.',true);
+    Inventario.setMarcaCatalogo(n).then(function(m){
+      return logoNuevo ? Inventario.subirLogoMarca(m.id,logoNuevo) : m;
+    }).then(function(m){
+      $('mc-nombre').value=''; $('mc-logo').value=''; logoNuevo=null; $('mc-logo-nombre').textContent='';
+      pintarMarcasCatalogo();
+      toast('«'+m.nombre+'» ya sale en la franja del catálogo'+(m.logo?' con su logo.':', con su nombre.'));
+    }).catch(function(err){ pintarMarcasCatalogo(); toast(err.message||'No se pudo.',true); });
+  });
+  $('mc-lista').addEventListener('click',function(e){
+    var fila=e.target.closest('[data-mc]'); if(!fila) return;
+    var id=fila.dataset.mc, b=e.target.closest('button'); if(!b) return;
+    var hecho=null;
+    if(b.dataset.mcMover) hecho=Inventario.moverMarcaCatalogo(id,Number(b.dataset.mcMover));
+    else if(b.hasAttribute('data-mc-sinlogo')) hecho=Inventario.quitarLogoMarca(id);
+    else if(b.hasAttribute('data-mc-quitar')){
+      if(!confirm('¿Quitar esta marca de la franja del catálogo? Sus productos no se tocan.')) return;
+      hecho=Inventario.quitarMarcaCatalogo(id);
+    }
+    if(hecho) hecho.then(pintarMarcasCatalogo).catch(function(err){ toast(err.message||'No se pudo.',true); });
+  });
+  $('mc-lista').addEventListener('change',function(e){
+    var i=e.target.closest('input[data-mc-logo]'); if(!i) return;
+    var f=i.files&&i.files[0]; if(!f) return;
+    var id=i.closest('[data-mc]').dataset.mc;
+    toast('Subiendo el logo…');
+    Inventario.subirLogoMarca(id,f).then(function(){ pintarMarcasCatalogo(); toast('Logo guardado.'); })
+      .catch(function(err){ toast(err.message||'No se pudo subir el logo.',true); });
+  });
+  $('det-marcas').addEventListener('toggle',function(){ if(this.open) pintarMarcasCatalogo(); });
+  $('det-vistos').addEventListener('toggle',function(){
+    if(!this.open) return;
+    $('vis-lista').innerHTML='<div class="empty">Cargando…</div>';
+    Inventario.visitasTop(30).then(function(d){
+      if(!d || !d.ok){ $('vis-lista').innerHTML='<div class="empty">El sitio no contestó ('+esc((d&&d.error)||'red')+').</div>'; return; }
+      var l=d.productos||[];
+      $('vis-estado').innerHTML=l.length?'Calculado '+new Date(d.generado).toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'})+'.':'';
+      $('vis-lista').innerHTML = l.length
+        ? '<div class="scroll"><table><thead><tr><th>#</th><th>Producto</th><th>Precio</th><th>Visitas</th></tr></thead><tbody>'+
+          l.map(function(p,i){
+            return '<tr><td class="mono">'+(i+1)+'</td><td>'+esc(p.nombre)+(p.foto?'':' <span class="chip" style="background:var(--s100);color:var(--s600)">sin foto</span>')+'</td>'+
+              '<td class="mono">'+money(p.precio)+'</td><td class="mono">'+(p.visitas?nf(p.visitas):'<span class="hint">relleno del día</span>')+'</td></tr>';
+          }).join('')+'</tbody></table></div>'
+        : '<div class="empty">Todavía no hay nada que enseñar.</div>';
+    });
+  });
+  Inventario.onCambio(function(t){ if(t==='marcas' && $('det-marcas').open) pintarMarcasCatalogo(); });
+
   /* ------------------------- alta de producto -------------------------- */
+  function llenarListasAlta(){
+    [['a-cat',Inventario.categoriasTodas(),'Categoría','categoría'],
+     ['a-marca',Inventario.marcasTodas(),'Marca','marca']].forEach(function(x){
+      var sel=$(x[0]); if(!sel) return;
+      var v=sel.value==='__nueva__'?'':sel.value;
+      sel.innerHTML=opcionesLista(v, x[1], x[2], x[3]);
+    });
+  }
+  ['a-cat','a-marca'].forEach(function(id){
+    $(id).addEventListener('change',function(){ resolverNueva(this,''); });
+  });
+  $('det-alta').addEventListener('toggle',function(){ if(this.open) llenarListasAlta(); });
+
   $('a-crear').addEventListener('click',function(){
     var d={
       nombre:$('a-nombre').value.trim(), categoria:$('a-cat').value.trim(),
+      marca:$('a-marca').value.trim(),
       precio:parseFloat(String($('a-precio').value).replace(',','.'))||0,
       existencia:parseFloat(String($('a-exist').value).replace(',','.'))||0,
       unidad:$('a-unidad').value.trim()||'Unidad',
@@ -2866,7 +3180,7 @@ details.plegable[open]>summary{margin-bottom:12px}
     var b=$('a-crear'); b.disabled=true;
     Inventario.altaProducto(d).then(function(p){
       b.disabled=false;
-      ['a-nombre','a-cat','a-precio','a-exist','a-unidad','a-codigo','a-item'].forEach(function(id){ $(id).value=''; });
+      ['a-nombre','a-cat','a-marca','a-precio','a-exist','a-unidad','a-codigo','a-item'].forEach(function(id){ $(id).value=''; });
       toast('Creado: '+p.nombre+' (ITEM '+p.item+').');
       $('q-prod').value=p.item; $('f-prod').value='';
       pintarEstado(); pintarProductos();

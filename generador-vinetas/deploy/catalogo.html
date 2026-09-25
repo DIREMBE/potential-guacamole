@@ -75,6 +75,10 @@ header.top{position:sticky;top:0;z-index:50;background:#08182A;border-bottom:3px
 .mk img{max-width:100%;max-height:30px;width:auto;object-fit:contain;display:block;pointer-events:none}
 .mk.sq img{max-height:42px}
 .mk:hover{box-shadow:inset 0 0 0 1px rgba(241,89,48,.55),inset 0 0 16px 6px rgba(12,32,54,.12)}
+/* Marca sin logo: su nombre, con la letra de la casa. */
+.mk .mk-n{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:17px;letter-spacing:.05em;
+  color:#0C2036;text-transform:uppercase;line-height:1.05;text-align:center;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .mk.on{box-shadow:inset 0 0 0 1px rgba(241,89,48,.6),inset 0 0 16px 6px rgba(12,32,54,.12),0 0 0 2px rgba(241,89,48,.45)}
 
 /* ---------- Sugerencias del buscador ---------- */
@@ -127,6 +131,15 @@ main{max-width:1280px;margin:0 auto;padding:22px clamp(16px,4vw,40px) 80px}
 .pres .pc{color:var(--tx-3);font-size:11.5px}
 .pres .pp{margin-left:auto;font-weight:700;color:var(--orange);white-space:nowrap}
 .pres .pa{flex-basis:100%;font-size:11px;color:var(--ok);font-weight:600}
+/* Selector de medida: el mismo producto en varias medidas, en una tarjeta. */
+.medidas{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin:4px 0 2px}
+.medidas .ml{font-size:11px;color:var(--tx-3);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-right:2px}
+.medidas .md{background:var(--ink-3);border:1px solid var(--line-2);color:var(--tx);font:inherit;font-size:12.5px;
+  font-weight:600;padding:4px 9px;border-radius:6px;cursor:pointer;min-width:34px}
+.medidas .md:hover{border-color:var(--orange)}
+.medidas .md.on{background:var(--orange);border-color:var(--orange);color:#fff}
+.fx .medidas{margin:6px 0 12px}
+.fx .medidas .md{font-size:14px;padding:7px 13px}
 .combo{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-top:7px;
   border:1px dashed var(--orange);border-radius:6px;padding:6px 8px;font-size:12px;
   color:var(--tx)}
@@ -153,7 +166,9 @@ main{max-width:1280px;margin:0 auto;padding:22px clamp(16px,4vw,40px) 80px}
 .cart.on{transform:none}
 .cart-h{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
 .cart-h h2{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:20px;margin:0;letter-spacing:.02em}
-.x{margin-left:auto;background:none;border:none;color:var(--tx-2);font-size:24px;cursor:pointer;line-height:1;padding:2px 6px}
+.x{margin-left:auto;background:none;border:none;color:var(--tx-2);cursor:pointer;line-height:0;padding:6px;
+  display:inline-flex;align-items:center;justify-content:center;border-radius:6px}
+.x svg{width:22px;height:22px}
 .x:hover{color:var(--tx)}
 .cart-body{flex:1;overflow-y:auto;padding:14px 18px}
 .ci{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
@@ -167,7 +182,8 @@ main{max-width:1280px;margin:0 auto;padding:22px clamp(16px,4vw,40px) 80px}
 .qty button:hover{background:var(--orange);color:#fff}
 .qty input{width:46px;height:28px;text-align:center;background:var(--ink-2);border:none;border-left:1px solid var(--line);border-right:1px solid var(--line);color:var(--tx);font-size:13.5px;font-family:'Barlow',sans-serif}
 .qty input:focus{outline:none}
-.ci .rm{background:none;border:none;color:var(--tx-3);cursor:pointer;font-size:17px;align-self:flex-start;padding:2px 4px}
+.ci .rm{background:none;border:none;color:var(--tx-3);cursor:pointer;align-self:flex-start;padding:4px;
+  line-height:0;display:inline-flex;align-items:center;justify-content:center}
 .ci .rm:hover{color:#F6A07F}
 .ci .sub{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;color:var(--orange);white-space:nowrap;align-self:center}
 .cart-empty{text-align:center;color:var(--tx-3);padding:50px 16px;font-size:14.5px;line-height:1.6}
@@ -210,7 +226,9 @@ footer.ft{border-top:1px solid var(--line);text-align:center;color:var(--tx-3);f
 .fx-in{position:relative;max-width:1060px;margin:0 auto;background:var(--ink-2);border:1px solid var(--line-2);
   border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,.6);padding:26px clamp(16px,3vw,32px) 30px}
 .fx-x{position:absolute;top:10px;right:12px;z-index:3;background:var(--ink-3);border:1px solid var(--line-2);
-  color:var(--tx);width:40px;height:40px;border-radius:50%;font-size:24px;line-height:1;cursor:pointer}
+  color:var(--tx);width:40px;height:40px;border-radius:50%;padding:0;line-height:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center}
+.fx-x svg{width:18px;height:18px}
 .fx-x:hover{border-color:var(--orange);color:var(--orange)}
 .fx-top{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(18px,3vw,34px)}
 .fx-main{position:relative;aspect-ratio:1/1;background:#fff;border-radius:10px;overflow:hidden;
@@ -272,7 +290,8 @@ footer.ft{border-top:1px solid var(--line);text-align:center;color:var(--tx-3);f
 .car-nav button:hover:not(:disabled){border-color:var(--orange);color:var(--orange)}
 .car-nav button:disabled{opacity:.32;cursor:default}
 .car{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 3*14px)/4);gap:14px;overflow-x:auto;
-  scroll-snap-type:x mandatory;scroll-behavior:smooth;padding-bottom:4px;scrollbar-width:none}
+  scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;
+  padding:6px 1px 6px;margin-top:-6px}
 .car::-webkit-scrollbar{display:none}
 .car .sc{scroll-snap-align:start;display:flex;flex-direction:column;background:#0F2739;text-align:left;
   border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden;cursor:pointer;padding:0;
@@ -303,7 +322,8 @@ footer.ft{border-top:1px solid var(--line);text-align:center;color:var(--tx-3);f
 .visor .v-img.zoom{cursor:zoom-out}
 .visor img{max-width:100%;max-height:100%;object-fit:contain;transition:transform .15s ease-out;background:#fff}
 .visor .vx{position:absolute;top:12px;right:14px;z-index:2;width:44px;height:44px;border-radius:50%;border:0;
-  background:rgba(255,255,255,.14);color:#fff;font-size:26px;cursor:pointer}
+  background:rgba(255,255,255,.14);color:#fff;cursor:pointer;padding:0;line-height:0;
+  display:flex;align-items:center;justify-content:center}
 .visor .vn{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:46px;height:64px;border:0;
   border-radius:8px;background:rgba(255,255,255,.12);color:#fff;font-size:30px;cursor:pointer}
 .visor .vn.prev{left:10px}.visor .vn.next{right:10px}
@@ -319,6 +339,8 @@ body.fx-abierta{overflow:hidden}
 </style>
 </head>
 <body>
+<!-- Pantalla de carga: solo se ve si la página tarda -->
+<script src="cargando.js" data-espera="inventario"></script>
 
 <header class="top">
   <div class="top-in">
@@ -375,7 +397,7 @@ body.fx-abierta{overflow:hidden}
 <aside class="cart" id="cart" aria-label="Mi cotización">
   <div class="cart-h">
     <h2>Mi cotización</h2>
-    <button class="x" id="btn-close" aria-label="Cerrar">×</button>
+    <button class="x" id="btn-close" aria-label="Cerrar"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
   </div>
   <div class="cart-body" id="cart-body"></div>
   <div class="cart-f">
@@ -398,7 +420,7 @@ body.fx-abierta{overflow:hidden}
 </div>
 <!-- Las fotos de cerca, a pantalla completa -->
 <div class="visor" id="visor" hidden aria-label="Fotos del producto">
-  <button class="vx" id="v-x" aria-label="Cerrar">×</button>
+  <button class="vx" id="v-x" aria-label="Cerrar"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
   <button class="vn prev" id="v-prev" aria-label="Foto anterior">‹</button>
   <div class="v-img" id="v-img"><img id="v-foto" alt=""></div>
   <button class="vn next" id="v-next" aria-label="Foto siguiente">›</button>
@@ -421,6 +443,9 @@ body.fx-abierta{overflow:hidden}
   var esc = function(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){
     return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); };
 
+  /* La «x» de cerrar, dibujada: el carácter × cae descentrado según la
+     fuente de cada teléfono. */
+  var ICONO_X = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
   var NOIMG = '<svg class="noimg" width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#98AEC3" stroke-width="1.5"><path d="M3 5h18v14H3z"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="8.5" cy="9" r="1.5"/></svg>';
 
   var cart = {};        // item -> {item, nombre, precio, unidad, cant}
@@ -440,6 +465,9 @@ body.fx-abierta{overflow:hidden}
   function addToCart(p){
     var k = String(p.item);
     if(window.Inventario && Inventario.marcarVisto) Inventario.marcarVisto(k);
+    /* Agregarlo a la cotización dice más que mirarlo: cuenta más para el
+       carrusel de la portada. */
+    contarVisita(k, 'cotizacion');
     if(cart[k]) cart[k].cant++;
     else cart[k] = { item:k, nombre:p.nombre, precio:Number(p.precio)||0, unidad:p.unidad||'', cant:1 };
     saveCart(); renderCart(); renderGrid();
@@ -481,7 +509,7 @@ body.fx-abierta{overflow:hidden}
                '</div>'+
              '</div>'+
              '<div class="sub">'+(c.precio>0 ? money(c.cant*c.precio) : '—')+'</div>'+
-             '<button class="rm" data-a="quitar" aria-label="Quitar">×</button>'+
+             '<button class="rm" data-a="quitar" aria-label="Quitar">'+ICONO_X+'</button>'+
            '</div>';
     });
     body.innerHTML = h;
@@ -550,7 +578,7 @@ body.fx-abierta{overflow:hidden}
       $('more').style.display = 'none';
       return;
     }
-    lista = Inventario.catalogo(filtro);
+    lista = agruparMedidas(Inventario.catalogo(filtro));
     var visibles = lista.slice(0, mostrados);
     $('count-line').innerHTML = lista.length
       ? '<b>' + lista.length.toLocaleString('es-SV') + '</b> producto(s)' + (filtro.categoria ? ' en ' + esc(filtro.categoria) : '')
@@ -562,6 +590,9 @@ body.fx-abierta{overflow:hidden}
     }
     var h = '';
     visibles.forEach(function(p){
+      /* Un grupo de medidas es UNA tarjeta: enseña la medida elegida. */
+      var grupo = p.__grupo || null;
+      if(grupo) p = medidaElegida(grupo, p);
       var img = Inventario.getImagen(p.item);
       var enCart = !!cart[String(p.item)];
       var stock = Number(p.existencia)||0;
@@ -590,6 +621,7 @@ body.fx-abierta{overflow:hidden}
                  : '<div class="price-row"><span class="price consultar">Consultar precio</span></div>')+
                /* Y de qué otras formas se vende: por varilla y por quintal,
                   por bolsa y por saco. */
+               (grupo ? medidasHTML(grupo, p) : '')+
                presentacionesHTML(p)+
                combosHTML(p)+
                '<button class="add'+(enCart?' in':'')+'" data-item="'+esc(p.item)+'">'+
@@ -599,6 +631,56 @@ body.fx-abierta{overflow:hidden}
     });
     grid.innerHTML = h;
     $('more').style.display = lista.length > mostrados ? 'block' : 'none';
+  }
+
+  /* ------------------------ productos por medida -----------------------
+     El hierro corrugado de 1/4, 3/8 y 1/2 son tres productos; el cliente
+     los ve en una tarjeta y elige la medida. Se arman en el panel. */
+  var medidaSel = {};          // id del grupo -> ITEM elegido
+  var idxMedidas = null;       // ITEM -> grupo (se rehace en cada pintada)
+  function indiceMedidas(){
+    idxMedidas = {};
+    var l = (window.Inventario && Inventario.variantes) ? Inventario.variantes() : [];
+    l.forEach(function(g){ g.items.forEach(function(x){ idxMedidas[String(x.item)] = g; }); });
+    return idxMedidas;
+  }
+  function grupoMedida(item){ return (idxMedidas || indiceMedidas())[String(item)] || null; }
+  /* De cada grupo queda la primera tarjeta que tocaba (la que más se
+     parece a lo buscado); las demás medidas se eligen dentro de ella. */
+  function agruparMedidas(l){
+    indiceMedidas();
+    var visto = {}, out = [];
+    l.forEach(function(p){
+      var g = grupoMedida(p.item);
+      if(!g){ out.push(p); return; }
+      if(visto[g.id]) return;
+      visto[g.id] = 1;
+      var c = Object.create(p); c.__grupo = g;
+      /* Si el cliente buscó una medida concreta, esa es la que se ve. */
+      if(filtro.q && !medidaSel['q:'+g.id+':'+filtro.q]){ medidaSel[g.id] = String(p.item); medidaSel['q:'+g.id+':'+filtro.q] = 1; }
+      out.push(c);
+    });
+    return out;
+  }
+  function medidasVisibles(g){
+    return g.items.map(function(x){ return { x:x, p:Inventario.porItem(x.item) }; })
+      .filter(function(o){ return o.p && esVisible(o.p); });
+  }
+  function medidaElegida(g, porDefecto){
+    var el = medidaSel[g.id];
+    var ok = medidasVisibles(g).some(function(o){ return String(o.p.item) === String(el); });
+    return ok ? Inventario.porItem(el) : Inventario.porItem(porDefecto.item);
+  }
+  function medidasHTML(g, actual){
+    var l = medidasVisibles(g);
+    if(l.length < 2) return '';
+    return '<div class="medidas" role="group" aria-label="Medida">'+
+      '<span class="ml">Medida</span>'+
+      l.map(function(o){
+        var on = String(o.p.item) === String(actual.item);
+        return '<button type="button" class="md'+(on?' on':'')+'" data-medida="'+esc(o.p.item)+'" data-grupo="'+esc(g.id)+'"'+
+          (on?' aria-pressed="true"':'')+'>'+esc(o.x.etiqueta || o.p.nombre)+'</button>';
+      }).join('')+'</div>';
   }
 
   /* Las otras formas en que se vende. Se enseña el precio de la presentación
@@ -732,6 +814,9 @@ body.fx-abierta{overflow:hidden}
   function sugeridosDe(p, n){
     var vistos = {}, out = [];
     vistos[String(p.item)] = 1;
+    /* Sus otras medidas ya se eligen arriba: no se repiten aquí. */
+    var gm = grupoMedida(p.item);
+    if(gm) gm.items.forEach(function(x){ vistos[String(x.item)] = 1; });
     function poner(q, porque){
       if(!q || vistos[String(q.item)] || !esVisible(q)) return;
       vistos[String(q.item)] = 1;
@@ -808,7 +893,7 @@ body.fx-abierta{overflow:hidden}
   function pintarFicha(){
     var p = Inventario.porItem(fichaItem);
     var box = $('fx-in');
-    if(!p){ box.innerHTML = '<button class="fx-x" data-cerrar aria-label="Cerrar">×</button>'+
+    if(!p){ box.innerHTML = '<button class="fx-x" data-cerrar aria-label="Cerrar">'+ICONO_X+'</button>'+
       '<div class="empty">Este producto ya no está en el catálogo.</div>'; return; }
     fichaFotos = fotosDe(p.item);
     if(fichaFoto >= fichaFotos.length) fichaFoto = 0;
@@ -819,7 +904,7 @@ body.fx-abierta{overflow:hidden}
       location.origin+location.pathname+'?item='+encodeURIComponent(p.item);
 
     box.innerHTML =
-      '<button class="fx-x" data-cerrar aria-label="Cerrar la ficha">×</button>'+
+      '<button class="fx-x" data-cerrar aria-label="Cerrar la ficha">'+ICONO_X+'</button>'+
       '<div class="fx-top">'+
         '<div class="fx-gal">'+
           '<div class="fx-main'+(foto?'':' sin')+'" id="fx-main">'+
@@ -840,6 +925,7 @@ body.fx-abierta{overflow:hidden}
             '<span>Cód. <b>'+esc(p.item)+'</b></span>'+
             '<span class="st '+(stock>0?'si':'no')+'">'+(stock>0?'● En stock':'● Consultar existencia')+'</span>'+
           '</div>'+
+          (function(){ var g = grupoMedida(p.item); return g ? medidasHTML(g, p) : ''; })()+
           precioHTML(p)+
           presentacionesHTML(p)+
           '<div class="fx-comprar">'+
@@ -872,8 +958,9 @@ body.fx-abierta{overflow:hidden}
     $('fx').scrollTop = 0;
     if(!op.sinHistorial && cambia){
       try{
-        history.pushState({ fx: fichaItem }, '', '?item='+encodeURIComponent(fichaItem));
-        fichaEmpujada = true;
+        /* Cambiar de medida no apila historial: «atrás» sigue cerrando. */
+        if(op.reemplazar && fichaEmpujada) history.replaceState({ fx: fichaItem }, '', '?item='+encodeURIComponent(fichaItem));
+        else { history.pushState({ fx: fichaItem }, '', '?item='+encodeURIComponent(fichaItem)); fichaEmpujada = true; }
       }catch(e){}
     }
     if(Inventario.marcarVisto) Inventario.marcarVisto(fichaItem);
@@ -922,6 +1009,13 @@ body.fx-abierta{overflow:hidden}
   $('fx').addEventListener('click', function(e){
     if(e.target === $('fx') || e.target.closest('[data-cerrar]')) return cerrarFicha();
     var p = Inventario.porItem(fichaItem); if(!p) return;
+    var md = e.target.closest('[data-medida]');
+    if(md){
+      medidaSel[md.dataset.grupo] = md.dataset.medida;
+      abrirFicha(md.dataset.medida, { reemplazar:true });
+      renderGrid();
+      return;
+    }
     var th = e.target.closest('[data-foto]');
     if(th){ fichaFoto = +th.dataset.foto; pintarFicha(); return; }
     if(e.target.closest('#fx-main') && fichaFotos.length) return abrirVisor(fichaFoto);
@@ -935,6 +1029,7 @@ body.fx-abierta{overflow:hidden}
       fichaCant = Math.max(1, parseInt($('fx-cant').value,10) || 1);
       if(cart[k]) cart[k].cant += fichaCant;
       else cart[k] = { item:k, nombre:p.nombre, precio:Number(p.precio)||0, unidad:p.unidad||'', cant:fichaCant };
+      contarVisita(k, 'cotizacion');
       saveCart(); renderCart(); renderGrid();
       toast('Agregado: '+fichaCant+' × '+p.nombre);
       fichaCant = 1; pintarFicha(); return;
@@ -1021,15 +1116,16 @@ body.fx-abierta{overflow:hidden}
   /* Cada ficha que se abre cuenta como una visita: con eso se eligen los
      productos del carrusel de la portada. Solo el ITEM, nada de quién es;
      y una vez por producto y por visita al sitio. */
-  function contarVisita(item){
+  function contarVisita(item, tipo){
+    tipo = tipo || 'ficha';
     try{
-      var k = 'fsj-visto-'+item;
+      var k = 'fsj-visto-'+tipo+'-'+item;
       if(sessionStorage.getItem(k)) return;
       sessionStorage.setItem(k, '1');
     }catch(e){}
     try{
       fetch('/api/visitas', { method:'POST', headers:{ 'content-type':'application/json' },
-        body: JSON.stringify({ item: String(item) }), keepalive:true }).catch(function(){});
+        body: JSON.stringify({ item: String(item), tipo: tipo }), keepalive:true }).catch(function(){});
     }catch(e){}
   }
 
@@ -1045,6 +1141,8 @@ body.fx-abierta{overflow:hidden}
   });
   $('q').addEventListener('input', pintarSug);
   $('q').addEventListener('focus', pintarSug);
+  /* La «x» del buscador (search) también cierra la lista. */
+  $('q').addEventListener('search', function(){ if(!$('q').value) cerrarSug(); });
   $('sug').addEventListener('mousedown', function(e){
     var b = e.target.closest('button[data-i]'); if(!b) return;
     e.preventDefault();
@@ -1055,6 +1153,18 @@ body.fx-abierta{overflow:hidden}
   $('q').addEventListener('keydown', function(e){
     var btns = [].slice.call($('sug').querySelectorAll('button[data-i]'));
     if(e.key==='Escape'){ cerrarSug(); return; }
+    /* Enter sin una sugerencia elegida: busca ya, cierra la lista y baja el
+       teclado del teléfono para que se vean los resultados. */
+    if(e.key==='Enter' && sugSel < 0){
+      e.preventDefault();
+      clearTimeout(deb);
+      filtro.q = e.target.value; mostrados = PAGE; renderGrid();
+      cerrarSug();
+      e.target.blur();
+      var m = document.querySelector('main');
+      if(m) window.scrollTo({ top: Math.max(0, m.offsetTop - 140), behavior:'smooth' });
+      return;
+    }
     if(!btns.length) return;
     if(e.key==='ArrowDown'){ e.preventDefault(); sugSel = Math.min(sugSel+1, btns.length-1); }
     else if(e.key==='ArrowUp'){ e.preventDefault(); sugSel = Math.max(sugSel-1, 0); }
@@ -1089,12 +1199,21 @@ body.fx-abierta{overflow:hidden}
     ['KOHLER','kohler.png','kohler',0],['CASTROL','castrol.png','castrol',0],['VALVOLINE','valvoline.png','valvoline',1],
     ['TOTALENERGIES','totalenergies.png','totalenergies',1]
   ];
+  /* La franja sale de la lista que se arma en el panel (Productos → Marcas
+     del catálogo). Si una marca no tiene logo, sale su nombre. */
+  function listaMarcas(){
+    if(window.Inventario && Inventario.marcasCatalogo) return Inventario.marcasCatalogo();
+    return MARCAS.map(function(m){ return { nombre:m[0], q:m[2], logo:'assets/marcas/'+m[1], sq:!!m[3] }; });
+  }
   function renderMarcas(){
     var actual = String(filtro.q || '').trim().toLowerCase();
     var h = '';
-    MARCAS.forEach(function(m){
-      h += '<button class="mk'+(m[3]?' sq':'')+(actual===m[2]?' on':'')+'" data-q="'+m[2]+'" title="Ver productos '+m[0]+'" aria-label="'+m[0]+'">'+
-           '<img src="assets/marcas/'+m[1]+'" alt="'+m[0]+'" loading="lazy"></button>';
+    listaMarcas().forEach(function(m){
+      var q = String(m.q || m.nombre || '').toLowerCase();
+      h += '<button class="mk'+(m.sq?' sq':'')+(m.logo?'':' txt')+(actual===q?' on':'')+'" data-q="'+esc(q)+'" '+
+             'title="Ver productos '+esc(m.nombre)+'" aria-label="'+esc(m.nombre)+'">'+
+           (m.logo ? '<img src="'+esc(m.logo)+'" alt="'+esc(m.nombre)+'" loading="lazy">'
+                   : '<span class="mk-n">'+esc(m.nombre)+'</span>')+'</button>';
     });
     $('marcas').innerHTML = h;
   }
@@ -1113,6 +1232,12 @@ body.fx-abierta{overflow:hidden}
   });
   renderMarcas();
   $('grid').addEventListener('click', function(e){
+    var md = e.target.closest('[data-medida]');
+    if(md){
+      medidaSel[md.dataset.grupo] = md.dataset.medida;
+      renderGrid();
+      return;
+    }
     var b = e.target.closest('.add');
     if(b){ var p = Inventario.porItem(b.dataset.item); if(p) addToCart(p); return; }
     /* La foto o el nombre abren la ficha. */
@@ -1157,7 +1282,10 @@ body.fx-abierta{overflow:hidden}
   renderCart();
   if(window.Inventario){
     // Si un empleado cambia un precio o sube una foto, el catálogo se refresca solo.
-    Inventario.onCambio(function(){ renderCats(); renderGrid(); renderCart(); });
+    Inventario.onCambio(function(t){
+      if(t === 'marcas') return renderMarcas();
+      renderCats(); renderGrid(); renderCart();
+    });
     /* `publica:true` = la versión del catálogo de la base guardada en el sitio
        (sin dados de baja y sin campos internos). Si el sitio no la tuviera, se
        cae al archivo publicado de siempre. */

@@ -100,6 +100,7 @@ window.Inventario = (function () {
        manda, pero esto deja la pantalla lista sin esperar a la red. */
     if (meta.equivalencias && Array.isArray(meta.equivalencias.grupos)) EQUIV = meta.equivalencias;
     if (meta.combos && Array.isArray(meta.combos.lista)) COMBOS = meta.combos;
+    _cargarSeccionesDeMeta();
     reindex();
   }
 
@@ -1709,6 +1710,7 @@ window.Inventario = (function () {
     if (Object.keys(_provPendientes()).length) secciones.push('proveedores');
     if (meta.equivSinMandar) secciones.push('equivalentes');
     if (meta.combosSinMandar) secciones.push('combos');
+    for (const k of Object.keys(SECC)) if (meta[SECC[k].flag]) secciones.push(SECC[k].nombre);
     return {
       cola, fotos, base: !!motivoBase, motivoBase, secciones,
       /* Lo que el cliente no ve, contado de verdad. La base cuenta como una
@@ -1738,6 +1740,13 @@ window.Inventario = (function () {
 
     if (!_claveEnvio()) {
       return Object.assign(inf, { ok: false, faltan: ['no hay sesión: entra con tu nombre y clave'] });
+    }
+
+    /* Si este equipo solo tiene la lista del cliente, primero se completa:
+       con media base no se puede guardar la base entera. */
+    if (meta.baselineParcial) {
+      paso('completando');
+      await completarBase().catch(() => {});
     }
 
     // 1) cambios sueltos
@@ -1770,6 +1779,9 @@ window.Inventario = (function () {
     }
     if (meta.combosSinMandar) {
       if (await _mandarCombos()) inf.secciones.push('combos');
+    }
+    for (const k of Object.keys(SECC)) {
+      if (meta[SECC[k].flag] && await _mandarSeccion(k)) inf.secciones.push(SECC[k].nombre);
     }
 
     // 4) la base entera, solo si hace falta
@@ -1835,6 +1847,8 @@ window.Inventario = (function () {
     await _bajarProveedores().catch(() => {});
     await _bajarEquiv().catch(() => {});
     await _bajarCombos().catch(() => {});
+    await _bajarSeccion('marcas').catch(() => {});
+    await _bajarSeccion('variantes').catch(() => {});
     return { recibidos: n, base, estado: estadoSincronizacion() };
   }
 
@@ -2707,6 +2721,291 @@ window.Inventario = (function () {
     }
   }
 
+  /* ============ AJUSTES COMPARTIDOS QUE VE EL CLIENTE ===================
+     Dos listas pequeñas que se escriben desde el panel y el catálogo lee
+     sin clave:
+       · marcas    -> la franja de marcas de arriba del catálogo (nombre y logo)
+       · variantes -> productos que son el mismo con distinta medida (el
+                      hierro corrugado de 1/4, 3/8, 1/2…): en el catálogo
+                      salen en UNA tarjeta con un selector de medida.
+     Igual que los combos: se guardan en el equipo, se mandan al sitio, y si
+     no llegan queda apuntado y Guardar lo vuelve a mandar.               */
+  const SECC = {
+    marcas:    { datos: null, flag: 'marcasSinMandar', meta: 'marcasCatalogo', nombre: 'marcas' },
+    variantes: { datos: null, flag: 'variantesSinMandar', meta: 'variantes', nombre: 'medidas' },
+  };
+
+  function _cargarSeccionesDeMeta() {
+    for (const k of Object.keys(SECC)) {
+      if (meta[SECC[k].meta] && typeof meta[SECC[k].meta] === 'object') SECC[k].datos = meta[SECC[k].meta];
+    }
+  }
+
+  async function _mandarSeccion(que) {
+    const s = SECC[que];
+    const clave = _claveEnvio();
+    if (!clave) { meta[s.flag] = Date.now(); await saveMeta(); return false; }
+    try {
+      const r = await fetch(API_CONFIG, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ clave, que, datos: s.datos }),
+      });
+      const d = await r.json().catch(() => null);
+      if (!r.ok || !d || !d.ok) throw new Error((d && d.error) || ('http ' + r.status));
+      if (meta[s.flag]) { meta[s.flag] = 0; await saveMeta(); }
+      return true;
+    } catch (e) {
+      meta[s.flag] = Date.now(); await saveMeta();
+      return false;
+    }
+  }
+
+  async function _bajarSeccion(que) {
+    const s = SECC[que];
+    try {
+      const r = await fetch(API_CONFIG + '?que=' + que, { cache: 'no-store' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      const d = await r.json();
+      if (!d || !d.ok) throw new Error('respuesta rara');
+      /* Lo de aquí que no llegó la otra vez gana, y se manda ahora. */
+      if (meta[s.flag] && _claveEnvio()) return await _mandarSeccion(que);
+      if (d.datos && typeof d.datos === 'object') {
+        s.datos = d.datos;
+        await asegurarMeta();
+        meta[s.meta] = d.datos;
+        await saveMeta();
+        emitir(que, { origen: 'sitio' });
+      }
+      return true;
+    } catch (e) { return false; }
+  }
+
+  async function _guardarSeccion(que, datos) {
+    const s = SECC[que];
+    s.datos = datos;
+    await asegurarMeta();
+    meta[s.meta] = datos;
+    await saveMeta();
+    emitir(que, {});
+    return _mandarSeccion(que);
+  }
+
+  function _slug(t) {
+    return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+  }
+
+  /* ------------------------- marcas del catálogo ------------------------
+     Las de fábrica son las que ya estaban, con sus logos en assets/marcas. */
+  const MARCAS_FABRICA = [
+    ['STIHL', 'stihl.png', 'stihl', 0], ['TRUPER', 'truper.png', 'truper', 0], ['TOTAL', 'total.png', 'total', 0],
+    ['INGCO', 'ingco.png', 'ingco', 0], ['EMTOP', 'emtop.png', 'emtop', 0], ['MAKITA', 'makita.png', 'makita', 0],
+    ['DEWALT', 'dewalt.png', 'dewalt', 1], ['STANLEY', 'stanley.png', 'stanley', 0], ['IMACASA', 'imacasa.png', 'imacasa', 1],
+    ['PFERD', 'pferd.png', 'pferd', 0], ['YALE', 'yale.png', 'yale', 1], ['SHERWIN-WILLIAMS', 'sherwin-williams.png', 'sherwin', 1],
+    ['LANCO', 'lanco.png', 'lanco', 0], ['TECNOLITE', 'tecnolite.png', 'tecnolite', 1], ['HOLCIM', 'holcim.png', 'holcim', 0],
+    ['CORINCA', 'corinca.png', 'corinca', 0], ['REFLEX', 'reflex.png', 'reflex', 1], ['HONDA', 'honda.png', 'honda', 0],
+    ['KOHLER', 'kohler.png', 'kohler', 0], ['CASTROL', 'castrol.png', 'castrol', 0], ['VALVOLINE', 'valvoline.png', 'valvoline', 1],
+    ['TOTALENERGIES', 'totalenergies.png', 'totalenergies', 1],
+  ];
+  function marcasCatalogo() {
+    const d = SECC.marcas.datos;
+    if (d && Array.isArray(d.lista)) return d.lista.map((m) => Object.assign({}, m));
+    return MARCAS_FABRICA.map((m) => ({ id: _slug(m[0]), nombre: m[0], q: m[2],
+                                        logo: 'assets/marcas/' + m[1], sq: !!m[3] }));
+  }
+  async function setMarcaCatalogo(nombre) {
+    const n = String(nombre || '').trim().toUpperCase().slice(0, 40);
+    if (!n) throw new Error('La marca necesita un nombre.');
+    const id = _slug(n);
+    if (!id) throw new Error('Ese nombre no sirve para una marca.');
+    const lista = marcasCatalogo();
+    const ya = lista.find((m) => m.id === id);
+    if (ya) return ya;
+    if (lista.length >= 80) throw new Error('Ya hay 80 marcas en la franja. Quita alguna primero.');
+    const m = { id, nombre: n, q: n.toLowerCase(), logo: '', sq: false };
+    lista.push(m);
+    await _guardarSeccion('marcas', { lista });
+    return m;
+  }
+  async function quitarMarcaCatalogo(id) {
+    const lista = marcasCatalogo();
+    const m = lista.find((x) => x.id === id);
+    if (!m) return false;
+    if (/^\/api\/fotos\/logo\//.test(m.logo || '')) await _borrarLogo(id).catch(() => {});
+    await _guardarSeccion('marcas', { lista: lista.filter((x) => x.id !== id) });
+    return true;
+  }
+  async function moverMarcaCatalogo(id, paso) {
+    const lista = marcasCatalogo();
+    const i = lista.findIndex((x) => x.id === id);
+    const j = i + (paso < 0 ? -1 : 1);
+    if (i < 0 || j < 0 || j >= lista.length) return false;
+    const t = lista[i]; lista[i] = lista[j]; lista[j] = t;
+    await _guardarSeccion('marcas', { lista });
+    return true;
+  }
+  /* El logo se achica y se guarda en el sitio (PNG, para no perder el fondo
+     transparente). Si es casi cuadrado, en la franja se dibuja más alto. */
+  async function subirLogoMarca(id, file) {
+    const lista = marcasCatalogo();
+    const m = lista.find((x) => x.id === id);
+    if (!m) throw new Error('Esa marca ya no está en la lista.');
+    if (!_claveEnvio()) throw new Error('Entra con tu nombre y clave para subir logos.');
+    const src = await _decodificar(file);
+    const iw = src.width || src.naturalWidth, ih = src.height || src.naturalHeight;
+    if (!iw || !ih) throw new Error('No se pudo leer la imagen.');
+    const k = Math.min(1, 360 / iw, 180 / ih);
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(iw * k)); c.height = Math.max(1, Math.round(ih * k));
+    c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+    if (src.close) src.close();
+    const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
+    let r;
+    try {
+      r = await fetch(API_FOTOS + '/logo/' + encodeURIComponent(id), {
+        method: 'POST', headers: { 'content-type': 'image/png', 'x-fsj-clave': _claveEnvio() }, body: blob });
+    } catch (e) { throw new Error('No se pudo conectar con el sitio. Revisa el internet.'); }
+    const d = await r.json().catch(() => null);
+    if (!r.ok || !d || !d.ok) throw new Error((d && d.error) ? 'El sitio dijo: ' + d.error : 'No se pudo subir el logo.');
+    m.logo = API_FOTOS + '/logo/' + encodeURIComponent(id) + '?v=' + d.ver;
+    m.sq = (iw / ih) < 1.6;
+    await _guardarSeccion('marcas', { lista });
+    return m;
+  }
+  async function _borrarLogo(id) {
+    const r = await fetch(API_FOTOS + '/logo/' + encodeURIComponent(id), {
+      method: 'DELETE', headers: { 'x-fsj-clave': _claveEnvio() } });
+    return r.ok;
+  }
+  async function quitarLogoMarca(id) {
+    const lista = marcasCatalogo();
+    const m = lista.find((x) => x.id === id);
+    if (!m) return false;
+    if (/^\/api\/fotos\/logo\//.test(m.logo || '')) await _borrarLogo(id).catch(() => {});
+    m.logo = ''; m.sq = false;
+    await _guardarSeccion('marcas', { lista });
+    return true;
+  }
+
+  /* ----------------------- productos por medida -------------------------
+     { id, nombre, items: [{ item, etiqueta }] }. Un producto solo puede
+     estar en un grupo. */
+  const MAX_VARIANTES = 16;
+  function variantes() {
+    const d = SECC.variantes.datos;
+    return (d && Array.isArray(d.lista)) ? d.lista.map((g) => Object.assign({}, g, { items: g.items.slice() })) : [];
+  }
+  function varianteDe(item) {
+    const k = String(item);
+    return variantes().find((g) => g.items.some((x) => String(x.item) === k)) || null;
+  }
+  /* Lo que cambia entre dos nombres: «HIERRO CORRUGADO 3/8 X 6 MTS» y
+     «HIERRO CORRUGADO 1/2 X 6 MTS» -> «1/2». */
+  function etiquetaSugerida(item, otroItem) {
+    const a = byItem.get(String(item)), b = byItem.get(String(otroItem));
+    if (!b) return '';
+    const pa = new Set(String(a ? a.nombre : '').toUpperCase().split(/\s+/));
+    const dif = String(b.nombre).toUpperCase().split(/\s+/).filter((w) => w && !pa.has(w));
+    return (dif.join(' ') || b.nombre).slice(0, 30);
+  }
+  async function setVariante(g) {
+    if (!g || !Array.isArray(g.items)) throw new Error('Faltan los productos.');
+    const vistos = new Set();
+    const items = [];
+    for (const x of g.items) {
+      const k = String(x && x.item || '');
+      if (!k || vistos.has(k) || !byItem.get(k)) continue;
+      vistos.add(k);
+      items.push({ item: k, etiqueta: String(x.etiqueta || '').trim().slice(0, 30) || etiquetaSugerida(g.items[0].item, k) });
+    }
+    if (items.length > MAX_VARIANTES) throw new Error('Son demasiadas medidas para un grupo (máximo ' + MAX_VARIANTES + ').');
+    /* De menor a mayor: 1/4, 3/8, 1/2, 5/8… (si todas se entienden como medida). */
+    const valor = (t) => {
+      const x = String(t || '').replace(',', '.');
+      let m = /(\d+)\s+(\d+)\/(\d+)/.exec(x);
+      if (m) return +m[1] + (+m[2] / +m[3]);
+      m = /(\d+)\/(\d+)/.exec(x);
+      if (m) return +m[1] / +m[2];
+      m = /(\d+(?:\.\d+)?)/.exec(x);
+      return m ? +m[1] : NaN;
+    };
+    if (items.every((x) => isFinite(valor(x.etiqueta)))) items.sort((a, b) => valor(a.etiqueta) - valor(b.etiqueta));
+    const id = g.id || ('v' + Date.now().toString(36));
+    const nombre = String(g.nombre || '').trim().slice(0, 80) ||
+      String((byItem.get(items[0] && items[0].item) || {}).nombre || 'Medidas');
+    /* Cada producto, en un solo grupo: se saca de donde estuviera. */
+    let lista = variantes().filter((x) => x.id !== id).map((x) =>
+      Object.assign(x, { items: x.items.filter((y) => !vistos.has(String(y.item))) }))
+      .filter((x) => x.items.length >= 2);
+    if (items.length >= 2) lista.push({ id, nombre, items });
+    await _guardarSeccion('variantes', { lista });
+    return items.length >= 2 ? { id, nombre, items } : null;
+  }
+  async function quitarDeVariante(item) {
+    const g = varianteDe(item);
+    if (!g) return false;
+    g.items = g.items.filter((x) => String(x.item) !== String(item));
+    if (g.items.length >= 2) return !!(await setVariante(g));
+    await _guardarSeccion('variantes', { lista: variantes().filter((x) => x.id !== g.id) });
+    return true;
+  }
+
+  /* Los que se le parecen tanto que solo cambia la medida: mismo nombre salvo
+     una o dos palabras. Es para ofrecerlos al armar el grupo, sin tener que
+     buscarlos uno por uno entre once mil. */
+  function parecidosPorMedida(item, n) {
+    const p = byItem.get(String(item));
+    if (!p) return [];
+    const pal = (t) => String(t || '').toUpperCase().split(/\s+/).filter(Boolean);
+    const mias = pal(p.nombre);
+    if (mias.length < 2) return [];
+    const set = new Set(mias);
+    const out = [];
+    for (const q of productos) {
+      if (q === p || q.activo === false) continue;
+      if (p.categoria && q.categoria && q.categoria !== p.categoria) continue;
+      const suyas = pal(q.nombre);
+      const comunes = suyas.filter((w) => set.has(w)).length;
+      const dif = (mias.length - comunes) + (suyas.length - comunes);
+      if (comunes < 2 || comunes < mias.length - 2 || dif > 4 || dif === 0) continue;
+      out.push({ p: q, s: comunes * 2 - dif });
+    }
+    out.sort((a, b) => b.s - a.s || a.p.nombre.localeCompare(b.p.nombre, 'es'));
+    return out.slice(0, n || 12).map((x) => x.p);
+  }
+
+  /* Lo más visto en el catálogo, con cuántas visitas (pide clave). */
+  async function visitasTop(n) {
+    const clave = _claveEnvio();
+    if (!clave) return { ok: false, error: 'sin clave' };
+    try {
+      const r = await fetch('/api/visitas?top=' + (n || 30) + '&conteo=1',
+        { headers: { 'x-fsj-clave': clave }, cache: 'no-store' });
+      const d = await r.json().catch(() => null);
+      if (!r.ok || !d) return { ok: false, error: (d && d.error) || ('http ' + r.status) };
+      return d;
+    } catch (e) { return { ok: false, error: 'red' }; }
+  }
+
+  /* ----------- las listas para elegir en la ficha: categoría y marca ------- */
+  function _valores(campo) {
+    const m = new Map();
+    for (const p of productos) {
+      const v = String(p[campo] || '').trim();
+      if (!v) continue;
+      m.set(v.toUpperCase(), (m.get(v.toUpperCase()) || 0) + 1);
+    }
+    return m;
+  }
+  function categoriasTodas() {
+    return [..._valores('categoria').keys()].sort((a, b) => a.localeCompare(b, 'es'));
+  }
+  function marcasTodas() {
+    const m = _valores('marca');
+    for (const x of marcasCatalogo()) if (!m.has(x.nombre)) m.set(x.nombre, 0);
+    return [...m.keys()].sort((a, b) => a.localeCompare(b, 'es'));
+  }
+
   function proveedorDeMarca(marca) {
     const l = proveedoresDeMarca(marca);
     return l.length ? l[0] : SIN_PROVEEDOR;
@@ -2923,6 +3222,30 @@ window.Inventario = (function () {
                                       { parcial: !full });
     emitir('base-del-servidor', { count: n, generatedAt: nueva, por: d.por || '' });
     return n;
+  }
+
+  /* Completa la base de este equipo cuando solo tiene la del cliente: la del
+     sitio si la hay (con clave), y si no, el archivo publicado completo. */
+  async function completarBase() {
+    if (!meta.baselineParcial) return { ok: true, ya: true };
+    let n = 0;
+    if (_claveEnvio()) {
+      try { n = await _bajarBaseServidor({ forzar: true }); } catch (e) { n = 0; }
+    }
+    if (!n || meta.baselineParcial) {
+      for (const url of ['./inventario-data.json', '../inventario-data.json']) {
+        try {
+          const r = await fetch(url, { cache: 'no-store' });
+          if (!r.ok) continue;
+          const d = await r.json();
+          if (!d || !Array.isArray(d.productos)) continue;
+          n = await importarBaseline(d, { parcial: false });
+          break;
+        } catch (e) { /* no está */ }
+      }
+    }
+    if (n) emitir('import', { origen: 'completar' });
+    return { ok: !meta.baselineParcial, count: n };
   }
 
   function _marcaDeSubida() {
@@ -3186,6 +3509,10 @@ window.Inventario = (function () {
     /* Se guarda en marcha: si el empleado entra mientras esto todavía carga,
        la base del sitio se pide DESPUÉS, no encima. */
     _arranque = _init(baselineUrls, opciones);
+    /* La pantalla de carga (cargando.js) se quita en cuanto hay inventario,
+       o si no se pudo cargar: nunca se queda tapando la página. */
+    const quitarCarga = () => { try { if (window.FSJ_CARGA) window.FSJ_CARGA.listo(); } catch (e) {} };
+    _arranque.then(quitarCarga, quitarCarga);
     return _arranque;
   }
 
@@ -3202,6 +3529,9 @@ window.Inventario = (function () {
        otra marca. Sin clave solo se leen. Con clave los recoge el arranque
        del empleado, que además puede tener que mandar los suyos. */
     if (!_claveEnvio()) _bajarEquiv().catch(() => {});
+    /* Las marcas de la franja y los grupos por medida, igual: sin clave. */
+    _bajarSeccion('marcas').catch(() => {});
+    _bajarSeccion('variantes').catch(() => {});
 
     /* Primero, la base guardada EN EL SITIO: es la que puede ser más nueva
        que los archivos publicados, porque no hace falta publicar para
@@ -3229,7 +3559,13 @@ window.Inventario = (function () {
            definición; volver a cargarlo "por si acaso" pisaría las ofertas y
            los precios que se acaban de tocar en este equipo. Solo la base del
            sitio, que sí está al día, se pide de más. */
-        if (!productos.length || (baseAt && baseAt > (meta.baselineAt || ''))) {
+        /* Salvo una cosa: si este equipo solo tiene la lista del cliente (le
+           faltan los dados de baja), el panel carga el archivo COMPLETO aunque
+           sea más viejo. Antes se quedaba esperando a la base del sitio, y si
+           el sitio no tenía ninguna guardada, el aviso de «base a medias» no
+           se iba nunca. */
+        const cojo = !op.publica && !parcial && !!meta.baselineParcial;
+        if (!productos.length || cojo || (baseAt && baseAt > (meta.baselineAt || ''))) {
           await importarBaseline(d, { parcial });
         }
         break;
@@ -3283,8 +3619,13 @@ window.Inventario = (function () {
     setClaveFotos, getClaveFotos, tieneClaveFotos, ultimoErrorServidor,
     palabrasDe, coincideTexto,
     guardarBaseEnServidor, estadoBaseServidor, bajarBaseServidor: _bajarBaseServidor,
-    guardarTodo, pendientesDelCliente,
+    guardarTodo, pendientesDelCliente, completarBase,
     fotosDe, cuantasFotos, subirFotoExtra, quitarFoto, MAX_FOTOS_PRODUCTO,
+    marcasCatalogo, setMarcaCatalogo, quitarMarcaCatalogo, moverMarcaCatalogo,
+    subirLogoMarca, quitarLogoMarca,
+    variantes, varianteDe, setVariante, quitarDeVariante, etiquetaSugerida, MAX_VARIANTES,
+    parecidosPorMedida,
+    categoriasTodas, marcasTodas, visitasTop,
     estadoEtiqueta, marcarEtiqueta, sinEtiqueta,
     proveedores, setProveedorDeMarca, setProveedores, proveedorDeMarca, SIN_PROVEEDOR,
     proveedoresDeMarca, proveedoresDeProducto, proveedorDeProducto, tieneProveedorPropio,

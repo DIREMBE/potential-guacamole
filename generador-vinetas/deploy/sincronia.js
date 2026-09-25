@@ -23,8 +23,10 @@
   'use strict';
 
   var CSS = [
-    /* Fija arriba: es lo que hay que ver antes de cerrar la pantalla. */
-    '#sync-estado{position:sticky;top:0;z-index:60;margin:0 0 14px}',
+    /* En su sitio, arriba, sin quedarse pegada: pegada tapaba las tablas y
+       las fichas al bajar. Cuando no se ve y hay algo pendiente, sale el
+       botón pequeño de abajo a la derecha. */
+    '#sync-estado{margin:0 0 14px}',
     '.sync-caja{display:flex;align-items:center;gap:10px;flex-wrap:wrap;',
     '  padding:9px 13px;border-radius:9px;font-size:13.5px;line-height:1.45;',
     '  border:1px solid transparent;box-shadow:0 2px 10px rgba(0,0,0,.06)}',
@@ -47,6 +49,18 @@
     '.sync-ok .btn-guardar{background:#fff;color:#17643A;border-color:#8CCBA6;font-weight:600}',
     '.sync-caja .btn-guardar[disabled]{opacity:.6;cursor:default}',
     '@media(max-width:560px){.sync-caja .btn-guardar{margin-left:0;width:100%}}',
+    '.sync-caja .btn-sec{cursor:pointer;border-radius:8px;padding:8px 14px;font:inherit;font-size:13.5px;',
+    '  font-weight:600;background:#fff;color:#6E5507;border:1px solid #E6CE7E}',
+    /* El botón flotante: pequeño, abajo a la derecha, solo si hace falta. */
+    '#sync-flota{position:fixed;right:16px;bottom:16px;z-index:70;display:none;align-items:center;gap:8px;',
+    '  padding:10px 16px;border-radius:999px;border:0;cursor:pointer;font:inherit;font-size:14px;',
+    '  font-weight:700;color:#fff;background:#F06030;box-shadow:0 6px 20px rgba(0,0,0,.25)}',
+    '#sync-flota.ver{display:inline-flex}',
+    '#sync-flota:hover{background:#d6481c}',
+    '#sync-flota.mal{background:#C22E26}',
+    '#sync-flota .pt{width:8px;height:8px;border-radius:50%;background:#fff;opacity:.9}',
+    '#sync-flota[disabled]{opacity:.85;cursor:default}',
+    '@media print{#sync-estado,#sync-flota{display:none!important}}',
   ].join('');
 
   function ponerCSS() {
@@ -78,7 +92,7 @@
     if (guardando) return;                       // mientras guarda, manda el progreso
     var p = Inventario.pendientesDelCliente();
     var e = Inventario.estadoSincronizacion ? Inventario.estadoSincronizacion() : {};
-    var clase, texto, det = '', boton = 'Guardar';
+    var clase, texto, det = '', boton = 'Guardar', extra = '';
 
     if (p.sinClave) {
       clase = 'sync-no';
@@ -90,9 +104,13 @@
       clase = 'sync-mal';
       texto = '<b>Tu clave no fue aceptada.</b> Sal y vuelve a entrar; si sigue igual, avisa a Diego.';
     } else if (p.baseParcial) {
+      /* Pasa cuando en este navegador se abrió antes el catálogo de clientes:
+         se quedó con la lista del cliente, que no trae los productos dados
+         de baja. No hay que ir a ningún otro lado: se completa aquí. */
       clase = 'sync-no';
-      texto = '<b>Este equipo tiene la base a medias.</b> Se completa sola en unos segundos; ' +
-              'mientras tanto no se sube la base, para no borrarle nada a nadie.';
+      texto = '<b>Este equipo solo tiene la lista del catálogo de clientes</b> (sin los productos ' +
+              'dados de baja). Se está completando sola; si el aviso sigue, pulsa «Completar ahora».';
+      extra = '<button type="button" class="btn-sec" data-completar>Completar ahora</button>';
     } else if (p.total) {
       clase = 'sync-no';
       texto = '<b>El cliente todavía no ve todo.</b> Pulsa Guardar.';
@@ -114,10 +132,18 @@
     caja.className = 'sync-caja ' + clase;
     caja.innerHTML = '<span class="pt"></span>' +
       '<span class="tx">' + texto + (det ? '<span class="det">' + det + '</span>' : '') + '</span>' +
+      extra +
       (p.sinClave ? '' : '<button type="button" class="btn-guardar">' + boton + '</button>');
 
     var btn = caja.querySelector('.btn-guardar');
     if (btn) btn.addEventListener('click', function () { guardar(caja); });
+    var comp = caja.querySelector('[data-completar]');
+    if (comp) comp.addEventListener('click', function () { completar(caja, comp); });
+
+    /* El flotante: cuenta lo pendiente, o avisa si falló. */
+    pendientesAhora = (!p.sinClave && p.comprobado && (p.total || (ultimo && !ultimo.ok))) ? (p.total || 1) : 0;
+    flotaMal = !!(ultimo && !ultimo.ok);
+    pintarFlota();
 
     /* Si el sitio falla del todo, que aparezca la salida de emergencia. */
     var emer = document.getElementById('card-emergencia');
@@ -135,6 +161,7 @@
   }
 
   function textoPaso(p) {
+    if (p.fase === 'completando') return 'Completando la base de este equipo…';
     if (p.fase === 'cambios') return 'Mandando los cambios…';
     if (p.fase === 'fotos') return 'Subiendo fotos: ' + (p.hechas + 1) + ' de ' + p.total + '…';
     if (p.fase === 'ajustes') return 'Mandando proveedores, equivalentes y combos…';
@@ -147,6 +174,29 @@
     return 'Guardando…';
   }
 
+  var pendientesAhora = 0, flotaMal = false, barraVisible = true, flota = null;
+
+  function pintarFlota(texto) {
+    if (!flota) return;
+    var ver = guardando ? !barraVisible : (!barraVisible && pendientesAhora > 0);
+    flota.classList.toggle('ver', !!ver);
+    flota.classList.toggle('mal', flotaMal && !guardando);
+    flota.disabled = guardando;
+    flota.innerHTML = '<span class="pt"></span>' + (texto || (guardando ? 'Guardando…'
+      : (flotaMal ? 'No se pudo guardar · reintentar' : 'Guardar · ' + pendientesAhora + ' pendiente' + (pendientesAhora === 1 ? '' : 's'))));
+  }
+
+  var completando = false;
+  function completar(caja, b) {
+    if (completando || !Inventario.completarBase) return;
+    completando = true;
+    if (b) { b.disabled = true; b.textContent = 'Completando…'; }
+    Promise.resolve(Inventario.completarBase()).catch(function () {}).then(function () {
+      completando = false;
+      pintar(caja);
+    });
+  }
+
   function guardar(caja) {
     if (guardando) return;
     guardando = true;
@@ -155,8 +205,10 @@
     if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
     caja.className = 'sync-caja sync-no';
     var tx = caja.querySelector('.tx');
+    pintarFlota();
     Promise.resolve(Inventario.guardarTodo(function (p) {
       if (tx) tx.innerHTML = '<b>' + textoPaso(p) + '</b> No cierres esta pantalla.';
+      pintarFlota(textoPaso(p));
     })).then(function (inf) {
       ultimo = inf;
     }).catch(function (err) {
@@ -176,8 +228,27 @@
     var caja = document.createElement('div');
     host.appendChild(caja);
 
+    flota = document.createElement('button');
+    flota.type = 'button';
+    flota.id = 'sync-flota';
+    flota.setAttribute('aria-label', 'Guardar');
+    flota.addEventListener('click', function () { guardar(caja); });
+    document.body.appendChild(flota);
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (e) {
+        barraVisible = e[0].isIntersecting;
+        pintarFlota();
+      }).observe(host);
+    }
+
     var listo = function () { pintar(caja); };
     listo();
+    /* Si este equipo se quedó con la lista del cliente, se intenta completar
+       solo una vez, sin esperar a que nadie pulse nada. */
+    setTimeout(function () {
+      var p = Inventario.pendientesDelCliente && Inventario.pendientesDelCliente();
+      if (p && p.baseParcial) completar(caja, null);
+    }, 3500);
     /* Se repinta unas cuantas veces al principio: la barra aparece antes de
        que termine de comprobarse qué tiene el sitio. */
     [400, 1000, 2000, 4000, 8000].forEach(function (ms) { setTimeout(listo, ms); });

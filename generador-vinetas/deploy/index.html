@@ -6,6 +6,7 @@
 <script src="./support.js"></script>
 </head>
 <body>
+<script src="cargando.js" data-espera="contenido"></script>
 <x-dc>
 <helmet>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,9 +21,9 @@
     input{font-family:inherit}
     ::placeholder{color:#7893AC;opacity:1}
     ::selection{background:#F15930;color:#fff}
-    .fsj-embed{width:100%;height:472px;border:0;display:block;overflow:hidden}
-@media(max-width:1024px){.fsj-embed{height:462px}}
-@media(max-width:700px){.fsj-embed{height:392px}}
+    .fsj-embed{width:100%;height:480px;border:0;display:block;overflow:hidden}
+@media(max-width:1024px){.fsj-embed{height:470px}}
+@media(max-width:700px){.fsj-embed{height:400px}}
     @keyframes scRise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
     @keyframes fsjDraw{0%{stroke-dashoffset:2400}22%{stroke-dashoffset:0}100%{stroke-dashoffset:0}}
     @keyframes fsjInk{0%{opacity:0}7%{opacity:1}86%{opacity:1}97%{opacity:0}100%{opacity:0}}
@@ -842,7 +843,7 @@ class Component extends DCLogic {
     if (!b) return true;
     // ¿hay algo dibujado además del propio respaldo?
     var hijos = Array.prototype.filter.call(b.children, function (el) {
-      return el.id !== 'fsj-respaldo' && el.tagName !== 'SCRIPT' &&
+      return el.id !== 'fsj-respaldo' && el.id !== 'fsj-carga' && el.tagName !== 'SCRIPT' &&
              el.offsetHeight > 40;
     });
     return hijos.length === 0;

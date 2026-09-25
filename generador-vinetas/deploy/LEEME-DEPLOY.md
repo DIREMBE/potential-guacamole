@@ -36,6 +36,7 @@ netlify/functions/       Funciones del servidor: entrada de empleados, fotos,
                          miran en el catálogo (para el carrusel de la portada).
 sincronia.js             La barra de arriba de las pantallas internas, con el
                          único botón Guardar.
+cargando.js              NUEVO · La pantalla de carga (muro de bloques).
 recuperar-fotos.js       TEMPORAL · Sube al sitio las fotos que se quedaron
                          guardadas en un equipo. Ver «Fotos varadas» abajo.
 inventario-admin.html    NUEVO · Precios, fotos, historial y actualización con
@@ -70,7 +71,51 @@ assets/vendor/           NUEVO · React, que antes se bajaba de un servidor
 
 ## Qué cambió en esta versión
 
-### Lo último (septiembre)
+### Lo último (segunda tanda de septiembre)
+
+- **La barra de Guardar ya no tapa nada.** Va arriba, en su sitio, sin quedarse
+  pegada. Si bajas por la página y queda algo pendiente, aparece un botón
+  pequeño abajo a la derecha: *«Guardar · N pendientes»*.
+- **«Base a medias», explicado y arreglado.** Salía cuando en ese navegador se
+  había abierto antes el **catálogo de clientes**: el equipo se quedaba con la
+  lista del cliente (6.300 productos, sin los dados de baja) en vez de la
+  completa (11.200). No hay que entrar a ningún otro lado: ahora el panel la
+  completa solo al abrirse, y si el aviso sigue, en la misma barra hay un botón
+  **«Completar ahora»**. Antes se quedaba así para siempre si el sitio no tenía
+  la base guardada.
+- **Categoría y marca se eligen de una lista** (en la ficha y al crear un
+  producto), con la opción **«＋ Agregar … nueva»** al final. Así no salen
+  «HERRAMIENTAS» y «HERRAMIENTA» como dos categorías distintas.
+- **Marcas del catálogo** (Productos → *Marcas del catálogo*): la franja de
+  logos de arriba del catálogo del cliente ya no es fija. Se agregan marcas,
+  con logo o sin él (sin logo sale **su nombre**), se ordenan y se quitan. Una
+  marca nueva creada en la ficha de un producto entra sola a la franja.
+- **Productos por medida.** En la ficha del producto, *«Otras medidas del mismo
+  producto»*: la ficha sugiere los que se le parecen (el hierro de 1/4, 3/8,
+  1/2…) y con un toque se agrupan; a cada uno se le pone la medida que verá el
+  cliente. En el catálogo salen en **una sola tarjeta** con botones de medida
+  (ordenados de menor a mayor): al elegir una, la tarjeta cambia a ese producto
+  —foto, precio, existencia— y se agrega a la cotización ese. En la ficha
+  también se cambia de medida.
+- **El carrusel de la portada ahora se mueve.** Antes, sin visitas todavía,
+  enseñaba el archivo viejo de siempre. Ahora: primero lo más visto; mientras
+  haya pocas visitas se completa con destacados, ofertas y productos con foto,
+  **y ese relleno cambia cada día**. Agregar un producto a la cotización cuenta
+  como tres visitas. En Productos → *Lo que más miran los clientes* ves la
+  lista con cuántas visitas tiene cada uno. Funciona también aunque el sitio no
+  tenga la base guardada.
+- **Enter en el buscador del catálogo** busca, cierra la lista de sugerencias y
+  baja el teclado del teléfono.
+- **Las «x» de cerrar y quitar** van dibujadas y centradas en cualquier
+  teléfono; y el borde naranja de las tarjetas del carrusel ya no se corta al
+  pasar el cursor.
+- **Pantalla de carga**: si una página tarda, en el centro se va levantando un
+  muro de bloques con frases como *«Construyendo algo para ti…»* u *«Ordenando
+  la bodega…»*. Si carga rápido, ni se ve. Nunca se queda más de 25 segundos.
+- Arreglado: en la ficha, **«Agregar una presentación»** y **«Armar un combo»**
+  no respondían al clic.
+
+### Primera tanda de septiembre
 
 **Un solo botón: Guardar.** Arriba de cada pantalla interna (panel, cargar
 archivos, administrar productos, fotos e historial, viñetas) hay una barra fija
@@ -839,7 +884,9 @@ la evolución en Excel, y botones para quitar un informe o borrar todo.
 ## 3) Showcase del inicio (15 productos, 5 a la vez)
 
 La página de inicio tiene un **carrusel con 15 productos, 5 visibles a la vez**
-(flechas y puntos), bajo el título **“Lo más visto”**.
+(flechas y puntos), bajo el título **“Lo más visto”** (o *“Te puede
+interesar”* mientras haya menos de 3 productos con visitas: el resto se
+completa con destacados, ofertas y productos con foto, distintos cada día).
 
 - Se eligen por **lo que más se mira en el catálogo**: cada vez que un cliente
   abre la ficha de un producto cuenta como una visita (una por producto y por
@@ -847,9 +894,8 @@ La página de inicio tiene un **carrusel con 15 productos, 5 visibles a la vez**
   cada 15 minutos. Solo se guarda el ITEM y cuántas veces: nada de quién.
 - Solo entra lo que se puede vender: dado de baja o sin precio, no sale.
 - Cada tarjeta abre **la ficha de su producto** en el catálogo.
-- Mientras no haya visitas suficientes (al principio), el carrusel se completa
-  con `showcase-data.json` y dice **“Lo más reciente”**, como antes. Si el sitio
-  no respondiera, sale solo con ese archivo: la portada nunca se queda vacía.
+- `showcase-data.json` ya solo se usa si el sitio no respondiera; entonces el
+  carrusel dice **“Lo más reciente”**, como antes. La portada nunca se queda vacía.
 - Lo lleva la función nueva `netlify/functions/visitas.mjs` (se sube sola con la
   carpeta; no hay que configurar nada).
 - Técnicamente el carrusel vive en `showcase-embed.html` y el home lo muestra
@@ -1162,6 +1208,24 @@ van poniendo desde *Administrar productos → Sin precio*.
 ---
 
 ## Deploy en Netlify
+
+### Gastar menos créditos
+
+Con el plan por créditos, **cada deploy a producción cuesta 15 créditos**, sin
+importar si cambió un archivo o cien. Lo que más ahorra:
+
+1. **No hace falta desplegar para cambiar datos.** Precios, fotos, el Excel del
+   mes, ofertas, marcas, combos, medidas: todo eso va con **Guardar** y no gasta
+   deploys. Solo hay que subir la carpeta cuando cambia el *código* del sitio.
+2. **Juntar los cambios de código** y subirlos de una vez (como esta carpeta),
+   en vez de subir cada arreglo por separado.
+3. **Las vistas previas (Deploy Previews) no cuestan créditos**: sirven para
+   probar antes de publicar. Lo que se publica en producción sí.
+4. **El ancho de banda también cuenta** (20 créditos por GB). El sitio ya ayuda:
+   el catálogo del cliente se guarda en su teléfono y solo se vuelve a bajar
+   cuando cambia la base; las fotos se reducen a ~80 KB.
+5. Revisa de vez en cuando en Netlify **Usage & billing** qué se lleva más
+   créditos (deploys, ancho de banda, peticiones o funciones).
 
 Sube esta carpeta como siempre. **Importante:** para que funcionen las fotos
 automáticas debe subirse **completa**, incluyendo `netlify.toml`, la carpeta

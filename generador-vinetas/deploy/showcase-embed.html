@@ -22,7 +22,10 @@
   .nav button:hover:not(:disabled){border-color:#F15930;color:#F15930}
   .nav button:disabled{opacity:.32;cursor:default}
   .track{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 4*14px)/5);gap:14px;
-    overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding-bottom:4px;scrollbar-width:none}
+    overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;
+    /* Aire arriba: al pasar el cursor la tarjeta sube 3px, y sin este hueco
+       el carril le cortaba el borde naranja de arriba. */
+    padding:6px 1px 6px;margin-top:-6px}
   .track::-webkit-scrollbar{display:none}
   .card{scroll-snap-align:start;display:flex;flex-direction:column;background:#0F2739;
     border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden;
@@ -124,19 +127,23 @@
      no hay suficientes visitas —o el sitio no contesta— se completa con los
      productos publicados de siempre, así la portada nunca se queda vacía. */
   function leer(url){
-    return fetch(url,{cache:'no-store'})
+    return fetch(url)
       .then(function(r){ if(!r.ok) throw 0; return r.json(); })
-      .then(function(d){ return (d && d.productos) ? d.productos : []; })
-      .catch(function(){ return []; });
+      .catch(function(){ return null; });
   }
-  Promise.all([leer('/api/visitas?top=15'), leer('showcase-data.json')]).then(function(r){
-    var vistos = r[0], respaldo = r[1], ya = {};
-    var l = [];
-    vistos.forEach(function(p){ if(p && p.item && !ya[p.item]){ ya[p.item]=1; l.push(p); } });
-    titulo = l.length >= PAGE ? 'Lo más visto' : 'Lo más reciente';
-    respaldo.forEach(function(p){ if(l.length < 15 && p && p.item && !ya[p.item]){ ya[p.item]=1; l.push(p); } });
-    datos = l.slice(0,15);
-    pinta();
+  /* El sitio ya devuelve lo más visto completado con lo que vale la pena
+     enseñar (destacados, ofertas, con foto), y ese relleno cambia cada día.
+     El archivo publicado solo se usa si el sitio no contesta. */
+  leer('/api/visitas?top=15').then(function(d){
+    var l = (d && d.productos) || [];
+    if(l.length){
+      titulo = (d.vistos || 0) >= 3 ? 'Lo más visto' : 'Te puede interesar';
+      datos = l.slice(0,15); pinta(); return;
+    }
+    return leer('showcase-data.json').then(function(r){
+      titulo = 'Lo más reciente';
+      datos = ((r && r.productos) || []).slice(0,15); pinta();
+    });
   });
 })();
 </script>
