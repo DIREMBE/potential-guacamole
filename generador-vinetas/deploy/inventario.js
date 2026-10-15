@@ -2744,7 +2744,15 @@ window.Inventario = (function () {
   async function _mandarSeccion(que) {
     const s = SECC[que];
     const clave = _claveEnvio();
-    if (!clave) { meta[s.flag] = Date.now(); await saveMeta(); return false; }
+    /* Cuando cambia si queda pendiente, se avisa: la barra de Guardar lo
+       cuenta en el momento, sin esperar a su repaso de cada 30 segundos. */
+    const marcar = async (pendiente) => {
+      const antes = !!meta[s.flag];
+      meta[s.flag] = pendiente ? Date.now() : 0;
+      await saveMeta();
+      if (antes !== pendiente) emitir('pendientes', { seccion: que, pendiente });
+    };
+    if (!clave) { await marcar(true); return false; }
     try {
       const r = await fetch(API_CONFIG, {
         method: 'POST', headers: { 'content-type': 'application/json' },
@@ -2752,10 +2760,10 @@ window.Inventario = (function () {
       });
       const d = await r.json().catch(() => null);
       if (!r.ok || !d || !d.ok) throw new Error((d && d.error) || ('http ' + r.status));
-      if (meta[s.flag]) { meta[s.flag] = 0; await saveMeta(); }
+      if (meta[s.flag]) await marcar(false);
       return true;
     } catch (e) {
-      meta[s.flag] = Date.now(); await saveMeta();
+      await marcar(true);
       return false;
     }
   }
@@ -3226,7 +3234,15 @@ window.Inventario = (function () {
 
   /* Completa la base de este equipo cuando solo tiene la del cliente: la del
      sitio si la hay (con clave), y si no, el archivo publicado completo. */
-  async function completarBase() {
+  let _completando = null;
+  function completarBase() {
+    /* Uno a la vez: el intento automático, el botón «Completar ahora» y
+       Guardar pueden pedirlo casi juntos, y cada uno bajaría la base entera. */
+    if (_completando) return _completando;
+    _completando = _completarBaseYa().finally(() => { _completando = null; });
+    return _completando;
+  }
+  async function _completarBaseYa() {
     if (!meta.baselineParcial) return { ok: true, ya: true };
     let n = 0;
     if (_claveEnvio()) {

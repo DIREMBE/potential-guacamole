@@ -1284,6 +1284,7 @@ body.fx-abierta{overflow:hidden}
     // Si un empleado cambia un precio o sube una foto, el catálogo se refresca solo.
     Inventario.onCambio(function(t){
       if(t === 'marcas') return renderMarcas();
+      if(t === 'pendientes') return;     // solo le importa a la barra de Guardar
       renderCats(); renderGrid(); renderCart();
     });
     /* `publica:true` = la versión del catálogo de la base guardada en el sitio

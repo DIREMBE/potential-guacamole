@@ -2629,7 +2629,7 @@ details.plegable[open]>summary{margin-bottom:12px}
     if(que==='marca' && Inventario.setMarcaCatalogo){
       Inventario.setMarcaCatalogo(n).then(function(){
         pintarMarcasCatalogo();
-        toast('«'+n+'» también sale ahora en la franja de marcas del catálogo.');
+        avisoMarcas('«'+n+'» también sale ahora en la franja de marcas del catálogo.');
       }).catch(function(){});
     }
     return true;
@@ -3085,6 +3085,15 @@ details.plegable[open]>summary{margin-bottom:12px}
 
   /* ---------------------- marcas del catálogo --------------------------
      La franja de logos de arriba del catálogo del cliente. */
+  /* La lista de marcas se guarda en el equipo y se manda al sitio; si no
+     llegó (sin clave o sin internet) queda pendiente para Guardar. El aviso
+     dice la verdad: «ya sale» solo si el cliente ya la ve. */
+  function avisoMarcas(textoOk){
+    var p=Inventario.pendientesDelCliente ? Inventario.pendientesDelCliente() : null;
+    var pendiente=!!(p && p.secciones && p.secciones.indexOf('marcas')>=0);
+    if(pendiente) toast('Guardado en este equipo, pero el cliente todavía no lo ve: pulsa Guardar.',true);
+    else if(textoOk) toast(textoOk);
+  }
   function tileMarca(m){
     return '<span class="mc-tile'+(m.sq?' sq':'')+'">'+(m.logo
       ? '<img src="'+esc(m.logo)+'" alt="'+esc(m.nombre)+'" loading="lazy">'
@@ -3121,7 +3130,7 @@ details.plegable[open]>summary{margin-bottom:12px}
     }).then(function(m){
       $('mc-nombre').value=''; $('mc-logo').value=''; logoNuevo=null; $('mc-logo-nombre').textContent='';
       pintarMarcasCatalogo();
-      toast('«'+m.nombre+'» ya sale en la franja del catálogo'+(m.logo?' con su logo.':', con su nombre.'));
+      avisoMarcas('«'+m.nombre+'» ya sale en la franja del catálogo'+(m.logo?' con su logo.':', con su nombre.'));
     }).catch(function(err){ pintarMarcasCatalogo(); toast(err.message||'No se pudo.',true); });
   });
   $('mc-lista').addEventListener('click',function(e){
@@ -3137,14 +3146,15 @@ details.plegable[open]>summary{margin-bottom:12px}
       if(!confirm('¿Quitar esta marca de la franja del catálogo? Sus productos no se tocan, pero si tiene un logo subido también se borra del sitio.')) return;
       hecho=Inventario.quitarMarcaCatalogo(id);
     }
-    if(hecho) hecho.then(pintarMarcasCatalogo).catch(function(err){ toast(err.message||'No se pudo.',true); });
+    if(hecho) hecho.then(function(){ pintarMarcasCatalogo(); avisoMarcas(''); })
+      .catch(function(err){ toast(err.message||'No se pudo.',true); });
   });
   $('mc-lista').addEventListener('change',function(e){
     var i=e.target.closest('input[data-mc-logo]'); if(!i) return;
     var f=i.files&&i.files[0]; if(!f) return;
     var id=i.closest('[data-mc]').dataset.mc;
     toast('Subiendo el logo…');
-    Inventario.subirLogoMarca(id,f).then(function(){ pintarMarcasCatalogo(); toast('Logo guardado.'); })
+    Inventario.subirLogoMarca(id,f).then(function(){ pintarMarcasCatalogo(); avisoMarcas('Logo guardado.'); })
       .catch(function(err){ toast(err.message||'No se pudo subir el logo.',true); });
   });
   $('det-marcas').addEventListener('toggle',function(){ if(this.open) pintarMarcasCatalogo(); });
