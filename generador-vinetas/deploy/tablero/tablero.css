@@ -1,0 +1,156 @@
+/* ==========================================================================
+   Tablero de ventas — estilos
+   Colores de marca: naranja #F15930, azul #0475BB. Letras del sistema (la
+   página no carga nada de afuera).
+   ========================================================================== */
+:root{
+  --naranja:#F15930; --naranja-2:#d6481c; --azul:#0475BB; --azul-2:#035d95;
+  --fondo:#f5f4f1; --tarjeta:#fff; --linea:#e3dfd8; --linea-2:#cfc9bf;
+  --tx:#1d1b18; --tx-2:#5b554c; --tx-3:#8b8379;
+  --rojo:#c62828; --rojo-bg:#fdecea; --ama:#b7870b; --ama-bg:#fff6d6; --verde:#2e7d32; --verde-bg:#e8f4e9;
+  --gris:#9e978c; --gris-bg:#f0eeea; --param:#fff3b0;
+  --r:8px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--fondo);color:var(--tx);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:15px;
+  -webkit-text-size-adjust:100%}
+body{overflow-x:hidden}
+[hidden]{display:none!important}
+a{color:var(--azul)}
+button,input,select{font:inherit}
+
+/* ------------------------------- barra -------------------------------- */
+.tb-barra{display:flex;align-items:center;gap:12px;padding:10px 16px;background:#0f2133;color:#fff;
+  border-bottom:3px solid var(--naranja)}
+.tb-marca{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;min-width:0}
+.tb-marca img{width:34px;height:34px;object-fit:contain}
+.tb-marca span{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.tb-marca b{font-size:15px;letter-spacing:.02em}
+.tb-marca small{font-size:12.5px;color:#b9c8d6}
+.tb-quien{margin-left:auto;font-size:13px;color:#b9c8d6;white-space:nowrap}
+.tb-quien button{margin-left:8px;background:none;border:1px solid #3a5269;color:#dbe6ef;border-radius:6px;
+  padding:3px 8px;cursor:pointer;font-size:12.5px}
+
+.tb-app,.tb-bloqueo{max-width:1280px;margin:0 auto;padding:16px}
+.tb-bloqueo{text-align:center;padding-top:60px}
+.tb-bloqueo h1{font-size:22px;margin:0 0 8px}
+.tb-bloqueo p{color:var(--tx-2);margin:6px 0 18px}
+
+/* ------------------------------ carga --------------------------------- */
+.tb-carga{background:var(--tarjeta);border:1px solid var(--linea);border-radius:12px;padding:16px;margin-bottom:16px}
+.tb-zona{border:2px dashed var(--linea-2);border-radius:10px;padding:22px 14px;text-align:center;cursor:pointer;
+  transition:border-color .15s,background .15s}
+.tb-zona:hover,.tb-zona:focus{outline:none;border-color:var(--naranja)}
+.tb-zona.encima{border-color:var(--naranja);background:#fff4ef}
+.tb-zona-t{font-weight:700;font-size:17px}
+.tb-zona-s{color:var(--tx-2);font-size:13.5px;margin-top:4px}
+.tb-lista{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+.tb-lista li{display:flex;gap:10px;align-items:baseline;font-size:14px;padding:7px 10px;border-radius:7px;
+  background:var(--gris-bg);flex-wrap:wrap}
+.tb-lista li .ic{font-weight:700;width:18px;flex:none;text-align:center}
+.tb-lista li.ok{background:var(--verde-bg)} .tb-lista li.ok .ic{color:var(--verde)}
+.tb-lista li.falta .ic{color:var(--tx-3)}
+.tb-lista li .det{color:var(--tx-2);font-size:13px}
+.tb-lista li .op{color:var(--tx-3);font-size:12.5px}
+.tb-progreso{margin-top:12px}
+.tb-progreso-barra{height:8px;border-radius:8px;background:var(--gris-bg);overflow:hidden}
+.tb-progreso-barra span{display:block;height:100%;width:0;background:var(--naranja);transition:width .15s}
+.tb-progreso p{margin:6px 0 0;font-size:13px;color:var(--tx-2)}
+.tb-error{margin-top:12px;padding:11px 13px;border-radius:8px;background:var(--rojo-bg);color:#8e1c1c;
+  border:1px solid #f1b6b0;font-size:14px;line-height:1.45}
+.tb-privado{margin:10px 0 0;font-size:12.5px;color:var(--tx-3)}
+
+/* --------------------------- lectura de archivos ---------------------- */
+.tb-lectura{background:var(--tarjeta);border:1px solid var(--linea);border-radius:12px;padding:14px 16px;margin-bottom:16px}
+.tb-lectura h2{font-size:15px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em;color:var(--tx-2)}
+.tb-cifras{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 18px;font-size:13.5px}
+.tb-cifras div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dotted var(--linea);padding:3px 0}
+.tb-cifras b{font-variant-numeric:tabular-nums}
+.tb-aviso{margin-top:10px;padding:9px 12px;border-radius:8px;font-size:13.5px;line-height:1.45}
+.tb-aviso.ama{background:var(--ama-bg);border:1px solid #edd88a}
+.tb-aviso.info{background:#eaf3fa;border:1px solid #b8d6ea}
+
+/* ------------------------------ pestañas ------------------------------ */
+.tb-pestanas{display:flex;gap:4px;overflow-x:auto;border-bottom:2px solid var(--linea);margin-bottom:14px;
+  scrollbar-width:thin}
+.tb-pestanas button{flex:none;background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;
+  padding:10px 14px;cursor:pointer;color:var(--tx-2);font-weight:600;white-space:nowrap}
+.tb-pestanas button[aria-selected="true"]{color:var(--naranja);border-bottom-color:var(--naranja)}
+
+/* ------------------------------ tarjetas ------------------------------ */
+.tb-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.tb-kpi{background:var(--tarjeta);border:1px solid var(--linea);border-radius:10px;padding:11px 13px}
+.tb-kpi .v{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.tb-kpi .l{font-size:12px;color:var(--tx-2);text-transform:uppercase;letter-spacing:.05em;margin-top:3px}
+.tb-kpi.n .v{color:var(--naranja)} .tb-kpi.a .v{color:var(--azul)}
+.tb-graficas{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin-bottom:14px}
+.tb-graf{background:var(--tarjeta);border:1px solid var(--linea);border-radius:10px;padding:12px;min-width:0}
+.tb-graf h3,.tb-bloque h3{font-size:14px;margin:0 0 8px}
+.tb-graf .lienzo{position:relative;height:240px}
+.tb-bloque{background:var(--tarjeta);border:1px solid var(--linea);border-radius:10px;padding:12px 14px;margin-bottom:14px;min-width:0}
+.tb-nota{font-size:13px;color:var(--tx-2);line-height:1.5;margin:6px 0 10px}
+
+/* --------------------------- parámetros ------------------------------- */
+.tb-param{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;background:var(--param);
+  border:1px solid #e9d36b;border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.tb-param label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;font-weight:600;color:#5c4a00}
+.tb-param input[type=number]{width:90px;padding:6px 8px;border:1px solid #d9c45a;border-radius:6px;background:#fffbe3;
+  text-align:right;font-variant-numeric:tabular-nums}
+.tb-param select{padding:6px 8px;border:1px solid #d9c45a;border-radius:6px;background:#fffbe3}
+.tb-param .ayuda{font-size:12px;font-weight:400;color:#6d5d17;flex-basis:100%}
+.tb-filtros{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.tb-filtros input[type=search]{flex:1;min-width:180px;padding:8px 10px;border:1px solid var(--linea-2);border-radius:7px}
+.tb-filtros select{padding:8px 10px;border:1px solid var(--linea-2);border-radius:7px;background:#fff;max-width:100%}
+.tb-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:7px;border:1px solid var(--linea-2);
+  background:#fff;cursor:pointer;font-weight:600;color:var(--tx)}
+.tb-btn:hover{border-color:var(--naranja);color:var(--naranja)}
+.tb-btn.pri{background:var(--naranja);border-color:var(--naranja);color:#fff}
+.tb-btn.pri:hover{background:var(--naranja-2);color:#fff}
+.tb-btn[disabled]{opacity:.5;cursor:default}
+.tb-cuenta{font-size:13px;color:var(--tx-2);margin:0 0 8px}
+
+/* ------------------------------- tablas ------------------------------- */
+/* Cada tabla con su propio scroll horizontal: la página nunca se corre de lado. */
+.tb-tabla{overflow:auto;max-width:100%;max-height:70vh;border:1px solid var(--linea);border-radius:8px;background:#fff;
+  -webkit-overflow-scrolling:touch}
+.tb-tabla table{border-collapse:collapse;width:100%;font-size:13.5px}
+.tb-tabla th,.tb-tabla td{padding:7px 9px;border-bottom:1px solid #eeebe6;text-align:left;vertical-align:top}
+.tb-tabla th{position:sticky;top:0;background:#f7f5f1;z-index:1;font-size:12px;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--tx-2);white-space:nowrap;cursor:pointer;user-select:none}
+.tb-tabla th.ord::after{content:" ▲";color:var(--naranja)}
+.tb-tabla th.ord.desc::after{content:" ▼"}
+.tb-tabla td.n,.tb-tabla th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tb-tabla td.cod{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;white-space:nowrap}
+.tb-tabla tr:hover td{background:#fbfaf7}
+.tb-tabla td.pedido{font-weight:800}
+.tb-mas{display:block;margin:10px auto 0}
+
+/* semáforo */
+.sem{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:12.5px;font-weight:700}
+.sem::before{content:"";width:12px;height:12px;border-radius:50%;flex:none}
+.sem.rojo{color:var(--rojo)} .sem.rojo::before{background:var(--rojo)}
+.sem.amarillo{color:var(--ama)} .sem.amarillo::before{background:#f2b705}
+.sem.verde{color:var(--verde)} .sem.verde::before{background:#43a047}
+.sem.gris{color:var(--gris)} .sem.gris::before{background:#c9c3b9}
+.sem.sininv{color:#6d6458} .sem.sininv::before{background:transparent;border:2px dashed #9e978c;width:10px;height:10px}
+.marca-aviso{display:inline-block;margin-left:4px;font-size:11px;font-weight:700;padding:1px 6px;border-radius:999px;
+  background:var(--rojo-bg);color:var(--rojo);white-space:nowrap}
+.marca-aviso.ama{background:var(--ama-bg);color:#8a6300}
+.chip{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:999px;background:var(--gris-bg);color:var(--tx-2);
+  margin:1px 3px 1px 0;white-space:nowrap}
+details.tb-det{margin:4px 0}
+details.tb-det summary{cursor:pointer;color:var(--azul);font-size:13px}
+
+@media (max-width:640px){
+  .tb-app{padding:10px}
+  .tb-quien .tb-nombre{display:none}   /* en el celular solo queda «Salir» */
+  .tb-kpi .v{font-size:19px}
+  .tb-graficas{grid-template-columns:1fr}
+  .tb-graf .lienzo{height:210px}
+  .tb-tabla{max-height:65vh}
+}
+@media print{
+  .tb-barra,.tb-carga,.tb-pestanas,.tb-param,.tb-filtros,.tb-mas{display:none!important}
+  .tb-tabla{max-height:none;overflow:visible;border:0}
+}

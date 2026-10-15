@@ -62,6 +62,13 @@ showcase-embed.html      NUEVO · el carrusel del inicio (se muestra dentro del
 imagenes-data.json       (lo generas tú) Fotos de producto publicadas.
 catalog-data.js          Catálogo anterior (lo sigue usando el home).
 support.js, assets/      Motor del sitio e imágenes.
+empleados/tablero/       NUEVO · TABLERO DE PEDIDOS (rotación, existencias y
+                         pedido sugerido). Todo el personal.
+gerencia/tablero/        NUEVO · TABLERO DE GERENCIA: lo mismo + ventas,
+                         márgenes, precios, clientes y calidad de datos. Rol admin.
+tablero/                 NUEVO · El código del tablero (una sola copia para las
+                         dos páginas) y sus librerías en tablero/vendor/.
+LEEME-TABLERO.md         NUEVO · Guía corta del tablero para los empleados.
 assets/vendor/           NUEVO · React, que antes se bajaba de un servidor
                          ajeno (unpkg.com). Ahora viaja dentro del sitio: si
                          ese servidor falla, la portada ya no queda en blanco.
@@ -70,6 +77,15 @@ assets/vendor/           NUEVO · React, que antes se bajaba de un servidor
 ---
 
 ## Qué cambió en esta versión
+
+### Tablero de ventas y pedidos (nuevo, octubre)
+
+- **Dos páginas nuevas**: `/empleados/tablero/` (pedidos, para todos) y
+  `/gerencia/tablero/` (todo, solo rol `admin`). Están en el panel de empleados
+  como *Tablero de pedidos* y *Tablero de gerencia* (esta última solo le aparece
+  a quien es admin). Detalle en la sección **Tablero de ventas y pedidos**.
+- **Los datos de ventas nunca se suben**: se arrastran los archivos de FelTec y
+  el navegador los lee ahí mismo. No usa Guardar ni gasta créditos al trabajar.
 
 ### Lo último (octubre)
 
@@ -1235,6 +1251,71 @@ van poniendo desde *Administrar productos → Sin precio*.
 
 ---
 
+## Tablero de ventas y pedidos
+
+**Los datos de ventas nunca salen de la computadora.** Se arrastran los archivos
+que exporta FelTec, el navegador los lee en memoria y arma el tablero. Nada se
+manda al sitio ni a Netlify (comprobado: la página no hace ninguna petición al
+trabajar). En el equipo solo se guardan los **parámetros** (días de entrega,
+seguridad y cobertura, y si C. COMPRA trae IVA), en `fsj-tablero-parametros`.
+Si se cierra la pestaña, hay que volver a arrastrar los archivos.
+
+| Página | Quién | Qué enseña |
+|--------|-------|------------|
+| `/empleados/tablero/` | Todo el personal | Rotación, existencias y pedido sugerido. **Sin costos, márgenes ni clientes.** |
+| `/gerencia/tablero/` | Solo rol `admin` | Resumen, Rotación y pedido (con costo), Precios, Márgenes, Clientes y Calidad de datos |
+
+**Los archivos** (la guía para los empleados está en `LEEME-TABLERO.md`):
+
+1. **ZIP de DTE** (obligatorio). Cuenta como venta lo que trae `identificacion`
+   y es tipo 01 (factura, precios con IVA) o 03 (crédito fiscal, sin IVA). El
+   tipo 14 es una **compra** y queda fuera. Los registros de anulación se cuentan
+   aparte y el documento que anulan deja de contar. Todo se agrupa por código.
+2. **Inventario .xlsx** (obligatorio para el pedido), del **último día** del
+   período. Si su fecha no coincide con el final del ZIP, sale un aviso.
+   C. COMPRA en 0 = *sin costo registrado* (no entra al margen). Existencia
+   negativa = error de unidades: se marca y para el pedido cuenta como 0.
+3. **Excel de ventas** (opcional): lo que viene **INVALIDADO** ahí deja de contar
+   aunque esté en el ZIP, y en Calidad de datos sale el cuadre entre los dos.
+
+**Las cuentas del pedido** (los tres recuadros amarillos se pueden cambiar):
+
+- Venta diaria = vendido ÷ días del período.
+- Punto de reorden = venta diaria × (tiempo de entrega + días de seguridad).
+- Pedido sugerido = venta diaria × cobertura − existencia (redondeado hacia
+  arriba; nunca negativo).
+- 🔴 Urgente: los días que alcanza la existencia son menos que el tiempo de
+  entrega · 🟡 Pedir: por debajo del punto de reorden · 🟢 Bien · ⚪ Sin movimiento.
+
+**Revisa la «Lectura de archivos»** la primera vez con los archivos de verdad:
+ahí salen cuántos JSON, tipos, anulaciones, líneas, códigos y fechas leyó. Con
+el período 15 sep – 15 oct deberían salir 1,980 JSON, 1,941 con
+«identificacion» (1,932 tipo 01, 8 tipo 03, 1 tipo 14), 39 anulaciones y 4,313
+líneas; y con el Excel, 1,926 FACTURADA y 54 INVALIDADO.
+
+**Quién entra.** Es el mismo candado del área de empleados (nombre + clave,
+comprobada en el servidor contra `FSJ_USUARIOS`). **No hace falta ninguna
+variable nueva.** El tablero de gerencia se abre solo con rol `admin`: para darle
+acceso a alguien, ponle `admin` en `FSJ_USUARIOS` **y** en `usuarios.js`.
+Ten en cuenta que los costos y márgenes salen del propio Excel de inventario
+(C. COMPRA): quien tenga ese archivo ya tiene los costos. Lo que protege de
+verdad es no compartir el inventario; la página de gerencia ordena quién ve qué.
+
+Las dos páginas llevan `noindex` (en la página, en `robots.txt` y en
+`netlify.toml`): no salen en Google.
+
+**Archivos del tablero:**
+
+```
+empleados/tablero/index.html     la página de pedidos
+gerencia/tablero/index.html      la página de gerencia (la misma, otra ruta)
+tablero/tablero.js               todo el tablero: lee los archivos, calcula y pinta
+tablero/tablero.css              los estilos
+tablero/acceso-tablero.js        el texto del candado según la página
+tablero/vendor/                  JSZip 3.10.1, SheetJS 0.18.5 y Chart.js 4.4.9,
+                                 guardadas en el sitio (licencias en LICENCIAS.txt)
+```
+
 ## Deploy en Netlify
 
 ### Gastar menos créditos
@@ -1254,6 +1335,11 @@ importar si cambió un archivo o cien. Lo que más ahorra:
    cuando cambia la base; las fotos se reducen a ~80 KB.
 5. Revisa de vez en cuando en Netlify **Usage & billing** qué se lleva más
    créditos (deploys, ancho de banda, peticiones o funciones).
+
+**Arrastrar a Netlify reemplaza el sitio completo**: lo que no esté en la carpeta
+que arrastras desaparece del sitio. Arrastra siempre la carpeta **entera**
+`generador-vinetas/deploy`, nunca solo los archivos nuevos (por ejemplo, solo la
+carpeta `tablero/`).
 
 Sube esta carpeta como siempre. **Importante:** para que funcionen las fotos
 automáticas debe subirse **completa**, incluyendo `netlify.toml`, la carpeta

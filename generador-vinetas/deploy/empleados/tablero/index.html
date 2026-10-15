@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<!-- Seguridad: esta página solo puede hablar con el propio sitio (la clave del
+     candado). Ningún archivo de ventas puede salir hacia otro lado, ni por
+     error. El hash permite el único «onerror» que trae el candado. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-hashes' 'sha256-pwQduWxX3Cm7lLbQmAos7n73RLP4QrsCDFejmsBdZ78='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Tablero de ventas — Ferretería San José</title>
+<link rel="icon" type="image/png" href="/assets/emblem.png">
+<link rel="stylesheet" href="/tablero/tablero.css">
+<!-- El mismo candado que el resto del área de empleados -->
+<script src="/usuarios.js"></script>
+<script src="/tablero/acceso-tablero.js"></script>
+<script src="/acceso.js"></script>
+</head>
+<body>
+
+<header class="tb-barra">
+  <a class="tb-marca" href="/interno.html" title="Volver al área de empleados">
+    <img src="/assets/emblem.png" alt="">
+    <span><b>Ferretería San José</b><small id="tb-subtitulo">Tablero de ventas</small></span>
+  </a>
+  <span class="tb-quien" id="tb-quien"></span>
+</header>
+
+<!-- Si alguien sin permiso abre la página de gerencia -->
+<section class="tb-bloqueo" id="tb-bloqueo" hidden></section>
+
+<main class="tb-app" id="tb-app" hidden>
+
+  <section class="tb-carga">
+    <div class="tb-zona" id="tb-zona" tabindex="0" role="button"
+         aria-label="Arrastrá aquí los archivos de FelTec o tocá para elegirlos">
+      <div class="tb-zona-t">Arrastrá aquí los archivos de FelTec</div>
+      <div class="tb-zona-s">Podés soltar varios a la vez · o <u>tocá para elegirlos</u></div>
+      <input type="file" id="tb-archivos" multiple accept=".zip,.xlsx,.xls" hidden>
+    </div>
+    <ul class="tb-lista" id="tb-lista"></ul>
+    <div class="tb-progreso" id="tb-progreso" hidden>
+      <div class="tb-progreso-barra"><span id="tb-progreso-span"></span></div>
+      <p id="tb-progreso-txt"></p>
+    </div>
+    <div class="tb-error" id="tb-error" role="alert" hidden></div>
+    <p class="tb-privado">🔒 Los archivos se leen en esta computadora. Nada se sube al sitio.</p>
+  </section>
+
+  <section class="tb-lectura" id="tb-lectura" hidden></section>
+
+  <nav class="tb-pestanas" id="tb-pestanas" role="tablist" hidden></nav>
+  <section class="tb-contenido" id="tb-contenido"></section>
+
+</main>
+
+<script src="/tablero/vendor/jszip-3.10.1.min.js"></script>
+<script src="/tablero/vendor/xlsx-0.18.5.full.min.js"></script>
+<script src="/tablero/vendor/chart-4.4.9.umd.min.js"></script>
+<script src="/tablero/tablero.js"></script>
+</body>
+</html>

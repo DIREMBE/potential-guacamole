@@ -15,3 +15,6 @@ Disallow: /inventario-data.json
 Disallow: /sincronia.js
 Disallow: /usuarios.js
 Disallow: /api/
+Disallow: /empleados/
+Disallow: /gerencia/
+Disallow: /tablero/

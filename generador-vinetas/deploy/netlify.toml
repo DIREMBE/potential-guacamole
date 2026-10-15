@@ -90,6 +90,22 @@
   [headers.values]
     X-Robots-Tag = "noindex, nofollow, noarchive"
 
+# El tablero de ventas y pedidos (empleados y gerencia) y sus archivos.
+[[headers]]
+  for = "/empleados/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
+  for = "/gerencia/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
+  for = "/tablero/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
 # La base del panel (11,267 productos, incluidos los dados de baja) no lleva
 # costos, pero tampoco tiene por qué salir en Google: el cliente usa
 # catalogo-data.json, que es más liviano y solo trae lo que se le enseña.

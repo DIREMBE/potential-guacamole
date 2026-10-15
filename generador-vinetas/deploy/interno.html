@@ -83,6 +83,18 @@
       <p>Todo el trabajo de inventario en una sola pantalla: cargas el archivo, eliges qué se aplica con buscador, analizas errores y compras, ajustas precios, códigos, fotos y ofertas, y publicas. <b>Empieza aquí.</b></p>
       <span class="go">Abrir →</span>
     </a>
+    <a class="tool" href="/empleados/tablero/">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#F15930" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="8"/><rect x="10" y="7" width="4" height="13"/><rect x="17" y="3" width="4" height="17"/></svg></span>
+      <h2>Tablero de pedidos</h2>
+      <p>Arrastras el ZIP de facturas y el inventario de FelTec y te dice qué se está acabando y cuánto pedir, con descarga en Excel. Los archivos no salen de la computadora.</p>
+      <span class="go">Abrir →</span>
+    </a>
+    <a class="tool" href="/gerencia/tablero/" data-solo-admin hidden>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#0070C0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l3-4 3 3 5-7"/><circle cx="18" cy="7" r="1.5"/></svg></span>
+      <h2>Tablero de gerencia</h2>
+      <p>Lo mismo que el de pedidos más ventas, márgenes, precios por producto, clientes y la revisión de los datos de FelTec. Solo administración.</p>
+      <span class="go">Abrir →</span>
+    </a>
     <a class="tool" href="vinetas-precios.html">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#F15930" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v5l8 8 6-6-8-8H3z"/><line x1="7.5" y1="7.5" x2="7.51" y2="7.5"/><path d="M20 10l1.5 1.5-6 6"/></svg></span>
       <h2>Viñetas de precio</h2>
@@ -153,6 +165,10 @@ window.__fsjTrasLogin = function (u) {
   var n = (u && u.nombre) || '';
   var el = document.getElementById('quien');
   if (el && n) el.textContent = n;
+  /* El tablero de gerencia solo se ofrece a quien tiene rol admin
+     (la página igual lo comprueba por su cuenta). */
+  var admin = !!(u && u.rol === 'admin');
+  document.querySelectorAll('[data-solo-admin]').forEach(function (a) { a.hidden = !admin; });
 };
 document.getElementById('salir').addEventListener('click', function () {
   if (window.FSJAuth) FSJAuth.salir(); else location.reload();
