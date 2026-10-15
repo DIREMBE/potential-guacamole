@@ -71,7 +71,35 @@ assets/vendor/           NUEVO · React, que antes se bajaba de un servidor
 
 ## Qué cambió en esta versión
 
-### Lo último (segunda tanda de septiembre)
+### Lo último (octubre)
+
+- **El catálogo abre al instante para quien ya lo visitó.** Si el teléfono del
+  cliente ya tiene el catálogo de una visita anterior, se enseña enseguida, sin
+  pantalla de carga; lo nuevo del sitio (precios, fotos) llega después y se
+  repinta solo, **también en la ficha que ya esté abierta**. Los enlaces
+  `catalogo.html?item=…` (los del carrusel de la portada) abren la ficha al
+  momento; si el producto es nuevo y el teléfono aún no lo tenía, se abre en
+  cuanto llega. `?q=…` busca, y si un `?item=` no existe, se usa la búsqueda.
+- **Marcas: el aviso dice la verdad.** Al crear una marca, subir un logo o
+  cambiar la franja, si el sitio no lo recibió (sin internet) el aviso lo dice
+  en rojo —*«el cliente todavía no lo ve: pulsa Guardar»*— y la barra de arriba
+  lo cuenta en el momento, sin esperar.
+- **Confirmaciones antes de borrar**: *Quitar logo* (se borra del sitio), *Quitar
+  de la franja* (avisa que también se borra el logo subido) y *Sacar del grupo*
+  de medidas. Si guardar una medida falla, se avisa; y si al cambiarla las
+  medidas se reordenan, la tabla se repinta en el orden que verá el cliente.
+- **La base completa se baja una sola vez**, aunque el aviso automático, el
+  botón *Completar ahora* y Guardar la pidan casi juntos, o mientras la pantalla
+  todavía está arrancando (antes podía bajar el archivo de 3 MB dos veces).
+- **Carrusel**: el orden de lo más visto se rehace cada 15 minutos (antes cada
+  5): cada vez lee el catálogo entero, y hacerlo más seguido gastaba créditos
+  sin que se notara.
+- **Arreglado: Guardar podía quedarse en «Guardando…» para siempre** si se
+  pulsaba justo después de cambiar algo (menos de un cuarto de segundo, por
+  ejemplo escribir un precio y hacer clic en Guardar enseguida). Ahora manda
+  ese cambio y termina; el informe también lo cuenta.
+
+### Segunda tanda de septiembre
 
 - **La barra de Guardar ya no tapa nada.** Va arriba, en su sitio, sin quedarse
   pegada. Si bajas por la página y queda algo pendiente, aparece un botón

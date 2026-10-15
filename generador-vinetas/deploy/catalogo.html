@@ -1306,17 +1306,25 @@ body.fx-abierta{overflow:hidden}
         if(lista.length === 1) irAlProducto(lista[0]);
       }
     }
+    /* La ficha abierta también se repinta cuando llega algo: si se abrió
+       con lo guardado (o con un ?item=), las fotos y los precios del sitio
+       llegan después y si no, se quedaba enseñando lo viejo. */
+    function repintarFichaAbierta(){
+      if(fichaItem && !$('fx').hidden && $('visor').hidden) pintarFicha();
+    }
     Inventario.onCambio(function(t){
       if(t === 'marcas') return renderMarcas();
       if(t === 'pendientes') return;     // solo le importa a la barra de Guardar
       renderCats(); renderGrid(); renderCart();
       if(t === 'local') aplicarEnlace(false);
+      else repintarFichaAbierta();
     });
     /* `publica:true` = la versión del catálogo de la base guardada en el sitio
        (sin dados de baja y sin campos internos). Si el sitio no la tuviera, se
        cae al archivo publicado de siempre. */
     Inventario.init(['./catalogo-data.json','./inventario-data.json'],{publica:true}).then(function(){
       renderCats(); renderGrid(); renderCart();
+      repintarFichaAbierta();
       aplicarEnlace(true);
     }).catch(function(){ renderGrid(); });
   } else { renderGrid(); }

@@ -109,7 +109,7 @@ window.Inventario = (function () {
   function emitir(tipo, detalle) {
     for (const fn of listeners) { try { fn(tipo, detalle); } catch (e) {} }
     /* Estos dos no cambian datos: no hace falta que otras pestañas recarguen. */
-    if (tipo === 'local' || tipo === 'pendientes') return;
+    if (tipo === 'local' || tipo === 'pendientes' || tipo === 'fotos-indice') return;
     // Aviso entre pestañas del mismo navegador (catálogo abierto en otra pestaña)
     try { localStorage.setItem('fsj-inv-ping', JSON.stringify({ tipo, t: Date.now() })); } catch (e) {}
   }
@@ -1587,6 +1587,12 @@ window.Inventario = (function () {
   let _porMandar = new Map();
   let _reloj = null;
   let _enCurso = Promise.resolve({ enviados: 0 });
+  /* Quien cumple la promesa de la tanda que está esperando. Es UNA por tanda
+     y se cumple siempre: salga por el reloj o la adelante Guardar. Antes, si
+     se pulsaba Guardar justo después de tocar algo (menos de un cuarto de
+     segundo), el reloj se cancelaba, esa promesa no se cumplía nunca y
+     Guardar se quedaba en «Guardando…» para siempre. */
+  let _cumplirTanda = null;
 
   function _empujar(lista) {
     if (!Array.isArray(lista) || !lista.length) return _enCurso;
@@ -1595,14 +1601,24 @@ window.Inventario = (function () {
       _porMandar.set(k, Object.assign({}, _porMandar.get(k) || {}, c));
     }
     clearTimeout(_reloj);
-    _enCurso = new Promise(function (listo) {
-      _reloj = setTimeout(function () {
-        const juntos = Array.from(_porMandar.values());
-        _porMandar = new Map();
-        _mandarYa(juntos).then(listo, function () { listo({ enviados: 0, motivo: 'red' }); });
-      }, 250);
-    });
+    if (!_cumplirTanda) {
+      _enCurso = new Promise(function (listo) { _cumplirTanda = listo; });
+    }
+    _reloj = setTimeout(_soltarTanda, 250);
     return _enCurso;
+  }
+
+  /* Manda lo que está esperando y cumple la promesa de la tanda. */
+  function _soltarTanda() {
+    clearTimeout(_reloj);
+    const juntos = Array.from(_porMandar.values());
+    _porMandar = new Map();
+    const cumplir = _cumplirTanda;
+    _cumplirTanda = null;
+    const envio = juntos.length ? _mandarYa(juntos) : Promise.resolve({ enviados: 0 });
+    const fin = envio.then(function (r) { return r; }, function () { return { enviados: 0, motivo: 'red' }; });
+    if (cumplir) fin.then(cumplir);
+    return fin;
   }
 
   /* Manda los cambios. No corta el trabajo de nadie: si no se puede, se
@@ -1643,14 +1659,9 @@ window.Inventario = (function () {
 
   /* Suelta ya lo que esté esperando el cuarto de segundo. */
   async function _mandarPendiente() {
-    if (_porMandar.size) {
-      clearTimeout(_reloj);
-      const juntos = Array.from(_porMandar.values());
-      _porMandar = new Map();
-      await _mandarYa(juntos).catch(function () {});
-    } else {
-      await _enCurso.catch(function () {});
-    }
+    if (_porMandar.size || _cumplirTanda) return _soltarTanda();
+    await _enCurso.catch(function () {});
+    return { enviados: 0 };
   }
 
   /* ======================= GUARDAR, CON UN SOLO BOTÓN ======================
@@ -1753,7 +1764,8 @@ window.Inventario = (function () {
 
     // 1) cambios sueltos
     paso('cambios');
-    await _mandarPendiente();
+    const r0 = await _mandarPendiente();
+    inf.cambios += (r0 && r0.enviados) || 0;
     const cola = _colaGuardada();
     if (cola.length) {
       const r = await _mandarYa(cola);
@@ -3245,6 +3257,10 @@ window.Inventario = (function () {
     return _completando;
   }
   async function _completarBaseYa() {
+    /* Si la pantalla todavía está arrancando, el arranque mismo puede estar
+       cargando la base completa: se espera a que acabe y se mira otra vez.
+       Si no, se bajaría el archivo entero (3 MB) dos veces. */
+    if (_arranque) await Promise.resolve(_arranque).catch(() => {});
     if (!meta.baselineParcial) return { ok: true, ya: true };
     let n = 0;
     if (_claveEnvio()) {
@@ -3600,6 +3616,10 @@ window.Inventario = (function () {
     }
     // ¿Hay servidor de fotos? (Netlify) — si sí, las fotos son automáticas
     await _cargarIndiceServidor();
+    /* El catálogo que ya se enseñó con lo guardado (evento 'local') no
+       sabía qué productos tienen foto en el sitio: se avisa para que la
+       cuadrícula y la ficha abierta las enseñen ya, sin esperar al final. */
+    if (op.publica && servidorActivo) emitir('fotos-indice', { count: fotosServidor.size });
 
     /* Lo que hayan cambiado los demás desde que se publicó el archivo. Va
        después de la base, porque se aplica ENCIMA de ella. Si no hay servidor
