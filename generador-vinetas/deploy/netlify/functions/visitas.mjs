@@ -35,7 +35,10 @@ const STORE = 'fsj-visitas';
 const DIAS = 30;                    // la ventana que cuenta para "lo más visto"
 const MAX_TOP = 30;
 const MAX_PRODUCTOS_DIA = 8000;     // tope de cordura por día
-const REFRESCO_MS = 5 * 60 * 1000;  // el ranking se rehace, como mucho, cada 5 minutos
+/* El ranking se rehace, como mucho, cada 15 minutos: cada vez lee el catálogo
+   entero del sitio, y hacerlo más seguido gasta créditos de Netlify sin que el
+   carrusel cambie de forma que se note. */
+const REFRESCO_MS = 15 * 60 * 1000;
 const PESO = { ficha: 1, cotizacion: 3 };
 
 function json(body, status = 200, cache) {
