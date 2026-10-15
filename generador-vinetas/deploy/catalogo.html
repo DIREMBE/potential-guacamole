@@ -1282,23 +1282,21 @@ body.fx-abierta{overflow:hidden}
   renderCart();
   if(window.Inventario){
     // Si un empleado cambia un precio o sube una foto, el catálogo se refresca solo.
-    Inventario.onCambio(function(t){
-      if(t === 'marcas') return renderMarcas();
-      if(t === 'pendientes') return;     // solo le importa a la barra de Guardar
-      renderCats(); renderGrid(); renderCart();
-    });
-    /* `publica:true` = la versión del catálogo de la base guardada en el sitio
-       (sin dados de baja y sin campos internos). Si el sitio no la tuviera, se
-       cae al archivo publicado de siempre. */
-    Inventario.init(['./catalogo-data.json','./inventario-data.json'],{publica:true}).then(function(){
-      renderCats(); renderGrid(); renderCart();
-      // Búsqueda que viene del inicio  (catalogo.html?q=...)
+    /* Lo que trae el enlace (catalogo.html?item=… o ?q=…) se aplica una sola
+       vez: en cuanto hay catálogo, sea el guardado en el equipo o el del
+       sitio. Un producto que aún no está en lo guardado se busca al final. */
+    var enlaceHecho = false;
+    function aplicarEnlace(alFinal){
+      if(enlaceHecho) return;
       var q = params.get('q');
       var item = params.get('item');
       if(item){
         var p = Inventario.porItem(item) || Inventario.porCodigo(item);
-        if(p){ irAlProducto(p); abrirFicha(p.item, { sinHistorial:true }); return; }
+        if(p){ enlaceHecho = true; irAlProducto(p); abrirFicha(p.item, { sinHistorial:true }); return; }
+        if(!alFinal) return;
       }
+      enlaceHecho = true;
+      // Búsqueda que viene del inicio  (catalogo.html?q=...)
       if(q){
         $('q').value = q;
         filtro.q = q;
@@ -1307,6 +1305,19 @@ body.fx-abierta{overflow:hidden}
         // si hay una sola coincidencia clara, lleva directo a ella
         if(lista.length === 1) irAlProducto(lista[0]);
       }
+    }
+    Inventario.onCambio(function(t){
+      if(t === 'marcas') return renderMarcas();
+      if(t === 'pendientes') return;     // solo le importa a la barra de Guardar
+      renderCats(); renderGrid(); renderCart();
+      if(t === 'local') aplicarEnlace(false);
+    });
+    /* `publica:true` = la versión del catálogo de la base guardada en el sitio
+       (sin dados de baja y sin campos internos). Si el sitio no la tuviera, se
+       cae al archivo publicado de siempre. */
+    Inventario.init(['./catalogo-data.json','./inventario-data.json'],{publica:true}).then(function(){
+      renderCats(); renderGrid(); renderCart();
+      aplicarEnlace(true);
     }).catch(function(){ renderGrid(); });
   } else { renderGrid(); }
 })();

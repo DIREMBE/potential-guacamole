@@ -108,6 +108,8 @@ window.Inventario = (function () {
   function onCambio(fn) { if (typeof fn === 'function') listeners.push(fn); }
   function emitir(tipo, detalle) {
     for (const fn of listeners) { try { fn(tipo, detalle); } catch (e) {} }
+    /* Estos dos no cambian datos: no hace falta que otras pestañas recarguen. */
+    if (tipo === 'local' || tipo === 'pendientes') return;
     // Aviso entre pestañas del mismo navegador (catálogo abierto en otra pestaña)
     try { localStorage.setItem('fsj-inv-ping', JSON.stringify({ tipo, t: Date.now() })); } catch (e) {}
   }
@@ -3536,6 +3538,15 @@ window.Inventario = (function () {
     const op = opciones || {};
     await openDB();
     await loadAll();
+
+    /* En el catálogo del cliente, si este equipo ya tiene el catálogo de una
+       visita anterior, se enseña ya: la pantalla de carga se quita y la
+       página se pinta con lo guardado. Lo nuevo del sitio llega después y
+       se repinta solo. El panel sigue esperando a tenerlo todo. */
+    if (op.publica && productos.length) {
+      try { if (window.FSJ_CARGA) window.FSJ_CARGA.listo(); } catch (e) {}
+      emitir('local', { count: productos.length });
+    }
 
     /* Los combos se leen sin clave —son una oferta y el catálogo del cliente
        tiene que poder enseñarlos—, así que se piden siempre, también en la
