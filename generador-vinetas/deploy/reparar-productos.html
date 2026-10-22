@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reparar productos cruzados · interno — Ferretería San José</title>
+<link rel="icon" type="image/png" href="assets/emblem.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#F06030; --orange-2:#d6481c; --blue:#0070C0; --blue-2:#0a5c99;
+  --s50:#f6f5f3; --s100:#e9e6e1; --s200:#d3cec5; --s300:#b3ab9d; --s400:#8b8175;
+  --s500:#6b6255; --s600:#544c42; --s700:#3f3931; --s900:#171512;
+  --ok:#2e7d43; --ok-bg:#e7f3ea; --warn:#c98a12; --warn-bg:#fbf1de; --dang:#c22e26; --dang-bg:#fbe9e7;
+  --r:6px; --rl:10px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--s50);color:var(--s900);font-family:'Barlow',system-ui,sans-serif;font-size:15px;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.04em;margin:0;line-height:1.05}
+a{color:var(--blue-2)}
+img{display:block;max-width:100%}
+button,input,select{font-family:inherit}
+[hidden]{display:none!important}
+
+header.bar{background:var(--s900);color:#fff;border-bottom:3px solid var(--orange)}
+.bar-in{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:12px clamp(16px,4vw,40px)}
+.bar-in img{height:40px}
+.bt{display:flex;flex-direction:column;line-height:1.15}
+.bt .n{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:19px}
+.bt .s{font-size:12px;color:var(--s300);text-transform:uppercase;letter-spacing:.08em}
+.bar-in .right{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:13.5px;color:var(--s300)}
+.bar-in .right a{color:var(--s300);text-decoration:none}
+.bar-in .right a:hover{color:var(--orange)}
+.brand-link{display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit;border-radius:8px}
+
+.wrap{max-width:1240px;margin:0 auto;padding:20px clamp(16px,4vw,40px) 70px}
+.card{background:#fff;border:1px solid var(--s200);border-radius:var(--rl);box-shadow:0 1px 2px rgba(23,21,18,.08);margin-bottom:18px}
+.card-h{padding:14px 18px;border-bottom:1px solid var(--s100);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.card-h h2{font-size:17px}
+.card-h .hint{font-size:12.5px;color:var(--s500);font-family:'Barlow',sans-serif;text-transform:none;letter-spacing:0}
+.card-b{padding:16px 18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:600;font-size:14px;padding:9px 15px;border-radius:var(--r);border:1px solid transparent;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.b-pri{background:var(--orange);color:#fff}.b-pri:not(:disabled):hover{background:var(--orange-2)}
+.b-sec{background:var(--blue);color:#fff}.b-sec:not(:disabled):hover{background:var(--blue-2)}
+.b-gh{background:#fff;color:var(--s700);border-color:var(--s300)}.b-gh:not(:disabled):hover{background:var(--s50)}
+.b-dg{background:#fff;color:var(--dang);border-color:var(--s300)}.b-dg:not(:disabled):hover{background:var(--dang-bg);border-color:var(--dang)}
+.b-sm{padding:6px 11px;font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.inp{width:100%;height:36px;padding:0 10px;border:1px solid var(--s300);border-radius:var(--r);font-size:14px;background:#fff}
+.inp:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,112,192,.18)}
+select.inp{padding:0 6px}
+.note{background:var(--s50);border-left:3px solid var(--s300);padding:11px 13px;border-radius:0 var(--r) var(--r) 0;font-size:13.5px;color:var(--s600);line-height:1.55;margin-top:12px}
+.note.w{border-left-color:var(--warn);background:var(--warn-bg);color:#6b4a06}
+.note.d{border-left-color:var(--dang);background:var(--dang-bg);color:#7d1d18}
+.note.ok{border-left-color:var(--ok);background:var(--ok-bg);color:#1e5530}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:13px}
+.empty{color:var(--s400);font-style:italic;padding:18px;text-align:center}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--s100);color:var(--s600);margin-left:4px;vertical-align:1px}
+.chip.o{background:#fdf1ea;color:var(--orange)}
+.chip.b{background:#e6f0f9;color:var(--blue-2)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(16px);opacity:0;background:var(--s900);color:#fff;padding:11px 18px;border-radius:var(--r);font-size:14px;z-index:200;transition:.2s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.toast.err{background:var(--dang)}
+
+/* referencias */
+.refs{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.refs li{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--s100);border-radius:var(--r);background:var(--s50);font-size:14px}
+.refs li .q{color:var(--s500);font-size:13px}
+.refs li .acc{margin-left:auto}
+.zona{border:2px dashed var(--s300);border-radius:var(--rl);padding:16px;text-align:center;color:var(--s600);cursor:pointer;margin-top:10px;background:#fff}
+.zona.sobre{border-color:var(--orange);background:#fff6f2}
+.zona b{color:var(--s900)}
+
+/* resumen */
+.sum{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.sbox{border:1px solid var(--s200);border-radius:var(--r);padding:8px 12px;min-width:120px;background:#fff}
+.sbox .v{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700}
+.sbox .l{font-size:12px;color:var(--s500)}
+.sbox.d{border-color:var(--dang);background:var(--dang-bg)}
+.sbox.w{border-color:var(--warn);background:var(--warn-bg)}
+
+/* filas de productos */
+.prod{display:grid;grid-template-columns:28px 92px 1fr;gap:12px;padding:12px;border:1px solid var(--s200);border-radius:var(--rl);margin-bottom:10px;background:#fff}
+.prod.marcado{border-color:var(--orange);box-shadow:0 0 0 2px rgba(240,96,48,.15)}
+.prod .ph{width:92px;height:92px;border-radius:8px;background:var(--s100);overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--s400);font-size:12px;text-align:center}
+.prod .ph img{width:100%;height:100%;object-fit:cover}
+.prod .ck{margin-top:4px;width:18px;height:18px}
+.prod .lin{font-size:14px;line-height:1.45}
+.prod .lin .et{display:inline-block;width:92px;color:var(--s500);font-size:12.5px;text-transform:uppercase;letter-spacing:.03em}
+.prod .diag{font-size:13.5px;margin:6px 0;color:var(--s700)}
+.prod .diag b{color:var(--s900)}
+.acciones{display:grid;gap:6px;margin-top:6px;font-size:14px}
+.acciones label{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.acciones .sub{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-left:26px}
+.acciones .sub .inp{width:auto;min-width:220px;flex:1}
+.res{font-size:13px;margin-top:6px}
+.res.ok{color:var(--ok)}.res.err{color:var(--dang)}
+.barra-ap{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--s200);padding:12px 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-radius:0 0 var(--rl) var(--rl)}
+.barra-ap .t{font-size:14px;color:var(--s600)}
+.vers td,.vers th{padding:7px 8px;border-bottom:1px solid var(--s100);font-size:14px;text-align:left}
+@media (max-width:640px){
+  .prod{grid-template-columns:24px 64px 1fr}
+  .prod .ph{width:64px;height:64px}
+  .prod .lin .et{width:auto;margin-right:6px}
+}
+</style>
+<script src="usuarios.js"></script>
+<script>window.FSJ_ACCESO = { sub: 'Reparar productos cruzados · solo personal' };</script>
+<script src="acceso.js"></script>
+</head>
+<body>
+<script src="cargando.js" data-espera="inventario" data-tema="claro"></script>
+
+<header class="bar">
+  <div class="bar-in">
+    <a class="brand-link" href="index.html" title="Ir al inicio">
+      <img src="assets/emblem.png" alt="Ferretería San José" onerror="this.style.display='none'">
+      <div class="bt"><span class="n">Ferretería San José</span><span class="s">Reparar productos cruzados · interno</span></div>
+    </a>
+    <div class="right">
+      <span id="quien">—</span>
+      <a href="panel-inventario.html">Análisis de inventario</a>
+      <a href="interno.html">← Panel</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="sync-estado"></div>
+
+  <div class="card">
+    <div class="card-h"><h2>Productos con la foto o el precio de otro</h2></div>
+    <div class="card-b">
+      <p style="margin:0 0 8px;line-height:1.55">
+        Todo lo nuestro —foto, precio, código de barras, ficha, destacado— va pegado al
+        <b>ITEM</b> de FelTec. Cuando FelTec le da a un producto suyo el ITEM que ya tenía uno
+        nuestro (por ejemplo, uno creado aquí en el panel), al cargar su reporte el nombre
+        cambiaba y lo demás se quedaba: el cliente veía <i>«CARETA P/SOLDAR»</i> con la foto y el
+        precio de una llave de paso. Esto ya no vuelve a pasar: el reporte ya no pisa un nombre que
+        no se parece al que había, y lo creado aquí lleva un ITEM provisional (<span class="mono">M-…</span>).
+      </p>
+      <p style="margin:0;line-height:1.55">
+        Esta pantalla encuentra los que ya quedaron cruzados y los separa <b>sin perder nada</b>:
+        la foto y el precio se van con el producto al que pertenecen.
+      </p>
+      <div class="row" style="margin-top:12px">
+        <button class="btn b-gh" id="b-respaldo">⬇ Descargar respaldo ahora</button>
+        <span class="q" style="font-size:13px;color:var(--s500)">Un archivo con todo como está hoy. Antes de aplicar cualquier arreglo se descarga uno solo.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== 1. CON QUÉ COMPARAR ===================== -->
+  <div class="card">
+    <div class="card-h"><h2>1. Con qué comparar</h2>
+      <span class="hint">Cómo se llamaba cada ITEM antes. Cuantas más, mejor.</span></div>
+    <div class="card-b">
+      <ul class="refs" id="refs"><li class="q">Buscando…</li></ul>
+      <div class="zona" id="zona-ref" tabindex="0">
+        <b>Arrastra aquí respaldos o reportes viejos</b><br>
+        <span style="font-size:13px">.json descargados del panel (inventario-data, catalogo-data, respaldo-inventario…) o
+        reportes de FelTec .xlsx de meses anteriores · o <u>tócalo para elegirlos</u></span>
+        <input type="file" id="f-ref" accept=".json,.xlsx,.xls" multiple hidden>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== 2. EL REPORTE DE HOY ===================== -->
+  <div class="card">
+    <div class="card-h"><h2>2. El reporte de FelTec de hoy</h2>
+      <span class="hint">Recomendado: dice de quién es hoy cada ITEM</span></div>
+    <div class="card-b">
+      <div id="hoy-estado" class="q" style="font-size:14px;color:var(--s600)">Todavía no cargado.</div>
+      <div class="zona" id="zona-hoy" tabindex="0">
+        <b>Arrastra aquí el reporte de inventario de FelTec de hoy (.xlsx)</b><br>
+        <span style="font-size:13px">No se aplica nada: solo se lee para saber qué producto tiene FelTec en cada ITEM · o <u>tócalo para elegirlo</u></span>
+        <input type="file" id="f-hoy" accept=".xlsx,.xls" hidden>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== 3. LOS CRUZADOS ===================== -->
+  <div class="card">
+    <div class="card-h"><h2>3. Productos para revisar</h2>
+      <span class="hint" id="rev-hint"></span></div>
+    <div class="card-b">
+      <div class="sum" id="sum"></div>
+      <div class="row" style="margin-bottom:10px">
+        <input class="inp" id="q-add" placeholder="¿Viste uno mal en el catálogo? Escribe su ITEM o nombre y pulsa Enter para revisarlo aquí" style="flex:1;min-width:260px">
+        <label style="font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="ver-nuevos">
+          Ver también los nuevos con foto <span class="q" style="color:var(--s500);font-size:12.5px">(para revisar a ojo)</span></label>
+      </div>
+      <div id="lista"><div class="empty">Cargando el inventario…</div></div>
+    </div>
+    <div class="barra-ap">
+      <button class="btn b-gh b-sm" id="b-todos">Marcar los que tienen arreglo sugerido</button>
+      <span class="t" id="ap-t">Nada marcado.</span>
+      <button class="btn b-pri" id="b-aplicar" disabled style="margin-left:auto">Aplicar lo marcado</button>
+    </div>
+  </div>
+
+  <!-- ===================== PROVISIONALES ===================== -->
+  <div class="card" id="card-prov" hidden>
+    <div class="card-h"><h2>Creados aquí que ya tienen ITEM en FelTec</h2>
+      <span class="hint">Lo creado en el panel lleva un ITEM provisional (M-…) hasta que FelTec le da el suyo</span></div>
+    <div class="card-b"><div id="prov"></div></div>
+  </div>
+
+  <!-- ===================== VERSIONES (GERENCIA) ===================== -->
+  <div class="card" id="card-vers" hidden>
+    <div class="card-h"><h2>Volver a una base guardada en el sitio</h2>
+      <span class="hint">Solo gerencia · el sitio guarda las últimas 8</span></div>
+    <div class="card-b">
+      <div id="vers"><div class="empty">Buscando…</div></div>
+      <div class="note w">Volver a una versión anterior deshace <b>todo</b> lo que se guardó después en la base
+        (precios, fotos nuevas no: las fotos van aparte). Úsalo solo si lo de ahora está muy mal y la versión de antes
+        estaba bien. La de ahora no se pierde: pasa a la lista.</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="tablero/vendor/xlsx-0.18.5.full.min.js"></script>
+<script src="inventario.js"></script>
+<script src="sincronia.js"></script>
+<script>
+(function(){
+  'use strict';
+  var $=function(id){return document.getElementById(id);};
+  var nf=function(n){return Number(n||0).toLocaleString('es-SV');};
+  var money=function(n){return 'US$'+(Number(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});};
+  var tt; function toast(m,e){var t=$('toast');t.textContent=m;t.className='toast on'+(e?' err':'');
+    clearTimeout(tt);tt=setTimeout(function(){t.className='toast'+(e?' err':'');},4000);}
+  var MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  function fecha(iso){
+    var d=new Date(iso||''); if(isNaN(d)) return 'sin fecha';
+    return d.getDate()+' '+MESES[d.getMonth()]+' '+d.getFullYear()+' '+
+      String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  }
+
+  var empleado='', esAdmin=false, arrancado=false;
+  window.__fsjTrasLogin=function(u){
+    u=u||(window.FSJAuth&&FSJAuth.usuario()); if(!u) return;
+    empleado=u.nombre||''; $('quien').textContent=empleado;
+    esAdmin=u.rol==='admin';
+    if(window.Inventario&&Inventario.setClaveServidor) Inventario.setClaveServidor(u.pin||'');
+    if(arrancado){ cargarReferenciasDelSitio(); pintarVersiones(); }
+  };
+  window.__fsjTrasLogin();
+
+  /* =================================================================
+     REFERENCIAS: cómo se llamaba cada ITEM en otros momentos.
+     Cada una: { id, etiqueta, fecha, activa, mapa: Map(item -> {nombre,
+     categoria, unidad, existencia, precio}) }                          */
+  var REFS=[];
+  var HOY=null;            // { archivo, fecha, filas: Map(item -> fila) }
+  var EXTRA=new Set();     // ITEM que la persona pidió revisar a mano
+  var ESTADO={};           // item -> { marcado, accion, destino, nombre, res }
+
+  function mapaDeProductos(lista){
+    var m=new Map();
+    (lista||[]).forEach(function(p){
+      if(!p||p.item==null) return;
+      m.set(String(p.item).trim(),{ nombre:String(p.nombre||''), categoria:String(p.categoria||''),
+        unidad:String(p.unidad||''), existencia:Number(p.existencia)||0, precio:Number(p.precio)||0 });
+    });
+    return m;
+  }
+  function ponerRef(r){
+    REFS=REFS.filter(function(x){ return x.id!==r.id; });
+    REFS.push(r);
+    REFS.sort(function(a,b){ return String(b.fecha||'').localeCompare(String(a.fecha||'')); });
+    pintarRefs(); analizar();
+  }
+
+  function pintarRefs(){
+    var h=REFS.map(function(r){
+      return '<li><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-ref="'+esc(r.id)+'"'+(r.activa?' checked':'')+'>'+
+        '<b>'+esc(r.etiqueta)+'</b></label><span class="q">'+esc(r.fecha?fecha(r.fecha):'')+' · '+nf(r.mapa.size)+' productos</span></li>';
+    }).join('');
+    PEND.forEach(function(x){
+      h+='<li><span>'+esc(x.etiqueta)+'</span><span class="q">'+esc(x.detalle||'')+'</span>'+
+        '<span class="acc"><button class="btn b-gh b-sm" data-usar="'+esc(x.id)+'">Usar</button></span></li>';
+    });
+    $('refs').innerHTML=h||'<li class="q">Ninguna todavía. Arrastra abajo los respaldos que tengas.</li>';
+  }
+  /* Las que se cargan solo si se piden (bajarlas cuesta). */
+  var PEND=[];
+  $('refs').addEventListener('change',function(e){
+    var c=e.target.closest('[data-ref]'); if(!c) return;
+    REFS.forEach(function(r){ if(r.id===c.dataset.ref) r.activa=c.checked; });
+    analizar();
+  });
+  $('refs').addEventListener('click',function(e){
+    var b=e.target.closest('[data-usar]'); if(!b) return;
+    var x=PEND.find(function(y){return y.id===b.dataset.usar;}); if(!x) return;
+    b.disabled=true; b.textContent='Bajando…';
+    x.cargar().then(function(r){
+      PEND=PEND.filter(function(y){return y!==x;});
+      ponerRef(r);
+    }).catch(function(err){
+      b.disabled=false; b.textContent='Usar'; toast(err.message||'No se pudo.',true);
+    });
+  });
+
+  function cargarReferenciasLocales(){
+    /* El archivo publicado del sitio: es de la última vez que se subió la
+       carpeta, así que suele ser de ANTES del cruce. */
+    fetch('./inventario-data.json',{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; })
+      .then(function(d){
+        if(!d||!Array.isArray(d.productos)) return;
+        ponerRef({ id:'publicado', etiqueta:'Archivo publicado del sitio', fecha:d.generatedAt||'',
+          activa:true, mapa:mapaDeProductos(d.productos) });
+      }).catch(function(){});
+    /* El historial de precios de este equipo: cada cambio guarda el nombre
+       que tenía el producto en ese momento. */
+    var m=new Map(), ult='';
+    (Inventario.cambios||[]).slice().sort(function(a,b){ return String(a.fecha||'').localeCompare(String(b.fecha||'')); })
+      .forEach(function(c){
+        if(!c||!c.item||!c.nombre) return;
+        var k=String(c.item);
+        if(!m.has(k)) m.set(k,{ nombre:String(c.nombre), categoria:'', unidad:'', existencia:0, precio:Number(c.nuevo)||0, fechaNombre:c.fecha });
+        if(c.fecha>ult) ult=c.fecha;
+      });
+    if(m.size) ponerRef({ id:'historial', etiqueta:'Historial de precios de este equipo (el primer nombre de cada uno)',
+      fecha:ult, activa:true, mapa:m });
+    listarCopiasLocales();
+  }
+
+  /* Las copias que este equipo guardó antes de cada carga. Se vuelve a mirar
+     cuando llega la base del sitio: justo antes, el equipo guarda la suya, y
+     en un equipo que llevaba tiempo sin abrirse esa es la de los nombres
+     buenos. */
+  function listarCopiasLocales(){
+    Inventario.respaldosLocales().then(function(l){
+      l.forEach(function(c){
+        var id='local-'+c.id;
+        if(PEND.some(function(x){return x.id===id;})||REFS.some(function(x){return x.id===id;})) return;
+        PEND.push({ id:id, etiqueta:'Copia de este equipo · '+(c.motivo||''),
+          detalle:fecha(c.fecha)+' · '+nf(c.count)+' productos',
+          cargar:function(){ return Inventario.respaldoLocal(c.id).then(function(x){
+            if(!x) throw new Error('Esa copia ya no está.');
+            return { id:'local-'+c.id, etiqueta:'Copia de este equipo · '+(c.motivo||''), fecha:c.fecha,
+              activa:true, mapa:mapaDeProductos(x.productos) };
+          }); } });
+      });
+      pintarRefs();
+    });
+  }
+
+  var refsSitioPedidas=false;
+  function cargarReferenciasDelSitio(){
+    if(refsSitioPedidas || !(window.FSJAuth&&FSJAuth.usuario())) return;
+    refsSitioPedidas=true;
+    Inventario.versionesBase().then(function(v){
+      if(!v.ok){ refsSitioPedidas=false; return; }
+      v.historial.forEach(function(h){
+        PEND.push({ id:'sitio-'+h.subida, etiqueta:'Base guardada en el sitio'+(h.por?' por '+h.por:''),
+          detalle:fecha(h.guardadaEn||h.generatedAt)+' · '+nf(h.count)+' productos',
+          cargar:function(){ return Inventario.bajarVersionBase(h.subida,h.partes).then(function(l){
+            return { id:'sitio-'+h.subida, etiqueta:'Base guardada en el sitio'+(h.por?' por '+h.por:''),
+              fecha:h.guardadaEn||h.generatedAt, activa:true, mapa:mapaDeProductos(l) };
+          }); } });
+      });
+      pintarRefs();
+    });
+  }
+
+  /* ---------------------- archivos que se arrastran --------------------- */
+  function zona(idZona, idInput, alSoltar){
+    var z=$(idZona), inp=$(idInput);
+    z.addEventListener('click',function(){ inp.click(); });
+    z.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); inp.click(); } });
+    inp.addEventListener('change',function(){ alSoltar(Array.prototype.slice.call(inp.files||[])); inp.value=''; });
+    ['dragenter','dragover'].forEach(function(t){ z.addEventListener(t,function(e){ e.preventDefault(); z.classList.add('sobre'); }); });
+    ['dragleave','drop'].forEach(function(t){ z.addEventListener(t,function(e){ e.preventDefault(); z.classList.remove('sobre'); }); });
+    z.addEventListener('drop',function(e){ alSoltar(Array.prototype.slice.call((e.dataTransfer&&e.dataTransfer.files)||[])); });
+  }
+  /* La fecha de un archivo: la última AAAAMMDD de su nombre, o la del archivo. */
+  function fechaDeArchivo(f){
+    var m=String(f.name).match(/(20\d{2})[-_]?(\d{2})[-_]?(\d{2})/g);
+    if(m){ var x=m[m.length-1].replace(/\D/g,''); return x.slice(0,4)+'-'+x.slice(4,6)+'-'+x.slice(6,8)+'T23:59:00'; }
+    return f.lastModified ? new Date(f.lastModified).toISOString() : '';
+  }
+  function leerReporte(f){
+    return Inventario.analizarArchivo(f).then(function(a){
+      var m=new Map(); a.filas.forEach(function(x){ m.set(String(x.item),x); }); return m;
+    });
+  }
+  zona('zona-ref','f-ref',function(files){
+    files.forEach(function(f){
+      if(/\.json$/i.test(f.name)){
+        f.text().then(function(t){
+          var d=JSON.parse(t);
+          if(!d||!Array.isArray(d.productos)) throw new Error('«'+f.name+'» no trae productos.');
+          ponerRef({ id:'arch-'+f.name, etiqueta:'Archivo «'+f.name+'»', fecha:d.generatedAt||fechaDeArchivo(f),
+            activa:true, mapa:mapaDeProductos(d.productos) });
+          toast('Leído: '+f.name+' ('+nf(d.productos.length)+' productos).');
+        }).catch(function(err){ toast(err.message&&/no trae/.test(err.message)?err.message:'No pude leer «'+f.name+'».',true); });
+      }else{
+        leerReporte(f).then(function(m){
+          ponerRef({ id:'arch-'+f.name, etiqueta:'Reporte «'+f.name+'»', fecha:fechaDeArchivo(f), activa:true, mapa:m });
+          toast('Leído: '+f.name+' ('+nf(m.size)+' productos).');
+        }).catch(function(err){ toast(err.message||'No pude leer «'+f.name+'».',true); });
+      }
+    });
+  });
+  zona('zona-hoy','f-hoy',function(files){
+    var f=files[0]; if(!f) return;
+    $('hoy-estado').textContent='Leyendo '+f.name+'…';
+    leerReporte(f).then(function(m){
+      HOY={ archivo:f.name, fecha:fechaDeArchivo(f), filas:m };
+      $('hoy-estado').innerHTML='✓ <b>'+esc(f.name)+'</b> · '+nf(m.size)+' productos. Solo se usa para saber de quién es cada ITEM.';
+      analizar();
+    }).catch(function(err){
+      $('hoy-estado').textContent='';
+      toast(err.message||'No se pudo leer el reporte.',true);
+    });
+  });
+
+  /* =================================================================
+     ANÁLISIS                                                          */
+  var FILAS=[];   // lo que se enseña
+  var maxPublicado=0;
+
+  /* Dónde puede estar de verdad el producto de la foto: un ITEM (de FelTec
+     o de aquí) que se llame como «antes» y no tenga foto. Para no comparar
+     con los once mil cada vez, se agrupan por la primera palabra (TUBO,
+     LLAVE, CARETA…): un producto que se llama igual empieza igual. */
+  var INDICE=null;
+  function indiceNombres(){
+    if(INDICE) return INDICE;
+    INDICE=new Map();
+    var poner=function(it,nombre,deFelTec){
+      var w=Inventario.palabrasProducto(nombre)[0]; if(!w) return;
+      if(!INDICE.has(w)) INDICE.set(w,new Map());
+      var m=INDICE.get(w);
+      if(!m.has(String(it))) m.set(String(it),{ item:String(it), nombre:nombre, felTec:deFelTec });
+    };
+    if(HOY) HOY.filas.forEach(function(f,it){ poner(it,f.nombre,true); });
+    Inventario.todos().forEach(function(p){ poner(p.item,p.nombre,!Inventario.esProvisional(p.item)); });
+    return INDICE;
+  }
+  function candidatosDestino(item, nombreAntes){
+    if(!nombreAntes) return [];
+    var w=Inventario.palabrasProducto(nombreAntes)[0];
+    var grupo=w&&indiceNombres().get(w); if(!grupo) return [];
+    var out=[];
+    grupo.forEach(function(c){
+      if(c.item===String(item)) return;
+      var s=Inventario.parecidoNombres(c.nombre,nombreAntes);
+      if(s<0.6||Inventario.esOtroProducto(c.nombre,nombreAntes)) return;
+      if(Inventario.tieneImagen(c.item)) return;       // ya tiene su foto: no es ahí
+      out.push({ item:c.item, nombre:c.nombre, s:s, felTec:c.felTec });
+    });
+    out.sort(function(a,b){ return b.s-a.s; });
+    return out.slice(0,5);
+  }
+
+  function analizar(){
+    if(!window.Inventario||!Inventario.disponible()) return;
+    INDICE=null;
+    var activas=REFS.filter(function(r){ return r.activa; });
+    var pub=REFS.find(function(r){ return r.id==='publicado'; });
+    maxPublicado=0;
+    if(pub) pub.mapa.forEach(function(_,k){ var n=parseInt(k,10); if(isFinite(n)&&n>maxPublicado) maxPublicado=n; });
+    var verNuevos=$('ver-nuevos').checked;
+    FILAS=[];
+    Inventario.todos().forEach(function(p){
+      var it=String(p.item);
+      /* Un nombre corregido a mano es distinto del de FelTec a propósito: se
+         compara con el que traía el reporte, si se sabe; si no, no se compara. */
+      var fijado=String(p.fichaFijada||'').split(',').map(function(x){return x.trim();}).indexOf('nombre')>=0;
+      var comparar=fijado?(p.nombreReporte||''):p.nombre;
+      /* Cómo se llamaba según cada referencia, si era OTRO producto. */
+      var antes=null;
+      for(var i=0;comparar&&i<activas.length;i++){
+        var r=activas[i].mapa.get(it);
+        if(r&&r.nombre&&Inventario.esOtroProducto(r.nombre,comparar)){ antes={ ref:activas[i], r:r }; break; }
+      }
+      var f=HOY?HOY.filas.get(it):null;
+      var conFoto=Inventario.tieneImagen(it);
+      /* Además de los que delata una referencia: los que el reporte de hoy
+         llama distinto que nosotros (eso ya no se pisa, pero conviene verlo),
+         los que alguien pidió revisar, y —si se pide— los nuevos con foto,
+         que es donde suelen estar los cruces sin referencia. */
+      var reporteDistinto=!!(f&&Inventario.esOtroProducto(Inventario.nombreDeReporte(p),f.nombre));
+      var nuevo=verNuevos&&conFoto&&maxPublicado&&parseInt(it,10)>maxPublicado;
+      if(!antes&&!reporteDistinto&&!EXTRA.has(it)&&!nuevo) return;
+      if(p.activo===false&&!antes&&!EXTRA.has(it)&&!reporteDistinto) return;
+
+      var diag='', sugerida='', nombreAntes=antes?antes.r.nombre:'';
+      if(antes&&f){
+        if(!Inventario.esOtroProducto(f.nombre,nombreAntes)){
+          diag='FelTec lo sigue llamando <b>'+esc(f.nombre)+'</b>: el nombre de ahora es el que está mal.';
+          sugerida='devolver';
+        }else if(!Inventario.esOtroProducto(f.nombre,p.nombre)){
+          diag='FelTec usa hoy este ITEM para <b>'+esc(f.nombre)+'</b>. La foto, el precio y la ficha son de <b>'+
+            esc(nombreAntes)+'</b>: se van a otro ITEM y este queda para el de FelTec.';
+          sugerida='mover';
+        }else{
+          diag='FelTec lo llama <b>'+esc(f.nombre)+'</b>, distinto de los dos. Revísalo a ojo.';
+        }
+      }else if(antes&&!HOY){
+        diag='Antes se llamaba <b>'+esc(nombreAntes)+'</b>. Carga el reporte de hoy (paso 2) para saber cuál de los dos tiene FelTec en este ITEM.';
+      }else if(antes){
+        diag='FelTec ya no tiene este ITEM: el nombre de antes era el bueno.';
+        sugerida='devolver';
+      }else if(reporteDistinto&&fijado){
+        diag='Este nombre lo corrigió alguien a mano y FelTec lo llama <b>'+esc(f.nombre)+'</b>. Si es el mismo producto, '+
+          'márcalo así y el reporte no lo vuelve a apartar.';
+        sugerida='mismo';
+      }else if(reporteDistinto){
+        diag='El reporte de hoy trae aquí <b>'+esc(f.nombre)+'</b> y nosotros tenemos otra cosa. Al cargarlo ya no se pisa; '+
+          'si la foto y el precio son del nuestro, muévelos a otro ITEM y deja este para el de FelTec.';
+      }else if(nuevo){
+        diag='Producto nuevo (ITEM más alto que el último archivo publicado) con foto: mira si la foto y el precio corresponden al nombre.';
+      }else{
+        diag='Pedido a mano para revisar.';
+      }
+      /* Lo que la persona eligió a mano no se toca; lo demás se vuelve a
+         proponer cada vez que llega algo nuevo (otra referencia, el reporte). */
+      var est=ESTADO[it]||(ESTADO[it]={ marcado:false, accion:'', destino:'', otro:false, nombre:'' });
+      if(!est.accionTocada&&!est.res) est.accion=sugerida;
+      if(!est.nombreTocado) est.nombre=nombreAntes;
+      var destinos=sugerida==='mover'||est.accion==='mover'||reporteDistinto ? candidatosDestino(it, est.nombre||nombreAntes) : [];
+      /* Si FelTec tiene un producto que se llama casi igual y sin foto, es
+         casi seguro que es ese: se propone (la persona lo ve y lo cambia). */
+      if(!est.destinoTocado){
+        est.otro=false;
+        est.destino=(destinos[0]&&destinos[0].felTec&&destinos[0].s>=0.85) ? destinos[0].item : '';
+      }
+      FILAS.push({ p:p, it:it, antes:antes, f:f, diag:diag, sugerida:sugerida, conFoto:conFoto, destinos:destinos,
+                   reporteDistinto:reporteDistinto });
+    });
+    /* Primero los que tienen arreglo claro, luego los de revisar a ojo. */
+    FILAS.sort(function(a,b){
+      var x=(a.sugerida?0:1)-(b.sugerida?0:1); if(x) return x;
+      return String(a.p.nombre).localeCompare(String(b.p.nombre),'es');
+    });
+    pintar();
+    pintarProvisionales();
+  }
+
+  function pintar(){
+    var nSug=FILAS.filter(function(x){return x.sugerida==='mover';}).length;
+    var nMismo=FILAS.filter(function(x){return x.sugerida==='mismo';}).length;
+    var nDev=FILAS.filter(function(x){return x.sugerida==='devolver';}).length;
+    $('sum').innerHTML=
+      '<div class="sbox'+(FILAS.length?' w':'')+'"><div class="v">'+nf(FILAS.length)+'</div><div class="l">para revisar</div></div>'+
+      '<div class="sbox'+(nSug?' d':'')+'"><div class="v">'+nf(nSug)+'</div><div class="l">FelTec usa el ITEM para otro</div></div>'+
+      '<div class="sbox'+(nDev?' d':'')+'"><div class="v">'+nf(nDev)+'</div><div class="l">con el nombre cambiado</div></div>'+
+      (nMismo?'<div class="sbox"><div class="v">'+nf(nMismo)+'</div><div class="l">corregidos a mano (confirmar)</div></div>':'');
+    $('rev-hint').textContent=REFS.filter(function(r){return r.activa;}).length+' referencia(s)'+(HOY?' · reporte de hoy cargado':' · sin reporte de hoy');
+    if(!FILAS.length){
+      $('lista').innerHTML='<div class="empty">'+(REFS.length
+        ? 'No encontré productos cruzados con estas referencias. Si ves uno mal en el catálogo, escribe su ITEM arriba.'
+        : 'Agrega al menos una referencia en el paso 1.')+'</div>';
+      pintarBarra(); return;
+    }
+    $('lista').innerHTML=FILAS.map(filaHTML).join('');
+    pintarBarra();
+  }
+
+  function filaHTML(x){
+    var p=x.p, it=x.it, est=ESTADO[it];
+    var img=Inventario.getImagen(it);
+    var opts='<option value="">un ITEM provisional nuevo (M-…)</option>'+
+      x.destinos.map(function(d){
+        return '<option value="'+esc(d.item)+'"'+(est.destino===d.item?' selected':'')+'>ITEM '+esc(d.item)+' · '+esc(d.nombre)+(d.felTec?' (FelTec)':'')+'</option>';
+      }).join('')+
+      '<option value="__otro"'+(est.otro?' selected':'')+'>otro ITEM, lo escribo…</option>';
+    var otro=!!est.otro;
+    return '<div class="prod'+(est.marcado?' marcado':'')+'" data-it="'+esc(it)+'">'+
+      '<input type="checkbox" class="ck" data-ck'+(est.marcado?' checked':'')+' title="Marcar para aplicar">'+
+      '<div class="ph">'+(img?'<img src="'+esc(img)+'" alt="" loading="lazy">':'sin foto')+'</div>'+
+      '<div>'+
+        '<div class="lin"><span class="et">ITEM</span><b class="mono">'+esc(it)+'</b>'+
+          (p.destacado?'<span class="chip o">destacado</span>':'')+
+          (x.conFoto?'<span class="chip b">'+Inventario.cuantasFotos(it)+' foto(s)</span>':'')+
+          (Number(p.precio)>0?'<span class="chip">'+money(p.precio)+'</span>':'<span class="chip">sin precio</span>')+
+          (p.codigo?'<span class="chip mono">'+esc(p.codigo)+'</span>':'')+'</div>'+
+        '<div class="lin"><span class="et">Ahora</span><b>'+esc(p.nombre)+'</b> <span style="color:var(--s500)">'+esc(p.categoria||'')+'</span></div>'+
+        (x.antes?'<div class="lin"><span class="et">Antes</span>'+esc(x.antes.r.nombre)+' <span style="color:var(--s500);font-size:12.5px">— '+esc(x.antes.ref.etiqueta)+(x.antes.ref.fecha?', '+esc(fecha(x.antes.ref.fecha)):'')+'</span></div>':'')+
+        (x.f?'<div class="lin"><span class="et">FelTec hoy</span>'+esc(x.f.nombre)+' <span style="color:var(--s500)">'+money(x.f.precio)+'</span></div>':'')+
+        '<div class="diag">'+x.diag+'</div>'+
+        '<div class="acciones">'+
+          '<label><input type="radio" name="a-'+esc(it)+'" value="devolver"'+(est.accion==='devolver'?' checked':'')+'> Devolver el nombre: '+
+            '<input class="inp" data-nombre value="'+esc(est.nombre||'')+'" placeholder="el nombre correcto" style="width:auto;min-width:260px;flex:1"></label>'+
+          '<label><input type="radio" name="a-'+esc(it)+'" value="mover"'+(est.accion==='mover'?' checked':'')+'> La foto, el precio y la ficha son de otro producto: pasarlos a</label>'+
+          '<div class="sub"><select class="inp" data-destino>'+opts+'</select>'+
+            '<input class="inp mono" data-otro placeholder="ITEM" value="'+esc(otro?est.destino:'')+'"'+(otro?'':' hidden')+' style="max-width:140px;min-width:100px"></div>'+
+          (x.reporteDistinto?'<label><input type="radio" name="a-'+esc(it)+'" value="mismo"'+(est.accion==='mismo'?' checked':'')+'> Es el mismo producto: FelTec solo lo llama «'+esc(x.f.nombre)+'» (no volver a avisar)</label>':'')+
+          '<label><input type="radio" name="a-'+esc(it)+'" value=""'+(!est.accion?' checked':'')+'> Está bien así</label>'+
+        '</div>'+
+        (est.res?'<div class="res '+(est.res.ok?'ok':'err')+'">'+esc(est.res.texto)+'</div>':'')+
+      '</div></div>';
+  }
+
+  function pintarBarra(){
+    var m=FILAS.filter(function(x){ var e=ESTADO[x.it]; return e&&e.marcado&&e.accion; });
+    $('ap-t').textContent=m.length?m.length+' marcado(s) con arreglo elegido.':'Nada marcado.';
+    $('b-aplicar').disabled=!m.length;
+  }
+
+  $('lista').addEventListener('change',function(e){
+    var row=e.target.closest('.prod'); if(!row) return;
+    var est=ESTADO[row.dataset.it]; if(!est) return;
+    if(e.target.matches('[data-ck]')){ est.marcado=e.target.checked; row.classList.toggle('marcado',est.marcado); }
+    else if(e.target.type==='radio'){ est.accion=e.target.value; est.accionTocada=true; if(est.accion){ est.marcado=true; row.querySelector('[data-ck]').checked=true; row.classList.add('marcado'); } }
+    else if(e.target.matches('[data-destino]')){
+      est.destinoTocado=true; est.accionTocada=true;
+      var v=e.target.value, o=row.querySelector('[data-otro]');
+      if(v==='__otro'){ o.hidden=false; o.focus(); est.otro=true; est.destino=o.value.trim(); }
+      else { o.hidden=true; est.otro=false; est.destino=v; }
+      est.accion='mover';
+      row.querySelector('input[type=radio][value="mover"]').checked=true;
+    }
+    pintarBarra();
+  });
+  $('lista').addEventListener('input',function(e){
+    var row=e.target.closest('.prod'); if(!row) return;
+    var est=ESTADO[row.dataset.it]; if(!est) return;
+    if(e.target.matches('[data-nombre]')){ est.nombre=e.target.value; est.nombreTocado=true; }
+    if(e.target.matches('[data-otro]')){ est.destino=e.target.value.trim(); est.destinoTocado=true; }
+  });
+  $('b-todos').addEventListener('click',function(){
+    FILAS.forEach(function(x){ var e=ESTADO[x.it]; if(e&&e.accion){ e.marcado=true; } });
+    pintar();
+  });
+  $('ver-nuevos').addEventListener('change',analizar);
+  $('q-add').addEventListener('keydown',function(e){
+    if(e.key!=='Enter') return;
+    var q=this.value.trim(); if(!q) return;
+    var p=Inventario.porItem(q)||Inventario.porCodigo(q);
+    var l=p?[p]:Inventario.buscar(q,8);
+    if(!l.length){ toast('No encontré «'+q+'».',true); return; }
+    l.forEach(function(x){ EXTRA.add(String(x.item)); });
+    this.value=''; analizar();
+    toast(l.length+' producto(s) agregado(s) a la lista para revisar.');
+  });
+
+  /* =================================================================
+     APLICAR                                                           */
+  $('b-aplicar').addEventListener('click',function(){
+    var lista=FILAS.filter(function(x){ var e=ESTADO[x.it]; return e&&e.marcado&&e.accion; });
+    if(!lista.length) return;
+    var faltaNombre=lista.filter(function(x){ var e=ESTADO[x.it]; return !String(e.nombre||'').trim()&&(e.accion==='devolver'||(e.accion==='mover'&&!e.destino&&!x.antes)); });
+    if(faltaNombre.length){ toast('Falta el nombre correcto en '+faltaNombre.length+' producto(s) (ITEM '+faltaNombre[0].it+').',true); return; }
+    var faltaItem=lista.filter(function(x){ var e=ESTADO[x.it]; return e.accion==='mover'&&e.otro&&!e.destino; });
+    if(faltaItem.length){ toast('Escribe el ITEM de destino del '+faltaItem[0].it+'.',true); return; }
+    var nMov=lista.filter(function(x){return ESTADO[x.it].accion==='mover';}).length;
+    if(!confirm('Se van a arreglar '+lista.length+' producto(s)'+(nMov?' ('+nMov+' cambian sus fotos de ITEM)':'')+'.\n\n'+
+      'Antes se descarga un respaldo con todo como está ahora. ¿Seguir?')) return;
+    var b=$('b-aplicar'); b.disabled=true;
+    Promise.resolve().then(function(){
+      b.textContent='Respaldando…';
+      return Inventario.descargarRespaldo('respaldo-antes-de-reparar-'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')+'.json')
+        .then(function(){ return Inventario.respaldarAhora('antes de reparar productos'); });
+    }).then(function(){
+      var hechos=0, fallos=0, i=0;
+      var siguiente=function(){
+        if(i>=lista.length) return Promise.resolve();
+        var x=lista[i++], e=ESTADO[x.it];
+        b.textContent='Arreglando '+i+' de '+lista.length+'…';
+        var nombre=String(e.nombre||'').trim();
+        var trabajo;
+        if(e.accion==='mismo'){
+          /* Nuestro nombre se queda; se apunta cómo lo llama FelTec para que
+             el próximo reporte no lo vuelva a apartar. */
+          trabajo=Inventario.devolverNombre(x.it,{ nombre:x.p.nombre, nombreReporte:x.f?x.f.nombre:'', fijar:true })
+            .then(function(){ return 'Listo: se queda «'+x.p.nombre+'»; FelTec lo llama «'+(x.f?x.f.nombre:'')+'».'; });
+        }else if(e.accion==='devolver'){
+          trabajo=Inventario.devolverNombre(x.it,{
+            nombre:nombre,
+            categoria:x.antes&&x.antes.r.categoria||'', unidad:x.antes&&x.antes.r.unidad||'',
+            nombreReporte:x.f&&Inventario.esOtroProducto(x.f.nombre,nombre)?'':(x.f?x.f.nombre:'')
+          }).then(function(){ return 'Listo: ahora se llama «'+nombre+'».'; });
+        }else{
+          var a=e.destino||'';
+          trabajo=Inventario.moverProducto(x.it,{
+            a:a, filaDestino:a&&HOY?HOY.filas.get(a)||null:null,
+            nombre:nombre||(x.antes&&x.antes.r.nombre)||x.p.nombre,
+            categoria:x.antes&&x.antes.r.categoria||'', unidad:x.antes&&x.antes.r.unidad||'',
+            existencia:x.antes?x.antes.r.existencia:0, fila:x.f||null
+          }).then(function(r){
+            return 'Listo: foto, precio y ficha pasaron al ITEM '+r.a+(Inventario.esProvisional(r.a)?' (provisional)':'')+'. El ITEM '+x.it+' queda para el producto de FelTec.';
+          });
+        }
+        return trabajo.then(function(t){ hechos++; e.res={ok:true,texto:t}; e.marcado=false; e.accion=''; },
+                            function(err){ fallos++; e.res={ok:false,texto:err.message||'No se pudo.'}; })
+          .then(siguiente);
+      };
+      return siguiente().then(function(){ return { hechos:hechos, fallos:fallos }; });
+    }).then(function(r){
+      /* Que llegue al sitio y al catálogo ya: Guardar sube la base. */
+      b.textContent='Guardando en el sitio…';
+      return Inventario.guardarTodo().then(function(inf){ r.guardado=inf; return r; },
+                                           function(){ r.guardado={ok:false}; return r; });
+    }).then(function(r){
+      b.textContent='Aplicar lo marcado';
+      var listos=lista.map(function(x){return x.it;});
+      analizar();
+      /* Los que se arreglaron siguen a la vista con su resultado. */
+      listos.forEach(function(it){ if(!FILAS.some(function(x){return x.it===it;})) EXTRA.add(it); });
+      analizar();
+      toast(r.hechos+' arreglado(s)'+(r.fallos?', '+r.fallos+' no se pudieron (mira el motivo en cada uno)':'')+'. '+
+        (r.guardado&&r.guardado.ok?'Ya está en el sitio.':'Pulsa Guardar arriba para que llegue al sitio.'), !!r.fallos);
+    }).catch(function(err){
+      b.textContent='Aplicar lo marcado'; pintarBarra();
+      toast(err.message||'No se pudo.',true);
+    });
+  });
+
+  $('b-respaldo').addEventListener('click',function(){
+    Inventario.descargarRespaldo().then(function(r){ toast('Descargado: '+r.archivo); Inventario.respaldarAhora('a mano'); });
+  });
+
+  /* =================================================================
+     PROVISIONALES: lo creado aquí que FelTec ya tiene con su número.  */
+  function pintarProvisionales(){
+    var prov=Inventario.todos().filter(function(p){ return Inventario.esProvisional(p.item)&&p.activo!==false; });
+    if(!prov.length||!HOY){ $('card-prov').hidden=true; return; }
+    var filas=[];
+    prov.forEach(function(p){
+      var c=[];
+      HOY.filas.forEach(function(f,it){
+        var s=Inventario.parecidoNombres(f.nombre,p.nombre);
+        if(s>=0.6&&!Inventario.esOtroProducto(f.nombre,p.nombre)&&!Inventario.tieneImagen(it)) c.push({ it:it, f:f, s:s });
+      });
+      c.sort(function(a,b){return b.s-a.s;});
+      if(c.length) filas.push({ p:p, c:c.slice(0,4) });
+    });
+    $('card-prov').hidden=!filas.length;
+    $('prov').innerHTML=filas.map(function(x){
+      var img=Inventario.getImagen(x.p.item);
+      return '<div class="prod" data-prov="'+esc(x.p.item)+'" style="grid-template-columns:92px 1fr">'+
+        '<div class="ph">'+(img?'<img src="'+esc(img)+'" alt="">':'sin foto')+'</div><div>'+
+        '<div class="lin"><span class="et">Aquí</span><b class="mono">'+esc(x.p.item)+'</b> · <b>'+esc(x.p.nombre)+'</b> <span class="chip">'+money(x.p.precio)+'</span></div>'+
+        '<div class="lin"><span class="et">En FelTec</span><select class="inp" data-vinc style="width:auto;min-width:260px">'+
+          x.c.map(function(o){ return '<option value="'+esc(o.it)+'">ITEM '+esc(o.it)+' · '+esc(o.f.nombre)+'</option>'; }).join('')+
+        '</select> <button class="btn b-sec b-sm" data-vincular>Vincular</button></div>'+
+        '<div class="diag">Al vincular, la foto, el precio y la ficha pasan al ITEM de FelTec, y el provisional queda de baja.</div>'+
+      '</div></div>';
+    }).join('');
+  }
+  $('prov').addEventListener('click',function(e){
+    var b=e.target.closest('[data-vincular]'); if(!b) return;
+    var row=b.closest('[data-prov]'), de=row.dataset.prov, a=row.querySelector('[data-vinc]').value;
+    if(!confirm('¿Pasar la foto, el precio y la ficha de '+de+' al ITEM '+a+' de FelTec?')) return;
+    b.disabled=true;
+    Inventario.respaldarAhora('antes de vincular '+de).then(function(){
+      return Inventario.moverProducto(de,{ a:a, retirar:true, filaDestino:HOY?HOY.filas.get(a)||null:null });
+    }).then(function(){
+      toast('Vinculado con el ITEM '+a+'. Pulsa Guardar arriba para que llegue al sitio.');
+      analizar();
+    }).catch(function(err){ b.disabled=false; toast(err.message||'No se pudo.',true); });
+  });
+
+  /* =================================================================
+     VERSIONES DEL SITIO (gerencia)                                    */
+  function pintarVersiones(){
+    if(!esAdmin){ $('card-vers').hidden=true; return; }
+    $('card-vers').hidden=false;
+    Inventario.versionesBase().then(function(v){
+      if(!v.ok){ $('vers').innerHTML='<div class="empty">No se pudieron ver las versiones ('+esc(v.motivo||'')+').</div>'; return; }
+      if(!v.historial.length){
+        $('vers').innerHTML='<div class="empty">Todavía no hay versiones anteriores guardadas: se empiezan a guardar desde esta versión del sitio.</div>';
+        return;
+      }
+      $('vers').innerHTML='<table class="vers"><thead><tr><th>Guardada</th><th>Por</th><th>Productos</th><th></th></tr></thead><tbody>'+
+        (v.actual?'<tr><td>'+esc(fecha(v.actual.guardadaEn||v.actual.generatedAt))+'</td><td>'+esc(v.actual.por||'')+'</td><td>'+nf(v.actual.count)+'</td><td><b>la de ahora</b></td></tr>':'')+
+        v.historial.map(function(h){
+          return '<tr><td>'+esc(fecha(h.guardadaEn||h.generatedAt))+'</td><td>'+esc(h.por||'')+'</td><td>'+nf(h.count)+'</td>'+
+            '<td><button class="btn b-dg b-sm" data-volver="'+esc(h.subida)+'">Volver a esta</button></td></tr>';
+        }).join('')+'</tbody></table>';
+    });
+  }
+  $('vers').addEventListener('click',function(e){
+    var b=e.target.closest('[data-volver]'); if(!b) return;
+    if(!confirm('¿Devolver el sitio a la base guardada el '+b.closest('tr').firstChild.textContent+'?\n\n'+
+      'Todo lo guardado después en la base se deshace (la de ahora queda en la lista, por si hay que volver).')) return;
+    b.disabled=true; b.textContent='Volviendo…';
+    Inventario.descargarRespaldo('respaldo-antes-de-volver-'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')+'.json')
+      .then(function(){ return Inventario.restaurarVersionBase(b.dataset.volver); })
+      .then(function(r){ toast('Listo: el sitio volvió a esa versión ('+nf(r.count)+' productos).'); pintarVersiones(); analizar(); })
+      .catch(function(err){ b.disabled=false; b.textContent='Volver a esta'; toast(err.message||'No se pudo.',true); });
+  });
+
+  /* ------------------------------- init -------------------------------- */
+  if(window.Inventario){
+    Inventario.onCambio(function(t){
+      if(t==='import'||t==='sincronizado'||t==='base-del-servidor') analizar();
+      if(arrancado&&(t==='base-del-servidor'||t==='import')) listarCopiasLocales();
+    });
+    Inventario.init().then(function(){
+      arrancado=true;
+      /* Con media base (la del cliente) faltarían los dados de baja. */
+      return Inventario.completarBase().catch(function(){});
+    }).then(function(){
+      cargarReferenciasLocales();
+      cargarReferenciasDelSitio();
+      pintarVersiones();
+      analizar();
+    });
+  }
+})();
+</script>
+</body>
+</html>

@@ -250,13 +250,26 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
     $('rev').style.display='block';
     $('rev-tit').textContent='Qué cambiaría con este reporte';
     $('rev-sub').textContent=nf(a.total)+' filas leídas · nada se aplica hasta que pulses Aplicar';
+    var cruces=a.cruces||[];
     $('sum').innerHTML=
+      (cruces.length ? sbox(nf(cruces.length),'ITEM con otro producto','d') : '') +
       sbox(nf(a.precios.length),'Cambios de precio', a.precios.length?'w':'') +
       sbox(nf(a.nuevos.length),'Productos nuevos', a.nuevos.length?'n':'') +
       sbox(nf(a.faltantes.length),'Ya no vienen', a.faltantes.length?'d':'') +
       sbox(nf(a.sinCambio),'Sin cambios','o');
 
     var h='';
+    /* Con estos ITEM el reporte trae un producto que no se parece al
+       nuestro. No se tocan: se arreglan en «Reparar productos cruzados». */
+    if(cruces.length){
+      h+=grupo('cruces',nf(cruces.length),'⚠ El reporte trae OTRO producto con el mismo ITEM',
+        'No se tocan. Si se les pusiera el nombre del reporte, se quedarían con la foto y el precio del nuestro. '+
+        'Revísalos en <a href="reparar-productos.html">Reparar productos cruzados</a>.',
+        '<div class="scroll"><table><thead><tr><th>ITEM</th><th>Lo que tenemos</th><th>Lo que trae el reporte</th></tr></thead><tbody>'+
+        cruces.map(function(r){
+          return '<tr><td class="mono">'+esc(r.item)+'</td><td>'+esc(r.nuestro)+'</td><td><b>'+esc(r.reporte)+'</b></td></tr>';
+        }).join('')+'</tbody></table></div>', true);
+    }
     if(a.precios.length){
       h+=grupo('precios',nf(a.precios.length),'Cambios de precio',
         'Marca los que quieras aplicar. Los que no marques se quedan como están.',
@@ -411,8 +424,9 @@ td{padding:7px 8px;border-bottom:1px solid var(--s100);vertical-align:middle}
         precios: sel('precios'), nuevos: sel('nuevos'),
         quitar: sel('faltan'), empleado: empleado,
       }).then(function(r){
+        var cr=(r.cruces||[]).length;
         return 'Listo: '+nf(r.actualizados)+' precio(s), '+nf(r.agregados)+' alta(s)'+
-               (r.quitados?', '+nf(r.quitados)+' baja(s)':'')+'.';
+               (r.quitados?', '+nf(r.quitados)+' baja(s)':'')+'.'+(cr?' '+nf(cr)+' producto(s) con el ITEM cruzado no se tocaron: revísalos en Reparar productos cruzados.':'');
       });
     }else{
       var ok=new Set(sel('cnuevos').map(function(i){

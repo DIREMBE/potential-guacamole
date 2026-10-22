@@ -69,6 +69,9 @@ gerencia/tablero/        NUEVO · TABLERO DE GERENCIA: lo mismo + ventas,
 tablero/                 NUEVO · El código del tablero (una sola copia para las
                          dos páginas) y sus librerías en tablero/vendor/.
 LEEME-TABLERO.md         NUEVO · Guía corta del tablero para los empleados.
+reparar-productos.html   NUEVO · REPARAR PRODUCTOS CRUZADOS: encuentra los
+                         productos que quedaron con la foto o el precio de
+                         otro y los separa sin perder nada.
 assets/vendor/           NUEVO · React, que antes se bajaba de un servidor
                          ajeno (unpkg.com). Ahora viaja dentro del sitio: si
                          ese servidor falla, la portada ya no queda en blanco.
@@ -77,6 +80,22 @@ assets/vendor/           NUEVO · React, que antes se bajaba de un servidor
 ---
 
 ## Qué cambió en esta versión
+
+### 🛠 Productos con la foto o el precio de otro (urgente, octubre)
+
+- **Qué se vio:** en el catálogo, «CARETA P/SOLDAR EMTOP» con la foto y el
+  precio de una llave de paso, «CINTA METRICA 5M» a US$35.85 con la foto de
+  una ducha, etc. Explicación y arreglo en la sección **Productos cruzados**.
+- **Ya no puede volver a pasar:** el reporte de FelTec ya no le cambia el
+  nombre a un producto si trae otro completamente distinto con el mismo
+  ITEM (lo aparta y avisa), y lo que se crea en el panel lleva un ITEM
+  provisional `M-…` que nunca choca con los números de FelTec.
+- **Nueva pantalla «Reparar productos cruzados»** (en el panel de empleados).
+- **Respaldos:** el sitio guarda las últimas 8 bases (antes tiraba la
+  anterior al guardar una nueva), cada equipo guarda copia antes de cada
+  carga, y antes de reparar se descarga un archivo con todo.
+- **Arreglado también:** después de Guardar, el catálogo podía seguir
+  recibiendo trozos de la base anterior guardados en caché hasta 24 horas.
 
 ### Tablero de ventas y pedidos (nuevo, octubre)
 
@@ -1250,6 +1269,89 @@ En cuanto alguien le pone precio, **vuelve solo**. Son 4,951 productos hoy: se
 van poniendo desde *Administrar productos → Sin precio*.
 
 ---
+
+## 🛠 Productos cruzados: la foto y el precio de otro
+
+### Qué pasó
+
+Todo lo nuestro —foto, precio, código de barras, ficha, destacado— va
+pegado al **ITEM**, el número que FelTec le pone a cada producto. Cuando se
+creaba un producto en el panel (*Crear producto*, o las altas de la hoja de
+conteo), el panel le ponía **el siguiente número libre**: si el último de
+FelTec era 19546, el nuevo quedaba 19547. Pero **ese es justo el número que
+FelTec le da a su próximo producto**. Cuando FelTec creó los suyos (las
+herramientas EMTOP de la foto), quedaron con los mismos números que nuestras
+llaves, inodoros y duchas.
+
+Al cargar el reporte de FelTec, el panel buscaba cada producto por ITEM,
+le ponía **el nombre y la categoría del reporte** y le dejaba **el precio,
+la foto y el código** (esos no se toman del reporte a propósito). Resultado:
+un solo producto con la cara de dos. Si además el equipo tenía la *base a
+medias* (la lista del cliente, sin los dados de baja), el «siguiente número»
+salía todavía más bajo y podía chocar con productos de FelTec que ya
+existían.
+
+> No pude ver los datos del sitio en vivo (desde aquí no se puede entrar a
+> ferreteriasnjose.com), así que esto se reconstruyó con el código y la
+> foto, y se reprodujo con datos de prueba: el patrón es exactamente ese.
+> La pantalla de reparar lo confirma producto por producto.
+
+### Qué se cambió para que no vuelva a pasar
+
+- **El reporte ya no pisa un nombre que no se parece al que había.** Si con
+  el mismo ITEM trae otro producto, no se le toca nada (ni nombre, ni
+  existencia, ni precio) y se enseña aparte: *«El reporte trae OTRO producto
+  con el mismo ITEM»*. Si de verdad es el mismo con otro nombre, se marca y
+  se aplica. Vale para el Análisis de inventario, Cargar archivos, Inventario
+  y catálogo y la carga rápida de Viñetas.
+- **Lo creado en el panel lleva ITEM provisional (`M-…`)**, que FelTec nunca
+  usa. Cuando FelTec le dé su número, se vincula en *Reparar productos
+  cruzados* y la foto y el precio pasan a ese número.
+- **La carga rápida del Excel ya no borra lo que el archivo no trae**
+  (lo creado en el panel desaparecía con sus fotos colgando).
+- **Respaldos por todos lados:**
+  - el sitio guarda las **últimas 8 bases** y gerencia puede volver a una
+    (*Reparar productos cruzados → Volver a una base guardada*);
+  - cada equipo guarda **una copia antes de cada carga** (la primera copia
+    del equipo no se borra nunca);
+  - antes de reparar se **descarga un archivo** con todo como estaba.
+- **Las fotos que se mueven o quitan ya no vuelven solas:** antes, un equipo
+  con una copia vieja de la foto la volvía a subir al pulsar Guardar.
+
+### Qué hacer ahora (en este orden)
+
+1. **Hasta subir esta carpeta, no cargues el Excel de FelTec ni crees
+   productos en el panel**: el código viejo sigue cruzándolos.
+2. **Sube la carpeta entera** a Netlify (arrastrando `generador-vinetas/deploy`).
+3. Si hay **un equipo que no se haya abierto desde antes del problema** (una
+   computadora o un teléfono de empleado), ábrelo **primero** en *Reparar
+   productos cruzados*: con el código nuevo guarda una copia de lo que tenía
+   antes de bajar la base del sitio, y esa copia sale en el paso 1 como
+   *«Copia de este equipo»* (pulsa **Usar**). Tiene los nombres buenos.
+4. En *Reparar productos cruzados*:
+   1. **Descargar respaldo ahora.**
+   2. **Paso 1:** el archivo publicado del sitio ya entra solo. Arrastra
+      además cualquier `inventario-data.json`, `catalogo-data.json` o
+      `respaldo-inventario-….json` que tengas en Descargas, y reportes viejos
+      de FelTec (.xlsx).
+   3. **Paso 2:** arrastra el reporte de inventario de FelTec **de hoy**. No
+      aplica nada: solo dice de quién es hoy cada ITEM.
+   4. **Paso 3:** cada producto trae el arreglo propuesto:
+      - *Devolver el nombre* → FelTec lo sigue llamando como antes.
+      - *Pasar la foto, el precio y la ficha a…* → FelTec usa ese ITEM para
+        otro producto. Lo nuestro se va al ITEM que FelTec le dio (si lo
+        encuentra, lo propone solo) o a uno provisional, y el ITEM queda para
+        el producto de FelTec, sin foto (sin precio queda de baja hasta que
+        alguien se lo ponga).
+      - Marca **«Ver también los nuevos con foto»** para revisar a ojo los
+        productos creados después del último archivo publicado: si no hay
+        respaldo con su nombre de antes, escribe el nombre correcto mirando
+        la foto.
+      - Si ves uno mal en el catálogo, escribe su ITEM o nombre en el
+        buscador del paso 3.
+   5. **Aplicar lo marcado.** Descarga un respaldo, arregla, mueve las fotos
+      en el sitio y guarda. El cliente lo ve enseguida.
+5. Abre el catálogo y revisa los destacados.
 
 ## Tablero de ventas y pedidos
 

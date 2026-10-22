@@ -1353,7 +1353,9 @@ table.productos input.err{border-color:var(--danger); background:var(--danger-bg
       try {
         const r = await Inventario.importarExcel(f);
         renderInvStats();
-        toast(`Inventario cargado: ${Number(r.count).toLocaleString('es-SV')} productos. Pulsa Guardar arriba para que el cliente lo vea.`);
+        const cr = (r.cruces || []).length;
+        toast(`Inventario cargado: ${Number(r.count).toLocaleString('es-SV')} productos. Pulsa Guardar arriba para que el cliente lo vea.` +
+              (cr ? ` ${cr} producto(s) con el ITEM cruzado no se tocaron: revísalos en Reparar productos cruzados.` : ''), !!cr);
       } catch (err) {
         toast('No se pudo leer el archivo: ' + err.message, true);
       }

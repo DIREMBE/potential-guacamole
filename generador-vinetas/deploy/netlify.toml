@@ -86,6 +86,11 @@
     X-Robots-Tag = "noindex, nofollow, noarchive"
 
 [[headers]]
+  for = "/reparar-productos.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
   for = "/usuarios.js"
   [headers.values]
     X-Robots-Tag = "noindex, nofollow, noarchive"

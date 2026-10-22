@@ -163,6 +163,72 @@ window.Inventario = (function () {
     await guardar(COLS.meta, (st) => st.put({ k: 'meta', v: meta }));
   }
 
+  /* ================ ¿EL MISMO PRODUCTO, U OTRO? =========================
+     FelTec numera sus productos (el ITEM) y todo lo nuestro —foto, precio,
+     código de barras, ficha, destacado— se cuelga de ese número. Si un día el
+     reporte trae con el mismo ITEM un producto DISTINTO, ponerle el nombre
+     que trae es lo peor que se puede hacer: la foto, el precio y el código se
+     quedan con el número, el nombre cambia, y el cliente ve «CARETA P/SOLDAR»
+     con la foto y el precio de una llave de paso.
+
+     Por eso, antes de aceptar el nombre que trae el reporte, se compara con
+     el que el reporte había traído antes para ese ITEM. Un cambio chico (una
+     medida mal escrita, la marca que se añade, otro orden) pasa; un nombre
+     que no comparte casi nada se queda esperando a que una persona diga si
+     es el mismo producto.                                                  */
+  const _VACIAS = new Set(['DE', 'DEL', 'LA', 'EL', 'LOS', 'LAS', 'P', 'PARA', 'CON', 'C',
+                           'S', 'SIN', 'Y', 'X', 'EN', 'A', 'AL', 'O']);
+  function _palabrasProducto(t) {
+    return _sinAcentos(t).toUpperCase().replace(/[^A-Z0-9]+/g, ' ').split(' ')
+      .filter((w) => w && !_VACIAS.has(w) && !/^\d+$/.test(w));
+  }
+  function _mismaPalabra(x, y) {
+    return x === y || (x.length >= 3 && y.length >= 3 && (x.startsWith(y) || y.startsWith(x)));
+  }
+  /* De 0 (nada en común) a 1 (todas las palabras del más corto están en el
+     otro). Las cifras sueltas no cuentan: «1/2» y «3/4» no dicen qué es. */
+  function parecidoNombres(a, b) {
+    const A = _palabrasProducto(a), B = _palabrasProducto(b);
+    if (!A.length || !B.length) return _sinAcentos(a).toUpperCase().trim() === _sinAcentos(b).toUpperCase().trim() ? 1 : 0;
+    const usadas = new Set();
+    let comunes = 0;
+    for (const x of A) {
+      for (let j = 0; j < B.length; j++) {
+        if (!usadas.has(j) && _mismaPalabra(x, B[j])) { usadas.add(j); comunes++; break; }
+      }
+    }
+    return comunes / Math.min(A.length, B.length);
+  }
+  /* Otro producto: casi nada en común, o distinto lo que es (la primera
+     palabra: TUBO no es CODO) y poco más en común. */
+  function esOtroProducto(a, b) {
+    if (!String(a || '').trim() || !String(b || '').trim()) return false;
+    const s = parecidoNombres(a, b);
+    if (s < 0.34) return true;
+    const pa = _palabrasProducto(a)[0], pb = _palabrasProducto(b)[0];
+    return !!(pa && pb && !_mismaPalabra(pa, pb) && s < 0.6);
+  }
+  /* El nombre con que FelTec conoce el producto: si el nuestro se corrigió a
+     mano, se guarda aparte lo que traía el reporte. */
+  function nombreDeReporte(p) { return (p && (p.nombreReporte || p.nombre)) || ''; }
+
+  /* ITEM para lo que se crea en el panel. NUNCA un número: los números los
+     pone FelTec, y el siguiente número libre de aquí es justo el que FelTec le
+     va a dar a su próximo producto. Así se cruzan: lo creado aquí como 19547 y
+     lo que FelTec crea después como 19547 acaban siendo uno solo, con la foto
+     y el precio de uno y el nombre del otro. Con la «M-» delante no puede
+     pasar. Cuando FelTec le dé su número, se vincula desde «Reparar
+     productos cruzados». */
+  let _provSeq = 0;
+  function _itemProvisional() {
+    let k;
+    do {
+      k = 'M-' + Date.now().toString(36).toUpperCase() + (_provSeq++ % 36).toString(36).toUpperCase();
+    } while (byItem.has(k));
+    return k;
+  }
+  function esProvisional(item) { return /^M-/i.test(String(item || '')); }
+
   /* --------------------- Importar Excel (.xlsx) -------------------------- */
   // Mapea encabezados del reporte FelTec a nuestros campos.
   function mapHeader(header) {
@@ -190,8 +256,10 @@ window.Inventario = (function () {
     return true;
   }
 
-  // file: File (del <input type=file>). Devuelve {count, sinPrecio}.
-  async function importarExcel(file) {
+  // file: File (del <input type=file>). Devuelve {count, sinPrecio, cruces}.
+  // opciones.mismos: ITEM que una persona confirmó que SÍ son el mismo producto.
+  async function importarExcel(file, opciones) {
+    const mismos = new Set(((opciones && opciones.mismos) || []).map(String));
     if (typeof XLSX === 'undefined') throw new Error('No se pudo cargar el lector de Excel (XLSX).');
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
@@ -226,13 +294,29 @@ window.Inventario = (function () {
     }
     let conservados = 0;
 
+    /* Antes de reescribir la base entera, una copia de cómo estaba. */
+    await _respaldoLocal('antes de cargar el Excel (' + (file && file.name || '') + ')');
+
     const st = store(COLS.productos, 'readwrite');
     st.clear();
     let count = 0, sinPrecio = 0, bajasSinPrecio = 0;
+    const cruces = [], vistos = new Set();
     for (let r = 1; r < rows.length; r++) {
       const row = rows[r];
       if (!row || !esFilaDeProducto(row[col.item])) continue;
       const item = String(row[col.item]).trim();
+      vistos.add(item);
+      const nombreFila = String(row[col.nombre] == null ? '' : row[col.nombre]).trim();
+      /* El reporte trae OTRO producto con este ITEM: lo nuestro se queda
+         como estaba, entero, y se avisa. Se resuelve en «Reparar productos
+         cruzados». */
+      const previo = prev.get(item);
+      if (previo && !mismos.has(item) && esOtroProducto(nombreDeReporte(previo), nombreFila)) {
+        st.put(previo);
+        cruces.push({ item, nuestro: previo.nombre, reporte: nombreFila });
+        count++;
+        continue;
+      }
       let codigo = '';
       if (col.codigo >= 0 && row[col.codigo] != null && String(row[col.codigo]).trim() !== '') codigo = String(row[col.codigo]).trim();
       else if (prevCod.has(item)) codigo = prevCod.get(item);
@@ -252,9 +336,9 @@ window.Inventario = (function () {
          conserva: el Object.assign de abajo parte de lo que ya había. */
       const fijados = ant ? fijadosDe(ant) : [];
       const delArchivo = (k, v) => (ant && fijados.indexOf(k) >= 0 && ant[k]) ? ant[k] : v;
-      st.put(Object.assign({}, ant || {}, {
+      const nuevoP = Object.assign({}, ant || {}, {
         item,
-        nombre: delArchivo('nombre', String(row[col.nombre] == null ? '' : row[col.nombre]).trim()),
+        nombre: delArchivo('nombre', nombreFila),
         categoria: delArchivo('categoria', col.categoria >= 0 ? String(row[col.categoria] || '').trim() : ''),
         unidad: delArchivo('unidad', col.unidad >= 0 ? String(row[col.unidad] || '').trim() : ''),
         existencia: numOf(row[col.existencia]),
@@ -269,7 +353,19 @@ window.Inventario = (function () {
         destacado: prevDest.has(item),
         activo: bajaPorPrecio ? false : (ant ? ant.activo !== false : true),
         tocadoEn: prevToc.get(item) || 0,
-      }));
+      });
+      /* Si el nombre es nuestro (corregido a mano), se apunta cómo lo llama
+         FelTec: es con eso con lo que se compara la próxima vez. */
+      if (nuevoP.nombre !== nombreFila) nuevoP.nombreReporte = nombreFila; else delete nuevoP.nombreReporte;
+      st.put(nuevoP);
+      count++;
+    }
+    /* Lo que el archivo no trae NO se borra: lo creado en el panel, los
+       dados de baja… Antes desaparecía todo lo que no viniera en el Excel,
+       con sus fotos y sus precios colgando de un ITEM que ya no existía. */
+    for (const [item, p] of prev) {
+      if (vistos.has(item)) continue;
+      st.put(p);
       count++;
     }
     await txDone(st.transaction);
@@ -278,8 +374,8 @@ window.Inventario = (function () {
     meta.count = count;
     await saveMeta();
     await loadAll();
-    emitir('import');
-    return { count, sinPrecio, preciosConservados: conservados, bajasSinPrecio };
+    emitir('import', { cruces: cruces.length });
+    return { count, sinPrecio, preciosConservados: conservados, bajasSinPrecio, cruces };
   }
 
   /* ======================================================================
@@ -313,10 +409,17 @@ window.Inventario = (function () {
     }
 
     const enArchivo = new Set(filas.map((f) => f.item));
-    const nuevos = [], precios = [], iguales = [];
+    const nuevos = [], precios = [], iguales = [], cruces = [];
     for (const f of filas) {
       const actual = byItem.get(f.item);
       if (!actual) { nuevos.push(f); continue; }
+      /* Con este ITEM el reporte trae OTRO producto. Ni su nombre ni su
+         precio son de lo nuestro: no se ofrecen, se enseñan aparte. */
+      if (esOtroProducto(nombreDeReporte(actual), f.nombre)) {
+        cruces.push({ item: f.item, nuestro: actual.nombre, reporte: f.nombre,
+                      foto: tieneImagen(f.item), precio: numOf(actual.precio), fila: f });
+        continue;
+      }
       if (f.precio > 0 && Math.abs(f.precio - numOf(actual.precio)) >= 0.005) {
         precios.push({
           item: f.item, nombre: actual.nombre || f.nombre,
@@ -328,7 +431,7 @@ window.Inventario = (function () {
     const faltantes = productos.filter((p) => !enArchivo.has(String(p.item)))
       .map((p) => ({ item: p.item, nombre: p.nombre, precio: numOf(p.precio) }));
 
-    return { filas, nuevos, precios, faltantes, sinCambio: iguales.length, total: filas.length };
+    return { filas, nuevos, precios, faltantes, cruces, sinCambio: iguales.length, total: filas.length };
   }
 
   /* Aplica el análisis con la selección del empleado.
@@ -339,8 +442,14 @@ window.Inventario = (function () {
     sel = sel || {};
     const okPrecio = new Set((sel.precios || []).map(String));
     const okNuevo = new Set((sel.nuevos || []).map(String));
+    /* ITEM que una persona confirmó que SÍ son el mismo producto aunque el
+       nombre cambie mucho. Los demás cruces no se tocan. */
+    const mismos = new Set((sel.mismos || []).map(String));
     const empleado = sel.empleado || '';
     const enArchivo = new Map(analisis.filas.map((f) => [f.item, f]));
+    const cruces = [];
+
+    await _respaldoLocal('antes de aplicar el Excel');
 
     const st = store(COLS.productos, 'readwrite');
     const nuevosCambios = [];
@@ -372,6 +481,12 @@ window.Inventario = (function () {
          carga del Excel borraba en este equipo la marca, el costo, la ficha y
          las bajas; al guardar la base, se borraban para todos. Y lo que se
          corrigió a mano en la ficha manda sobre el reporte. */
+      /* El reporte trae OTRO producto con este ITEM: no se toca nada de lo
+         nuestro (ni nombre, ni existencia, ni nada). */
+      if (!mismos.has(item) && esOtroProducto(nombreDeReporte(p), f.nombre)) {
+        cruces.push({ item, nuestro: p.nombre, reporte: f.nombre });
+        continue;
+      }
       const fijados = fijadosDe(p);
       const delReporte = (k) => (fijados.indexOf(k) < 0 && f[k]) ? f[k] : p[k];
       const actualizado = Object.assign({}, p, {
@@ -385,6 +500,8 @@ window.Inventario = (function () {
         destacado: !!p.destacado,
         tocadoEn: p.tocadoEn || 0,
       });
+      if (f.nombre && actualizado.nombre !== f.nombre) actualizado.nombreReporte = f.nombre;
+      else delete actualizado.nombreReporte;
       // El precio solo si el empleado lo aprobó
       if (okPrecio.has(item) && f.precio > 0) {
         const anterior = numOf(p.precio);
@@ -458,7 +575,7 @@ window.Inventario = (function () {
     }
     if (paraCompartir.length) _empujar(paraCompartir);
 
-    return { actualizados, agregados, quitados,
+    return { actualizados, agregados, quitados, cruces,
              compartidos: paraCompartir.length <= INV_MAX_DE_GOLPE ? paraCompartir.length : 0 };
   }
 
@@ -486,6 +603,14 @@ window.Inventario = (function () {
     for (const c of cambios) {
       const t = Date.parse(c.fecha || '') || 0;
       if (t > baseAt) editadoAqui.add(String(c.item));
+    }
+
+    /* La base de aquí se va a reemplazar: antes, una copia. También cuando
+       en el equipo de un empleado (base completa) se abre el catálogo, que
+       trae nombres nuevos. En el teléfono de un cliente (solo tiene la lista
+       del catálogo) no hace falta. */
+    if (productos.length && !(op && op.sinRespaldo) && (!parcial || !meta.baselineParcial)) {
+      await _respaldoLocal(parcial ? 'antes de abrir el catálogo con datos nuevos' : 'antes de bajar la base del sitio');
     }
 
     const st = store(COLS.productos, 'readwrite');
@@ -552,6 +677,9 @@ window.Inventario = (function () {
            si la que llega no lo trae, se conserva lo de este equipo. */
         etiquetaEn: Number(p.etiquetaEn) || (ant ? Number(ant.etiquetaEn) || 0 : 0),
         etiquetaPrecio: Number(p.etiquetaPrecio) || (ant ? Number(ant.etiquetaPrecio) || 0 : 0),
+        nombreReporte: p.nombreReporte !== undefined ? String(p.nombreReporte || '')
+                       : (ant ? String(ant.nombreReporte || '') : ''),
+        origen: p.origen !== undefined ? String(p.origen || '') : (ant ? String(ant.origen || '') : ''),
       });
       count++;
     }
@@ -923,19 +1051,17 @@ window.Inventario = (function () {
     }
 
     if (altaNuevos) {
-      let siguiente = 0;
-      for (const p of productos) {
-        const n = parseInt(p.item, 10);
-        if (isFinite(n) && n > siguiente) siguiente = n;
-      }
+      /* ITEM provisional, no «el siguiente número»: ese número es el que
+         FelTec le dará a su próximo producto (ver _itemProvisional). */
       for (const r of (analisis.nuevos || [])) {
         if (nuevosOk && !nuevosOk.has(r.codigo + '|' + r.nombre)) continue;
-        siguiente++;
+        const item = _itemProvisional();
+        byItem.set(item, { item });          // reservado, para que el siguiente no lo repita
         st.put({
-          item: String(siguiente), nombre: r.nombre, categoria: r.categoria,
+          item, nombre: r.nombre, categoria: r.categoria,
           unidad: r.unidad || 'Unidad', existencia: r.stock, precio: 0,
           costo: r.costo, marca: r.marca, codigo: r.codigo,
-          destacado: false, activo: true, tocadoEn: Date.now(),
+          destacado: false, activo: true, tocadoEn: Date.now(), origen: 'panel',
         });
         altas++;
       }
@@ -1056,15 +1182,11 @@ window.Inventario = (function () {
     datos = datos || {};
     const nombre = String(datos.nombre || '').trim();
     if (!nombre) throw new Error('El producto necesita un nombre.');
+    /* Sin ITEM de FelTec, uno provisional que nunca choca con los suyos
+       (ver _itemProvisional). Si la persona escribe el de FelTec, ese. */
     let item = String(datos.item || '').trim();
-    if (!item) {
-      let siguiente = 0;
-      for (const p of productos) {
-        const n = parseInt(p.item, 10);
-        if (isFinite(n) && n > siguiente) siguiente = n;
-      }
-      item = String(siguiente + 1);
-    }
+    if (!item) item = _itemProvisional();
+    if (!/^[A-Za-z0-9._-]{1,40}$/.test(item)) throw new Error('El ITEM solo puede llevar letras, números, guion y punto.');
     if (byItem.get(item)) throw new Error('Ya existe un producto con el ITEM ' + item + '.');
     const codigo = String(datos.codigo || '').trim();
     if (codigo && byCodigo.get(normCod(codigo))) {
@@ -1077,6 +1199,7 @@ window.Inventario = (function () {
       existencia: numOf(datos.existencia), precio: numOf(datos.precio),
       costo: numOf(datos.costo), marca: String(datos.marca || '').trim(),
       codigo: codigo, destacado: false, activo: true, tocadoEn: Date.now(),
+      origen: 'panel',
     };
     await guardar(COLS.productos, (st) => st.put(p));
     meta.cambioSinPublicar = Date.now();
@@ -1088,7 +1211,7 @@ window.Inventario = (function () {
     _empujar([{
       item: p.item, alta: true, nombre: p.nombre, categoria: p.categoria,
       unidad: p.unidad, existencia: p.existencia, precio: p.precio,
-      codigo: p.codigo, marca: p.marca, activo: true,
+      codigo: p.codigo, marca: p.marca, activo: true, origen: 'panel',
     }]);
     return p;
   }
@@ -1451,7 +1574,7 @@ window.Inventario = (function () {
   const INV_CAMPOS = ['precio', 'promoAntes', 'promoHasta', 'activo', 'activoManual',
                       'bajaMotivo', 'codigo', 'destacado', 'existencia',
                       'nombre', 'categoria', 'unidad', 'marca', 'especificaciones',
-                      'fichaFijada', 'presentaciones'];
+                      'fichaFijada', 'presentaciones', 'nombreReporte', 'origen'];
 
   async function _aplicarCambioServidor(o) {
     if (!o || !o.item) return false;
@@ -1705,7 +1828,8 @@ window.Inventario = (function () {
     if (!baseEstado.comprobado || !baseEstado.disponible) return '';
     if (!baseEstado.hay) return 'el sitio todavía no tiene la base guardada';
     if ((meta.baselineAt || '') > (baseEstado.generatedAt || '')) {
-      return 'hay una carga del Excel que el sitio todavía no tiene';
+      return meta.reparado ? 'hay productos reparados que el sitio todavía no tiene'
+                           : 'hay una carga del Excel que el sitio todavía no tiene';
     }
     if ((invEstado.count || 0) > UMBRAL_REGISTRO) {
       return 'hay muchos cambios sueltos acumulados y conviene juntarlos';
@@ -1906,8 +2030,30 @@ window.Inventario = (function () {
       fotosMas = (d.mas && typeof d.mas === 'object') ? d.mas : {};
       fotosVer = (d.ver && typeof d.ver === 'object') ? d.ver : {};
       servidorActivo = true;
+      await _descartarFotosQuitadas(d.quitadas);
       return true;
     } catch (e) { return false; }
+  }
+
+  /* Si en el sitio a un producto se le quitaron o movieron las fotos DESPUÉS
+     de que este equipo guardara su copia, esa copia ya no vale: se borra.
+     Si no, Guardar la volvía a subir y la foto regresaba al ITEM de donde se
+     quitó (justo lo que hay que evitar al reparar productos cruzados). */
+  async function _descartarFotosQuitadas(quitadas) {
+    if (!quitadas || typeof quitadas !== 'object') return 0;
+    const fuera = [];
+    imagenes.forEach((_, k) => {
+      const q = Number(quitadas[k]) || 0;
+      if (q && !fotosServidor.has(k) && (imagenesT.get(k) || 0) < q) fuera.push(k);
+    });
+    if (!fuera.length) return 0;
+    try {
+      const st = store(COLS.imagenes, 'readwrite');
+      for (const k of fuera) st.delete(k);
+      await txDone(st.transaction);
+    } catch (e) { return 0; }
+    for (const k of fuera) { imagenes.delete(k); imagenesT.delete(k); }
+    return fuera.length;
   }
 
   let _ultimoErrorServidor = '';
@@ -3231,7 +3377,10 @@ window.Inventario = (function () {
     const todos = [];
     for (let i = 0; i < partes; i++) {
       const cab = full ? { 'x-fsj-clave': clave } : undefined;
-      const r = await fetch(API_BASE + '?parte=' + i + (full ? '&full=1' : ''), { headers: cab });
+      /* Con la versión en la dirección: cada versión tiene la suya y nunca
+         llega un trozo de la base anterior guardado en caché. */
+      const r = await fetch(API_BASE + '?parte=' + i + (d.subida ? '&v=' + encodeURIComponent(d.subida) : '') +
+                            (full ? '&full=1' : ''), { headers: cab });
       if (!r.ok) throw new Error('no llegó la parte ' + i + ' (' + r.status + ')');
       const t = await r.json();
       if (!t.ok || !Array.isArray(t.productos)) throw new Error('parte ' + i + ' vino mal');
@@ -3339,6 +3488,7 @@ window.Inventario = (function () {
       bajaMotivo: p.bajaMotivo || '', activoManual: !!p.activoManual,
       tocadoEn: p.tocadoEn || 0,
       etiquetaEn: p.etiquetaEn || 0, etiquetaPrecio: p.etiquetaPrecio || 0,
+      nombreReporte: p.nombreReporte || '', origen: p.origen || '',
     }));
     /* El costo de compra NO va: la parte del catálogo se sirve sin clave. */
 
@@ -3365,6 +3515,7 @@ window.Inventario = (function () {
       });
 
       meta.baselineAt = generatedAt;
+      meta.reparado = 0;
       await saveMeta();
       /* Los cambios sueltos anteriores ya están dentro de esta base: sobran
          en el servidor. `marcarPublicado` los borra y apaga el aviso de
@@ -3538,6 +3689,337 @@ window.Inventario = (function () {
       .sort((a, b) => b.count - a.count || a.nombre.localeCompare(b.nombre, 'es'));
   }
 
+  /* ====================== RESPALDOS EN ESTE EQUIPO ======================
+     Antes de cada cosa que reescribe la base entera —cargar el Excel, bajar
+     la base del sitio, reparar productos— se guarda aquí una copia de cómo
+     estaba. Si lo nuevo viene mal, hay de dónde sacar lo de antes. Van en una
+     base de datos aparte (no hace falta tocar la de siempre) y se guardan
+     la primera y las últimas MAX_RESPALDOS. */
+  const RESP_DB = 'fsj-respaldos';
+  const MAX_RESPALDOS = 4;
+  const CAMPOS_RESPALDO = ['item', 'nombre', 'categoria', 'unidad', 'existencia', 'precio', 'costo',
+    'codigo', 'marca', 'especificaciones', 'presentaciones', 'fichaFijada', 'nombreReporte', 'origen',
+    'promoAntes', 'promoHasta', 'destacado', 'activo', 'bajaMotivo', 'activoManual',
+    'etiquetaEn', 'etiquetaPrecio', 'tocadoEn'];
+
+  function _abrirRespaldos() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open(RESP_DB, 1);
+      r.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains('copias')) d.createObjectStore('copias', { keyPath: 'id', autoIncrement: true });
+      };
+      r.onsuccess = (e) => res(e.target.result);
+      r.onerror = () => rej(r.error);
+    });
+  }
+  function _copiaLigera(p) {
+    const o = {};
+    for (const k of CAMPOS_RESPALDO) if (p[k] !== undefined && p[k] !== '' && p[k] !== null) o[k] = p[k];
+    return o;
+  }
+  async function _respaldoLocal(motivo) {
+    if (!productos.length) return null;
+    let d = null;
+    try {
+      d = await _abrirRespaldos();
+      const copia = { fecha: new Date().toISOString(), motivo: String(motivo || ''),
+                      count: productos.length, baselineAt: meta.baselineAt || '',
+                      productos: productos.map(_copiaLigera) };
+      const t = d.transaction('copias', 'readwrite');
+      t.objectStore('copias').add(copia);
+      await txDone(t);
+      const t2 = d.transaction('copias', 'readwrite');
+      const st = t2.objectStore('copias');
+      /* La PRIMERA copia de este equipo no se tira nunca: en un equipo que
+         llevaba tiempo sin abrirse es la que tiene los datos de antes. */
+      const llaves = (await reqP(st.getAllKeys())).sort((a, b) => a - b);
+      const resto = llaves.slice(1);
+      for (const k of resto.slice(0, Math.max(0, resto.length - MAX_RESPALDOS))) st.delete(k);
+      await txDone(t2);
+      return copia.fecha;
+    } catch (e) { return null; }
+    finally { try { if (d) d.close(); } catch (e) {} }
+  }
+  /* La lista, sin los productos (para enseñarla). */
+  async function respaldosLocales() {
+    let d = null;
+    try {
+      d = await _abrirRespaldos();
+      const l = await reqP(d.transaction('copias').objectStore('copias').getAll());
+      return l.map((c) => ({ id: c.id, fecha: c.fecha, motivo: c.motivo, count: c.count }))
+        .sort((a, b) => (b.fecha > a.fecha ? 1 : -1));
+    } catch (e) { return []; }
+    finally { try { if (d) d.close(); } catch (e) {} }
+  }
+  async function respaldoLocal(id) {
+    let d = null;
+    try {
+      d = await _abrirRespaldos();
+      return await reqP(d.transaction('copias').objectStore('copias').get(Number(id)));
+    } catch (e) { return null; }
+    finally { try { if (d) d.close(); } catch (e) {} }
+  }
+  function respaldarAhora(motivo) { return _respaldoLocal(motivo || 'a mano'); }
+
+  /* Todo lo nuestro en un archivo, para guardarlo fuera del navegador:
+     productos (sin el costo de compra), qué fotos hay en el sitio, y los
+     ajustes compartidos. Sirve de referencia en «Reparar productos». */
+  async function descargarRespaldo(nombreArchivo) {
+    await _cargarIndiceServidor();
+    const datos = {
+      tipo: 'respaldo-fsj', generatedAt: new Date().toISOString(),
+      baselineAt: meta.baselineAt || '', count: productos.length,
+      productos: productos.map((p) => { const o = _copiaLigera(p); delete o.costo; return o; }),
+      fotos: { items: Array.from(fotosServidor), mas: fotosMas, ver: fotosVer },
+      equivalencias: EQUIV, combos: COMBOS,
+      variantes: SECC.variantes.datos || null, marcas: SECC.marcas.datos || null,
+    };
+    const f = nombreArchivo || ('respaldo-inventario-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.json');
+    _download(f, JSON.stringify(datos), 'application/json');
+    return { archivo: f, count: productos.length };
+  }
+
+  /* =================== VERSIONES GUARDADAS EN EL SITIO ==================
+     El sitio guarda las últimas bases (ver base.mjs). Se pueden mirar sin
+     cambiar nada, para comparar, y gerencia puede devolver el sitio a una. */
+  async function versionesBase() {
+    if (!_claveEnvio()) return { ok: false, motivo: 'sin-clave', historial: [] };
+    try {
+      const r = await fetch(API_BASE + '?versiones=1', { headers: { 'x-fsj-clave': _claveEnvio() }, cache: 'no-store' });
+      const d = await r.json().catch(() => null);
+      if (!r.ok || !d || !d.ok) return { ok: false, motivo: (d && d.error) || ('http ' + r.status), historial: [] };
+      return { ok: true, actual: d.actual, historial: d.historial || [] };
+    } catch (e) { return { ok: false, motivo: 'red', historial: [] }; }
+  }
+  /* Los productos de una versión, SIN cargarlos en este equipo. */
+  async function bajarVersionBase(subida, partes) {
+    if (!_claveEnvio()) throw new Error('Entra con tu nombre y clave.');
+    const todos = [];
+    for (let i = 0; i < (partes || 1); i++) {
+      const r = await fetch(API_BASE + '?parte=' + i + '&v=' + encodeURIComponent(subida) + '&full=1',
+                            { headers: { 'x-fsj-clave': _claveEnvio() } });
+      if (!r.ok) throw new Error('No llegó la parte ' + (i + 1) + ' de esa versión.');
+      const t = await r.json();
+      for (const p of (t.productos || [])) todos.push(p);
+    }
+    return todos;
+  }
+  async function restaurarVersionBase(subida) {
+    if (!_claveEnvio()) throw new Error('Entra con tu nombre y clave.');
+    const r = await fetch(API_BASE, { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ clave: _claveEnvio(), restaurar: subida }) });
+    const d = await r.json().catch(() => null);
+    if (!r.ok || !d || !d.ok) throw new Error((d && d.error) || 'No se pudo volver a esa versión.');
+    /* Y este equipo la toma ya. */
+    const n = await _bajarBaseServidor({ forzar: true });
+    if (n) emitir('import', { origen: 'restaurar' });
+    return { meta: d.meta, count: n };
+  }
+
+  /* ================= REPARAR PRODUCTOS CRUZADOS =========================
+     Cuando FelTec le dio a otro producto el ITEM de uno nuestro, en el mismo
+     número quedaron mezclados dos productos: el nombre del de FelTec y la
+     foto, el precio, el código de barras y la ficha del nuestro. Hay dos
+     arreglos, y una persona elige cuál en cada caso:
+
+       · devolverNombre  -> el nombre de ahora está mal y el de antes era el
+                            bueno (FelTec sigue llamándolo como antes).
+       · moverProducto   -> FelTec de verdad usa ese ITEM para otro producto.
+                            Lo nuestro (foto, precio, ficha) se va a otro ITEM
+                            —el que FelTec le haya dado, o uno provisional— y
+                            el ITEM queda para el producto de FelTec, limpio.
+
+     Lo que es NUESTRO (no viene de FelTec) y se va con el producto:        */
+  const CAMPOS_NUESTROS = ['precio', 'promoAntes', 'promoHasta', 'codigo', 'marca',
+    'especificaciones', 'presentaciones', 'destacado', 'activo', 'activoManual', 'bajaMotivo',
+    'etiquetaEn', 'etiquetaPrecio'];
+
+  function _marcarBaseCambiada() {
+    meta.lastUpload = new Date().toISOString();
+    meta.baselineAt = meta.lastUpload;
+    meta.reparado = Date.now();
+  }
+
+  /* El ITEM cambia de nombre en lo compartido: equivalentes, combos,
+     medidas y proveedores propios. */
+  async function _cambiarItemEnAjustes(de, a) {
+    de = String(de); a = String(a);
+    let toco = false;
+    const gr = EQUIV.grupos.map((g) => {
+      if (g.items.indexOf(de) < 0) return g;
+      toco = true;
+      return Object.assign({}, g, { items: g.items.map((x) => (x === de ? a : x)) });
+    });
+    if (toco) { EQUIV = { grupos: gr }; await _guardarEquiv(); }
+
+    let tocoC = false;
+    const lc = COMBOS.lista.map((c) => {
+      if (!c.items.some((x) => String(x.item) === de)) return c;
+      tocoC = true;
+      return Object.assign({}, c, { items: c.items.map((x) => (String(x.item) === de ? Object.assign({}, x, { item: a }) : x)) });
+    });
+    if (tocoC) { COMBOS = { lista: lc }; await _guardarCombos(); }
+
+    const vd = SECC.variantes.datos;
+    if (vd && Array.isArray(vd.lista) && vd.lista.some((g) => g.items.some((x) => String(x.item) === de))) {
+      await _guardarSeccion('variantes', { lista: vd.lista.map((g) => Object.assign({}, g, {
+        items: g.items.map((x) => (String(x.item) === de ? Object.assign({}, x, { item: a }) : x)) })) });
+    }
+
+    const prov = meta.proveedores || {};
+    const k = _clave(de);
+    if (prov[k]) {
+      await _guardarProv(_clave(a), prov[k]);
+      await _guardarProv(k, '');
+    }
+  }
+
+  async function devolverNombre(item, antes) {
+    const p = byItem.get(String(item));
+    if (!p) throw new Error('No está el ITEM ' + item + '.');
+    const ref = antes || {};
+    if (!String(ref.nombre || '').trim()) throw new Error('Falta el nombre de antes.');
+    p.nombre = String(ref.nombre).trim();
+    if (ref.categoria) p.categoria = String(ref.categoria).trim();
+    if (ref.unidad) p.unidad = String(ref.unidad).trim();
+    /* Si FelTec lo llama de otra forma, se apunta: así el próximo reporte
+       no lo vuelve a pisar ni lo confunde con otro. */
+    if (ref.nombreReporte && ref.nombreReporte !== p.nombre) p.nombreReporte = String(ref.nombreReporte);
+    else delete p.nombreReporte;
+    /* «Es el mismo producto, FelTec solo lo llama distinto»: nuestro nombre
+       queda fijo, o el próximo reporte lo cambiaría por el de FelTec. */
+    if (ref.fijar) {
+      const f = fijadosDe(p);
+      if (f.indexOf('nombre') < 0) f.push('nombre');
+      p.fichaFijada = f.join(',');
+    }
+    p.tocadoEn = Date.now();
+    await guardar(COLS.productos, (st) => st.put(p));
+    _editado(p);
+    _marcarBaseCambiada();
+    await saveMeta();
+    emitir('reparado', { item: p.item, como: 'nombre' });
+    _empujar([{ item: p.item, nombre: p.nombre, categoria: p.categoria || '', unidad: p.unidad || '',
+                nombreReporte: p.nombreReporte || '', fichaFijada: p.fichaFijada || '' }]);
+    return p;
+  }
+
+  /* op: { a (ITEM destino; vacío = uno provisional nuevo),
+           nombre, categoria, unidad, existencia (para el nuestro si va a uno
+           nuevo), fila (lo que dice el reporte de FelTec de `de`, para dejarlo
+           como el producto de FelTec) } */
+  async function moverProducto(de, op) {
+    op = op || {};
+    de = String(de);
+    const src = byItem.get(de);
+    if (!src) throw new Error('No está el ITEM ' + de + '.');
+    let a = String(op.a || '').trim();
+    if (a && !/^[A-Za-z0-9._-]{1,40}$/.test(a)) throw new Error('El ITEM ' + a + ' no es válido.');
+    if (a === de) throw new Error('El ITEM de destino es el mismo.');
+    const existia = !!(a && byItem.get(a));
+    if (!a) a = _itemProvisional();
+    const dst0 = byItem.get(a) || null;
+    if (dst0 && tieneImagen(a) && tieneImagen(de)) {
+      throw new Error('El ITEM ' + a + ' ya tiene foto. Elige otro o quítale la foto primero.');
+    }
+
+    /* 1) Las fotos primero: si no se pueden mover, no se toca nada más. */
+    await _cargarIndiceServidor();
+    if (fotosServidor.has(de)) {
+      if (!_claveEnvio()) throw new Error('Entra con tu nombre y clave para mover fotos.');
+      let r, d;
+      try {
+        r = await fetch(API_FOTOS + '/_mover', { method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-fsj-clave': _claveEnvio() },
+          body: JSON.stringify({ de, a }) });
+        d = await r.json().catch(() => null);
+      } catch (e) { throw new Error('No se pudo conectar con el sitio para mover las fotos.'); }
+      if (!r.ok || !d || !d.ok) throw new Error('No se pudieron mover las fotos: ' + ((d && d.error) || r.status));
+      _anotarFotos(a, { fotos: d.fotosA, ver: d.verA });
+      _anotarFotos(de, { fotos: d.fotosDe, ver: d.verDe });
+    }
+    if (imagenes.has(de)) {
+      const dataUri = imagenes.get(de);
+      const stI = store(COLS.imagenes, 'readwrite');
+      stI.put({ item: a, data: dataUri, t: imagenesT.get(de) || Date.now() });
+      stI.delete(de);
+      await txDone(stI.transaction);
+      imagenes.set(a, dataUri); imagenesT.set(a, imagenesT.get(de) || Date.now());
+      imagenes.delete(de); imagenesT.delete(de);
+    }
+
+    /* 2) Lo nuestro, al destino. Si el destino es de FelTec, su nombre y su
+       existencia se quedan (son de FelTec); si es nuevo, lleva el nombre de
+       antes. */
+    /* Un ITEM que FelTec tiene (viene en su reporte) pero este equipo todavía
+       no: se crea con lo que dice el reporte. Uno que no existe en ningún
+       lado es de aquí: nombre de antes y origen «panel». */
+    const fd = !dst0 && op.filaDestino ? op.filaDestino : null;
+    const dst = Object.assign({}, dst0 || (fd ? {
+      item: a, nombre: String(fd.nombre || op.nombre || src.nombre), categoria: String(fd.categoria || ''),
+      unidad: String(fd.unidad || 'Unidad'), existencia: numOf(fd.existencia), costo: 0,
+    } : {
+      item: a, nombre: String(op.nombre || src.nombre), categoria: String(op.categoria || src.categoria || ''),
+      unidad: String(op.unidad || src.unidad || 'Unidad'), existencia: numOf(op.existencia), costo: 0,
+      origen: 'panel',
+    }));
+    for (const k of CAMPOS_NUESTROS) if (src[k] !== undefined) dst[k] = src[k];
+    const fijos = fijadosDe(src).filter((k) => k === 'marca' || k === 'especificaciones');
+    dst.fichaFijada = fijos.join(',');
+    if (numOf(dst.precio) > 0 && dst.bajaMotivo === 'sin-precio') { dst.activo = true; dst.bajaMotivo = ''; }
+    dst.tocadoEn = Date.now();
+    _editado(dst);
+
+    /* 3) Y el ITEM de origen queda como el producto de FelTec, limpio: sin
+       foto, sin nuestro precio, sin nuestro código ni ficha. Precio, el del
+       reporte; sin él, de baja hasta que alguien se lo ponga (la regla de
+       siempre para lo que llega sin precio). */
+    const f = op.fila || null;
+    const precioF = f ? numOf(f.precio) : 0;
+    const limpio = Object.assign({}, src, {
+      nombre: f && f.nombre ? String(f.nombre) : src.nombre,
+      categoria: f && f.categoria ? String(f.categoria) : src.categoria,
+      unidad: f && f.unidad ? String(f.unidad) : src.unidad,
+      existencia: f ? numOf(f.existencia) : numOf(src.existencia),
+      precio: precioF, promoAntes: 0, promoHasta: '', codigo: '', marca: '',
+      especificaciones: '', presentaciones: '', destacado: false, fichaFijada: '',
+      activo: precioF > 0, bajaMotivo: precioF > 0 ? '' : 'sin-precio', activoManual: false,
+      etiquetaEn: 0, etiquetaPrecio: 0, tocadoEn: Date.now(),
+    });
+    delete limpio.nombreReporte; delete limpio.origen;
+    /* Un ITEM provisional que se vincula con el de FelTec ya no hace falta:
+       queda de baja (no se borra, por si acaso). */
+    if (op.retirar) { limpio.activo = false; limpio.bajaMotivo = 'vinculado'; limpio.origen = 'panel'; }
+    _editado(limpio);
+
+    const st = store(COLS.productos, 'readwrite');
+    st.put(dst); st.put(limpio);
+    await txDone(st.transaction);
+
+    /* 4) Lo compartido que nombraba al ITEM de origen ahora nombra al nuevo. */
+    await loadAll();
+    await _cambiarItemEnAjustes(de, a);
+
+    _marcarBaseCambiada();
+    await saveMeta();
+    await loadAll();
+    emitir('reparado', { item: de, a, como: 'mover' });
+
+    /* 5) A los demás equipos y al catálogo, enseguida: los dos enteros. */
+    const fichaDst = Object.assign(_fichaPublica(dst), {
+      activo: dst.activo !== false, bajaMotivo: dst.bajaMotivo || '', activoManual: !!dst.activoManual,
+      fichaFijada: dst.fichaFijada || '', etiquetaEn: numOf(dst.etiquetaEn), etiquetaPrecio: numOf(dst.etiquetaPrecio),
+    });
+    if (dst.origen) fichaDst.origen = dst.origen;
+    const fichaSrc = Object.assign(_fichaPublica(limpio), {
+      activo: limpio.activo !== false, bajaMotivo: limpio.bajaMotivo, activoManual: false,
+      fichaFijada: '', etiquetaEn: 0, etiquetaPrecio: 0,
+    });
+    _empujar([fichaDst, fichaSrc]);
+    return { de, a, nuevo: !existia, fotos: cuantasFotos(a) };
+  }
+
   /* ------------------------------- Init ---------------------------------- */
   function init(baselineUrls, opciones) {
     /* Se guarda en marcha: si el empleado entra mientras esto todavía carga,
@@ -3687,6 +4169,11 @@ window.Inventario = (function () {
     setMarca, setFicha, soltarFicha, fichaFijada, FICHA_CAMPOS,
     diferenciasConReporte,
     analizarConteo, aplicarConteo, setActivo, deBaja, altaProducto, setCodigo,
+    parecidoNombres, esOtroProducto, esProvisional, nombreDeReporte, palabrasProducto: _palabrasProducto,
+    respaldosLocales, respaldoLocal, respaldarAhora, descargarRespaldo,
+    versionesBase, bajarVersionBase, restaurarVersionBase,
+    devolverNombre, moverProducto,
+    todos: () => productos.slice(),
     setPromo, quitarPromo, promociones, enOferta, descuento,
     publicar, publicarCatalogo, publicarImagenes, publicarShowcase, exportarCambios, limpiarCambios,
     marcarPublicado, pendientes,

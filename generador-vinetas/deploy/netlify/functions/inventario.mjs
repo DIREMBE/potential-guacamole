@@ -111,7 +111,11 @@ const NUMEROS = ['precio', 'promoAntes', 'existencia', 'etiquetaEn', 'etiquetaPr
 /* `fichaFijada` dice que campos corrigio una persona a mano («nombre,marca»).
    Viaja para que el reporte no los vuelva a pisar en NINGUN equipo. */
 const TEXTOS = ['promoHasta', 'codigo', 'bajaMotivo', 'nombre', 'categoria', 'unidad',
-                'marca', 'especificaciones', 'fichaFijada', 'presentaciones'];
+                'marca', 'especificaciones', 'fichaFijada', 'presentaciones',
+                /* El nombre que trae FelTec cuando el nuestro se corrigió a
+                   mano, y si el producto se creó en el panel: sirven para
+                   notar cuando FelTec le da el mismo ITEM a otro producto. */
+                'nombreReporte', 'origen'];
 /* Lo normal cabe en 160, pero `presentaciones` lleva dentro la lista de
    formas en que se vende el producto —«varilla», «quintal de 14»— y necesita
    mas sitio. Recortarla a 160 la dejaria rota a medias. */

@@ -19,13 +19,31 @@
    subiendo, quien lea sigue viendo la base anterior, completa. Nunca se sirve
    una base a medias.
 
+   VERSIONES ANTERIORES (para poder volver atrás)
+   Antes, al guardar una base nueva se tiraba la anterior. Si la nueva venía
+   mal —un Excel que cruzó nombres entre productos—, no había a dónde volver.
+   Ahora se guardan las últimas GUARDAR_VERSIONES, y gerencia puede ver
+   cualquiera de ellas o devolver el sitio a una.
+
    RUTAS
      GET  /api/base            -> qué hay guardado (fechas y tamaños)
-     GET  /api/base?parte=2    -> un trozo del catálogo (público)
-     GET  /api/base?parte=2&full=1  -> un trozo de la base del panel (con clave)
+     GET  /api/base?parte=2&v=<subida>        -> un trozo del catálogo (público)
+     GET  /api/base?parte=2&v=<subida>&full=1 -> un trozo de la base del panel (con clave)
+     GET  /api/base?versiones=1   -> las versiones guardadas (con clave)
      POST /api/base            -> { clave, subida, parte, total, productos[] }
      POST /api/base            -> { clave, subida, cerrar:true }   (promueve)
-     DELETE /api/base          -> { clave }   borra lo guardado
+     POST /api/base            -> { clave, restaurar:<subida> }   (vuelve a una
+                                  versión anterior; solo rol admin)
+     DELETE /api/base          -> { clave }   borra lo guardado (solo rol admin)
+
+   OJO CON LA CACHÉ. Los trozos se piden con `v=<subida>`: así cada versión
+   tiene su propia dirección y se puede guardar en caché para siempre. Antes
+   la dirección era la misma para todas las versiones (?parte=2) y se
+   guardaba 24 horas: después de guardar una base nueva, la red de Netlify y
+   el navegador podían seguir dando trozos de la anterior, mezclados con
+   trozos de la nueva. Y la base del panel (full=1) ya no se guarda en la red
+   de Netlify: pide clave, y la red no mira la clave para decidir a quién se
+   la da.
 
    La variable de Netlify es la misma de siempre: FSJ_USUARIOS.
    ========================================================================== */
@@ -35,6 +53,7 @@ const STORE = 'fsj-base';
 const META = 'meta';                 // lo que está publicado ahora mismo
 const MAX_PRODUCTOS_PARTE = 2500;    // ~600 KB por trozo
 const MAX_PARTES = 24;               // tope de cordura: ~60.000 productos
+const GUARDAR_VERSIONES = 8;         // bases anteriores que se conservan
 
 function json(body, status = 200, cache) {
   const h = {
@@ -85,12 +104,53 @@ function quienEs(clave) {
   return '';
 }
 
+/* El rol de quien manda la clave (admin o empleado). Volver a una base
+   anterior o borrarla es cosa de gerencia. */
+function rolDe(clave) {
+  const c = String(clave || '').trim();
+  for (const entrada of String(process.env.FSJ_USUARIOS || '').split(',')) {
+    const p = entrada.split(':');
+    if (p[1] && iguales(String(p[1]).trim(), c)) return String(p[2] || 'empleado').trim().toLowerCase();
+  }
+  return '';
+}
+
+/* Lo que se apunta de cada versión en la lista. */
+function resumen(m) {
+  return {
+    subida: m.subida, generatedAt: m.generatedAt || '', guardadaEn: m.guardadaEn || '',
+    por: m.por || '', count: m.count || 0, countCatalogo: m.countCatalogo || 0,
+    partes: m.partes || 0, restaurada: m.restaurada || '',
+  };
+}
+
+async function borrarVersion(store, h) {
+  for (let i = 0; i < (h.partes || MAX_PARTES); i++) {
+    try { await store.delete('v/' + h.subida + '/p/' + i); } catch (e) {}
+    try { await store.delete('v/' + h.subida + '/c/' + i); } catch (e) {}
+  }
+  try { await store.delete('v/' + h.subida + '/sello'); } catch (e) {}
+}
+
+async function partesCompletas(store, subida, partes) {
+  for (let i = 0; i < partes; i++) {
+    let t = null;
+    try { t = await store.get('v/' + subida + '/p/' + i, { type: 'json' }); } catch (e) {}
+    if (!t) return i;
+  }
+  return -1;
+}
+
 /* ------------------------- Qué se deja guardar --------------------------
    Lista blanca, igual que en los cambios sueltos. El COSTO DE COMPRA no
    está y no debe estar: la parte del catálogo se sirve sin clave.          */
 const NUMEROS = ['precio', 'promoAntes', 'existencia', 'tocadoEn', 'etiquetaEn', 'etiquetaPrecio'];
 const TEXTOS = ['nombre', 'categoria', 'unidad', 'codigo', 'marca', 'promoHasta',
-                'bajaMotivo', 'especificaciones', 'presentaciones', 'fichaFijada'];
+                'bajaMotivo', 'especificaciones', 'presentaciones', 'fichaFijada',
+                /* nombreReporte: el nombre que trae FelTec cuando el nuestro
+                   se corrigió a mano; con él se nota si FelTec le da el mismo
+                   ITEM a otro producto. origen: 'panel' si se creó aquí. */
+                'nombreReporte', 'origen'];
 /* `presentaciones` lleva dentro las formas en que se vende el producto
    —«varilla», «quintal de 14»—; recortarla a 200 la dejaria rota a medias. */
 const LARGO_TEXTO = { presentaciones: 600 };
@@ -188,6 +248,16 @@ export default async (req) => {
     const meta = await leerMeta(store);
     const parte = url.searchParams.get('parte');
     const full = url.searchParams.get('full') === '1';
+    const v = String(url.searchParams.get('v') || '').trim();
+
+    /* Las versiones guardadas, para la pantalla de reparar. Con clave. */
+    if (url.searchParams.get('versiones') === '1') {
+      if (!claveOk(req.headers.get('x-fsj-clave'))) {
+        return json({ ok: false, error: 'las versiones necesitan clave' }, 401);
+      }
+      return json({ ok: true, actual: meta ? resumen(meta) : null,
+                    historial: (meta && meta.historial) || [] }, 200, 'private, no-store');
+    }
 
     if (parte === null) {
       /* El "meta" cambia cada vez que se sube una base nueva, así que se
@@ -212,15 +282,26 @@ export default async (req) => {
     if (full && !claveOk(req.headers.get('x-fsj-clave'))) {
       return json({ ok: false, error: 'la base del panel necesita clave' }, 401);
     }
-    const llave = (full ? 'v/' + meta.subida + '/p/' : 'v/' + meta.subida + '/c/') + n;
+    /* Qué versión: la que se pide con `v`, si todavía está guardada; si no
+       se dice, la de ahora (los equipos con el código de antes). */
+    let subida = meta.subida;
+    if (v) {
+      const existe = v === meta.subida || (meta.historial || []).some((h) => h.subida === v);
+      if (!existe) return json({ ok: false, error: 'esa versión ya no está', actual: meta.subida }, 404);
+      subida = v;
+    }
+    const llave = (full ? 'v/' + subida + '/p/' : 'v/' + subida + '/c/') + n;
     let trozo = null;
     try { trozo = await store.get(llave, { type: 'json' }); } catch (e) {}
     if (!trozo) return json({ ok: false, error: 'esa parte no está' }, 404);
 
-    /* Los trozos llevan la fecha de subida dentro de su nombre, así que nunca
-       cambian de contenido: se pueden guardar mucho tiempo sin miedo. */
-    return json({ ok: true, parte: n, productos: trozo.productos || [] },
-      200, 'public, max-age=86400, immutable');
+    /* Con `v` la dirección es de esa versión y nunca cambia de contenido: se
+       puede guardar para siempre. Sin `v` es «la de ahora», que cambia en
+       cuanto alguien guarda: solo un minuto. La del panel, nunca en la red. */
+    const cache = full ? 'private, no-store'
+                : v ? 'public, max-age=31536000, immutable'
+                : 'public, max-age=60';
+    return json({ ok: true, parte: n, subida, productos: trozo.productos || [] }, 200, cache);
   }
 
   if (req.method !== 'POST' && req.method !== 'DELETE') {
@@ -242,6 +323,9 @@ export default async (req) => {
 
   /* ------------------------------ BORRAR ------------------------------- */
   if (req.method === 'DELETE') {
+    if (rolDe(clave) !== 'admin') {
+      return json({ ok: false, error: 'solo gerencia puede borrar la base guardada' }, 403);
+    }
     const meta = await leerMeta(store);
     try { await store.delete(META); } catch (e) {}
     /* Se van también los trozos: si no, quedan 3 MB ocupando sitio sin que
@@ -252,6 +336,34 @@ export default async (req) => {
       for (const k of ks) { try { await store.delete(k); llaves++; } catch (e) {} }
     }
     return json({ ok: true, borrada: meta ? meta.subida : null, llaves });
+  }
+
+  /* ---------------------- VOLVER A UNA VERSIÓN ANTERIOR -----------------
+     La versión elegida pasa a ser la de ahora, con fecha de hoy (si no, los
+     equipos que ya tienen una más nueva no la bajarían), y la de ahora pasa
+     a la lista: tampoco se pierde. Solo gerencia. */
+  if (datos && datos.restaurar) {
+    if (rolDe(clave) !== 'admin') {
+      return json({ ok: false, error: 'solo gerencia puede volver a una base anterior' }, 403);
+    }
+    const actual = await leerMeta(store);
+    const elegida = actual && (actual.historial || []).find((h) => h.subida === String(datos.restaurar));
+    if (!elegida) return json({ ok: false, error: 'esa versión ya no está guardada' }, 404);
+    const falta = await partesCompletas(store, elegida.subida, elegida.partes || 0);
+    if (falta >= 0) return json({ ok: false, error: 'a esa versión le falta la parte ' + falta }, 409);
+
+    const historial = [resumen(actual)].concat(actual.historial || [])
+      .filter((h) => h.subida !== elegida.subida).slice(0, GUARDAR_VERSIONES);
+    const meta = Object.assign(resumen(elegida), {
+      generatedAt: new Date().toISOString(),
+      guardadaEn: new Date().toISOString(),
+      por: quienEs(clave),
+      restaurada: elegida.generatedAt || elegida.guardadaEn || '',
+      partesCatalogo: elegida.partes || 0,
+      historial,
+    });
+    await store.setJSON(META, meta);
+    return json({ ok: true, meta: resumen(meta), historial });
   }
 
   /* ------------------------------ GUARDAR ------------------------------
@@ -269,11 +381,8 @@ export default async (req) => {
 
     /* Antes de cambiar el meta se comprueba que estén TODAS las partes. Si
        falta una, la base quedaría coja y sería peor que no tenerla. */
-    for (let i = 0; i < partes; i++) {
-      let t = null;
-      try { t = await store.get('v/' + subida + '/p/' + i, { type: 'json' }); } catch (e) {}
-      if (!t) return json({ ok: false, error: 'falta la parte ' + i + ' de la base' }, 409);
-    }
+    const falta = await partesCompletas(store, subida, partes);
+    if (falta >= 0) return json({ ok: false, error: 'falta la parte ' + falta + ' de la base' }, 409);
 
     const meta = {
       subida,
@@ -288,25 +397,25 @@ export default async (req) => {
       partesCatalogo: partes,
     };
 
+    /* La de antes NO se tira: pasa a la lista de versiones, por si la nueva
+       viene mal y hay que volver. Solo se tiran las que se pasan del tope. */
+    const anterior = await leerMeta(store);
+    let historial = anterior && anterior.subida && anterior.subida !== subida
+      ? [resumen(anterior)].concat(anterior.historial || []) : ((anterior && anterior.historial) || []);
+    historial = historial.filter((h) => h && h.subida && h.subida !== subida);
+    const sobran = historial.slice(GUARDAR_VERSIONES);
+    historial = historial.slice(0, GUARDAR_VERSIONES);
+    meta.historial = historial;
+
     /* Se cambia el meta AL FINAL: hasta este momento quien lea sigue viendo
        la base anterior, entera. */
-    const anterior = await leerMeta(store);
     await store.setJSON(META, meta);
 
-    /* Y se tira la versión de antes. Si no, cada carga mensual deja 12 trozos
-       de 600 KB para siempre. Se hace DESPUÉS de publicar la nueva: si algo
-       falla aquí, lo peor es gastar espacio, no quedarse sin base. */
     let limpiados = 0;
-    if (anterior && anterior.subida && anterior.subida !== subida) {
-      for (let i = 0; i < (anterior.partes || 0); i++) {
-        try { await store.delete('v/' + anterior.subida + '/p/' + i); limpiados++; } catch (e) {}
-        try { await store.delete('v/' + anterior.subida + '/c/' + i); } catch (e) {}
-      }
-      try { await store.delete('v/' + anterior.subida + '/sello'); } catch (e) {}
-    }
-    /* Y las que se quedaron a medias hace tiempo. */
-    const huerfanas = await barrerHuerfanas(store, [subida]);
-    return json({ ok: true, meta, limpiados, huerfanas: huerfanas.barridas });
+    for (const h of sobran) { await borrarVersion(store, h); limpiados++; }
+    /* Y las que se quedaron a medias hace tiempo (nunca una de la lista). */
+    const huerfanas = await barrerHuerfanas(store, [subida].concat(historial.map((h) => h.subida)));
+    return json({ ok: true, meta: resumen(meta), historial, limpiados, huerfanas: huerfanas.barridas });
   }
 
   const parte = parseInt(datos && datos.parte, 10);

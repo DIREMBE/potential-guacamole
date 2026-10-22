@@ -480,7 +480,7 @@ details.plegable[open]>summary{margin-bottom:12px}
           <label>Existencia <input type="text" id="a-exist" placeholder="0" inputmode="numeric"></label>
           <label>Unidad <input type="text" id="a-unidad" placeholder="Unidad"></label>
           <label>Código de barras <input type="text" id="a-codigo" placeholder="opcional · se puede escanear"></label>
-          <label>ITEM <input type="text" id="a-item" placeholder="se pone solo"></label>
+          <label>ITEM de FelTec <input type="text" id="a-item" placeholder="vacío = provisional (M-…)" title="Si el producto ya está en FelTec, escribe su ITEM. Si lo dejas vacío queda con un ITEM provisional que empieza por M- y nunca choca con los números de FelTec."></label>
         </div>
         <div class="row" style="margin-top:12px">
           <button class="btn b-pri b-sm" id="a-crear">Crear producto</button>
@@ -1054,7 +1054,9 @@ details.plegable[open]>summary{margin-bottom:12px}
   function pintarReporte(a){
     G={};
     $('p2-sub').textContent=nf(a.total)+' filas leídas · nada se aplica hasta que pulses Aplicar';
+    var cruces=a.cruces||[];
     $('sum').innerHTML=
+      (cruces.length ? caja(nf(cruces.length),'ITEM con otro producto','d') : '') +
       caja(nf(a.precios.length),'Cambios de precio', a.precios.length?'w':'') +
       caja(nf(a.nuevos.length),'Productos nuevos', a.nuevos.length?'n':'') +
       caja(nf(a.faltantes.length),'Ya no vienen', a.faltantes.length?'d':'') +
@@ -1063,6 +1065,22 @@ details.plegable[open]>summary{margin-bottom:12px}
     a.precios.forEach(function(r){ r.__k=r.item; });
     a.nuevos.forEach(function(r){ r.__k=r.item; });
     a.faltantes.forEach(function(r){ r.__k=r.item; });
+    cruces.forEach(function(r){ r.__k=r.item; r.nombre=r.reporte; });
+
+    /* El reporte trae, con un ITEM que ya teníamos, un producto que no se
+       parece en nada. Si se aplicara, el nombre cambiaría y la foto, el
+       precio y el código se quedarían: un producto con la cara de otro. No
+       se toca ninguno salvo que se marque (= «sí es el mismo producto»). */
+    if(cruces.length) nuevoGrupo('cruces','⚠ El reporte trae OTRO producto con el mismo ITEM',
+      'No se tocan: si se les pusiera el nombre del reporte, se quedarían con la foto y el precio del nuestro. '+
+      'Márcalo solo si de verdad es el mismo producto con otro nombre. Los demás se arreglan en '+
+      '<a href="reparar-productos.html">Reparar productos cruzados</a>.',
+      cruces, false, [
+        ['ITEM', function(r){return '<td class="mono">'+esc(r.item)+'</td>';}],
+        ['Lo que tenemos', function(r){return '<td>'+esc(r.nuestro)+(r.foto?' <span class="chip">con foto</span>':'')+'</td>';}],
+        ['Lo que trae el reporte', function(r){return '<td><b>'+esc(r.reporte)+'</b></td>';}],
+        ['Nuestro precio', function(r){return '<td class="mono">'+money(r.precio)+'</td>';}]
+      ]);
 
     if(a.precios.length) nuevoGrupo('precios','Cambios de precio',
       'Marca los que quieras aplicar. Los que no marques se quedan como están.',
@@ -1159,10 +1177,12 @@ details.plegable[open]>summary{margin-bottom:12px}
     if(tipo==='reporte'){
       p=Inventario.aplicarAnalisis(analisis,{
         precios:lista('precios'), nuevos:lista('nuevos'),
-        quitar:lista('faltan'), empleado:empleado
+        quitar:lista('faltan'), mismos:lista('cruces'), empleado:empleado
       }).then(function(r){
+        var cr=(r.cruces||[]).length;
         return 'Listo: '+nf(r.actualizados)+' precio(s), '+nf(r.agregados)+' alta(s)'+
-               (r.quitados?', '+nf(r.quitados)+' baja(s)':'')+'.';
+               (r.quitados?', '+nf(r.quitados)+' baja(s)':'')+'.'+
+               (cr?' '+nf(cr)+' producto(s) con el ITEM cruzado no se tocaron: revísalos en Reparar productos cruzados.':'');
       });
     }else{
       var ok=new Set(lista('cnuevos'));

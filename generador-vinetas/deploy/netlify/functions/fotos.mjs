@@ -9,6 +9,7 @@
      GET  /api/fotos/<item>/<n>   -> la foto n (2 o 3)
      POST /api/fotos/<item>[/<n>] -> guarda la foto   (requiere clave)
      DELETE /api/fotos/<item>[/<n>] -> borra la foto  (requiere clave)
+     POST /api/fotos/_mover       -> { de, a[, modo:'intercambiar'] }  (requiere clave)
 
    HASTA 3 FOTOS POR PRODUCTO. La principal sigue donde siempre (f_<item>),
    así que todo lo que ya estaba guardado y las páginas viejas siguen
@@ -106,17 +107,31 @@ function totalFotos(idx) {
 }
 /* Deja el índice diciendo que `item` tiene `n` fotos, y le cambia la
    versión para que nadie se quede con una vieja en caché. */
+/* `quitadas` apunta cuándo se le quitaron (o movieron) las fotos a un
+   producto. Un equipo que todavía guarde una copia vieja de esa foto la
+   descarta en vez de volver a subirla: si no, al pulsar Guardar la foto
+   regresaba sola al ITEM de donde se quitó. */
+const MAX_QUITADAS = 3000;
 function ponerCuantas(idx, item, n) {
   idx.mas = idx.mas || {};
   idx.ver = idx.ver || {};
+  idx.quitadas = idx.quitadas || {};
   if (n <= 0) {
+    const tenia = idx.items.indexOf(item) >= 0;
     idx.items = idx.items.filter((x) => x !== item);
     delete idx.mas[item];
     delete idx.ver[item];
+    if (tenia) idx.quitadas[item] = Date.now();
+    const ks = Object.keys(idx.quitadas);
+    if (ks.length > MAX_QUITADAS) {
+      ks.sort((a, b) => idx.quitadas[a] - idx.quitadas[b])
+        .slice(0, ks.length - MAX_QUITADAS).forEach((k) => { delete idx.quitadas[k]; });
+    }
   } else {
     if (idx.items.indexOf(item) < 0) idx.items.push(item);
     if (n > 1) idx.mas[item] = n; else delete idx.mas[item];
     idx.ver[item] = Date.now().toString(36);
+    delete idx.quitadas[item];
   }
   idx.actualizado = new Date().toISOString();
 }
@@ -126,6 +141,7 @@ async function leerIndice(store) {
   const ok = idx && Array.isArray(idx.items) ? idx : { items: [], actualizado: null };
   if (!ok.mas || typeof ok.mas !== 'object') ok.mas = {};
   if (!ok.ver || typeof ok.ver !== 'object') ok.ver = {};
+  if (!ok.quitadas || typeof ok.quitadas !== 'object') ok.quitadas = {};
   return ok;
 }
 
@@ -163,6 +179,53 @@ export default async (req, context) => {
       if (req.method === 'DELETE') { await store.delete(llave); return json({ ok: true, marca }); }
       return json({ error: 'método no permitido' }, 405);
     } catch (e) { return json({ error: 'error del servidor' }, 500); }
+  }
+
+  /* /api/fotos/_mover: pasar las fotos de un ITEM a otro, o cambiarlas
+     entre dos. Es para reparar productos cruzados: cuando FelTec le dio a
+     otro producto el ITEM que tenía uno nuestro, las fotos tienen que irse
+     con el producto que retratan, no quedarse con el número.
+       { de, a }                      -> mueve (falla si `a` ya tiene fotos)
+       { de, a, modo:'intercambiar' } -> cambia las de uno por las del otro */
+  if (item === '_mover') {
+    if (req.method !== 'POST') return json({ error: 'método no permitido' }, 405);
+    if (!autorizado(req)) return json({ error: 'no autorizado' }, 401);
+    let d = null;
+    try { d = JSON.parse(await req.text()); } catch (e) { d = null; }
+    const de = String((d && d.de) || '').trim(), a = String((d && d.a) || '').trim();
+    const cambiar = !!(d && d.modo === 'intercambiar');
+    if (!itemValido(de) || !itemValido(a) || de === a || de === '_mover' || a === '_mover') {
+      return json({ error: 'ITEM no válido' }, 400);
+    }
+    try {
+      const idx = await leerIndice(store);
+      const nDe = cuantas(idx, de), nA = cuantas(idx, a);
+      if (!cambiar && nA) return json({ error: 'el ITEM ' + a + ' ya tiene fotos', fotos: nA }, 409);
+      const leer = async (it, n) => {
+        const l = [];
+        for (let k = 1; k <= n; k++) {
+          const f = await store.get(claveFoto(it, k), { type: 'arrayBuffer' });
+          if (f) l.push(f);
+        }
+        return l;
+      };
+      const deDe = await leer(de, nDe), deA = cambiar ? await leer(a, nA) : [];
+      /* Primero se escribe lo nuevo y solo después se borra lo que sobra:
+         si algo se corta a la mitad, una foto puede quedar repetida, pero
+         nunca perdida. */
+      for (let k = 0; k < deDe.length; k++) await store.set(claveFoto(a, k + 1), deDe[k]);
+      for (let k = 0; k < deA.length; k++) await store.set(claveFoto(de, k + 1), deA[k]);
+      for (let k = deDe.length + 1; k <= nA; k++) await store.delete(claveFoto(a, k));
+      for (let k = deA.length + 1; k <= nDe; k++) await store.delete(claveFoto(de, k));
+      ponerCuantas(idx, a, deDe.length);
+      ponerCuantas(idx, de, deA.length);
+      await store.setJSON(INDICE, idx);
+      return json({ ok: true, de, a, modo: cambiar ? 'intercambiar' : 'mover',
+                    fotosDe: deA.length, fotosA: deDe.length,
+                    verDe: idx.ver[de] || '', verA: idx.ver[a] || '' });
+    } catch (e) {
+      return json({ error: 'error del servidor' }, 500);
+    }
   }
 
   /* /api/fotos/<item>/<n>: qué foto del producto (1, 2 o 3). */

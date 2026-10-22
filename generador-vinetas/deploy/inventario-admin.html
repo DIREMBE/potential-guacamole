@@ -795,6 +795,7 @@ input[type=checkbox]{accent-color:var(--orange);width:16px;height:16px;cursor:po
     var a = analisis;
     $('diff-sum').innerHTML =
       '<div class="sbox"><div class="v">'+nf(a.total)+'</div><div class="l">Filas del archivo</div></div>'+
+      ((a.cruces||[]).length ? '<div class="sbox d"><div class="v">'+nf(a.cruces.length)+'</div><div class="l">ITEM con otro producto (no se tocan)</div></div>' : '')+
       '<div class="sbox w"><div class="v">'+nf(a.precios.length)+'</div><div class="l">Cambios de precio</div></div>'+
       '<div class="sbox n"><div class="v">'+nf(a.nuevos.length)+'</div><div class="l">Productos nuevos</div></div>'+
       '<div class="sbox"><div class="v">'+nf(a.sinCambio)+'</div><div class="l">Sin cambio</div></div>'+
@@ -872,7 +873,9 @@ input[type=checkbox]{accent-color:var(--orange);width:16px;height:16px;cursor:po
       analisis=null; $('diff-wrap').style.display='none'; $('xls-name').textContent='';
       $('aplicar').disabled=false; $('aplicar').textContent='Aplicar cambios seleccionados';
       renderStats(); renderProductos(); renderHist(); renderPub(); renderPend();
-      toast('Listo: '+r.actualizados+' precio(s), '+r.agregados+' nuevo(s)'+(r.quitados?', '+r.quitados+' quitado(s)':'')+'. Pulsa Guardar arriba para que el cliente lo vea.');
+      var cr=(r.cruces||[]).length;
+      toast('Listo: '+r.actualizados+' precio(s), '+r.agregados+' nuevo(s)'+(r.quitados?', '+r.quitados+' quitado(s)':'')+'. Pulsa Guardar arriba para que el cliente lo vea.'+
+            (cr?' '+cr+' producto(s) con el ITEM cruzado no se tocaron: revísalos en Reparar productos cruzados.':''));
     }).catch(function(err){
       $('aplicar').disabled=false; $('aplicar').textContent='Aplicar cambios seleccionados';
       toast(err.message||'No se pudo aplicar.', true);
