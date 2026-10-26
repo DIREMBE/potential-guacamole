@@ -1365,7 +1365,7 @@ Si se cierra la pestaña, hay que volver a arrastrar los archivos.
 | Página | Quién | Qué enseña |
 |--------|-------|------------|
 | `/empleados/tablero/` | Todo el personal | Rotación, existencias y pedido sugerido. **Sin costos, márgenes ni clientes.** |
-| `/gerencia/tablero/` | Solo rol `admin` | Resumen, Rotación y pedido (con costo), Precios, Márgenes, Clientes y Calidad de datos |
+| `/gerencia/tablero/` | Solo rol `admin` | Resumen, Rotación y pedido (con costo), Precios, Márgenes, Clientes, **Vendedores** y Calidad de datos |
 
 **Los archivos** (la guía para los empleados está en `LEEME-TABLERO.md`):
 
@@ -1394,6 +1394,27 @@ ahí salen cuántos JSON, tipos, anulaciones, líneas, códigos y fechas leyó. 
 el período 15 sep – 15 oct deberían salir 1,980 JSON, 1,941 con
 «identificacion» (1,932 tipo 01, 8 tipo 03, 1 tipo 14), 39 anulaciones y 4,313
 líneas; y con el Excel, 1,926 FACTURADA y 54 INVALIDADO.
+
+**Vendedores (gerencia).** El DTE de Hacienda no tiene un campo «vendedor»;
+cada sistema lo deja en otro lugar. El tablero lo busca solo en el
+**apéndice** («Vendedor», «Usuario», «Caja»…), en **quien entrega el
+documento** (extensión), en «Vendedor: …» dentro de las observaciones, en
+campos propios de FelTec y en el **punto de venta**, y elige el que tiene
+más pinta de vendedor. Arriba de la pestaña se ve de dónde lo sacó, con
+ejemplos, y se puede elegir otro (el equipo se acuerda). También sirve un
+Excel con **«Codigo de generacion»** y una columna **Vendedor / Usuario /
+Cajero**: se cruza por ese código.
+
+Por vendedor: ventas con y sin IVA, % del total, documentos, ticket
+promedio, productos por factura, días con venta y venta por día trabajado,
+margen (con el inventario), descuentos dados, **ventas por debajo del
+precio habitual** (el precio que más se cobró por ese producto en el
+período) y **por debajo del costo**, clientes identificados, créditos
+fiscales y documentos **anulados**. Gráficas por vendedor y por día, un
+detalle de cada uno (lo que más vende, horas, lo que cobró más barato, sus
+anuladas) y **descarga en Excel** para la planilla y las comisiones. Si los
+documentos no traen vendedor, la pestaña lo dice y explica cómo tenerlo.
+Los empleados no ven esta pestaña.
 
 **Quién entra.** Es el mismo candado del área de empleados (nombre + clave,
 comprobada en el servidor contra `FSJ_USUARIOS`). **No hace falta ninguna

@@ -32,7 +32,8 @@
 
   var PESTANAS = GERENCIA
     ? [['resumen', 'Resumen'], ['rotacion', 'Rotación y pedido'], ['precios', 'Precios'],
-       ['margenes', 'Márgenes'], ['clientes', 'Clientes'], ['calidad', 'Calidad de datos']]
+       ['margenes', 'Márgenes'], ['clientes', 'Clientes'], ['vendedores', 'Vendedores'],
+       ['calidad', 'Calidad de datos']]
     : [['rotacion', 'Rotación y pedido']];
   var pestana = GERENCIA ? 'resumen' : 'rotacion';
 
@@ -136,7 +137,7 @@
   /* Lo único que se guarda en el equipo. Si el navegador no deja guardar
      (modo privado, por ejemplo), se trabaja con los de siempre. */
   var CLAVE_PARAM = 'fsj-tablero-parametros';
-  var P = { entrega: 7, seguridad: 5, cobertura: 30, compraConIva: false };
+  var P = { entrega: 7, seguridad: 5, cobertura: 30, compraConIva: false, campoVendedor: '' };
   try {
     var guardados = JSON.parse(localStorage.getItem(CLAVE_PARAM) || 'null');
     if (guardados && typeof guardados === 'object') {
@@ -145,6 +146,8 @@
         if (isFinite(n) && n >= 0 && n <= 365) P[k] = n;
       });
       P.compraConIva = guardados.compraConIva === true;
+      /* De qué dato del documento sale el vendedor (si gerencia eligió uno). */
+      if (typeof guardados.campoVendedor === 'string') P.campoVendedor = guardados.campoVendedor.slice(0, 120);
     }
   } catch (e) { /* sin almacenamiento: se usan los de siempre */ }
   function guardarParam() {
@@ -152,7 +155,7 @@
   }
 
   /* Lo leído de los archivos (en memoria) y lo calculado a partir de eso. */
-  var ESTADO = { zip: null, inv: null, xls: null, segundos: 0 };
+  var ESTADO = { zip: null, inv: null, xls: null, vendXls: null, segundos: 0 };
   var D = null;
 
   /* ============================== 4. LECTURA DEL ZIP ======================
@@ -195,6 +198,45 @@
     };
   }
 
+  /* ¿QUIÉN VENDIÓ? El DTE de Hacienda no tiene un campo «vendedor», pero los
+     sistemas de facturación lo dejan en alguno de estos lugares:
+       · el «apéndice» (campo, etiqueta, valor): «Vendedor», «Usuario», «Caja»…
+       · la «extensión»: el nombre de quien entrega el documento por la
+         ferretería (nombEntrega), o «Vendedor: …» en las observaciones
+       · un campo propio de FelTec fuera del DTE (vendedor, usuario, cajero…)
+       · el punto de venta del emisor (la caja), como último recurso
+     Se apunta TODO lo que traiga cada documento. Con qué se agrupa lo decide
+     el tablero (y gerencia lo puede cambiar en la pestaña Vendedores).   */
+  var DTE_ESTANDAR = { identificacion: 1, documentoRelacionado: 1, emisor: 1, receptor: 1, sujetoExcluido: 1,
+    otrosDocumentos: 1, ventaTercero: 1, cuerpoDocumento: 1, resumen: 1, extension: 1, apendice: 1,
+    firmaElectronica: 1, selloRecibido: 1 };
+  var RE_VENDEDOR = /vende|usuari|cajer|atendi|asesor|emplead|responsab|digitad|elabor|user|seller/i;
+  function candidatosVendedor(o) {
+    var c = {};
+    var poner = function (campo, v) {
+      if (v && typeof v === 'object') v = v.nombre || v.name || v.usuario || v.nombreCompleto || '';
+      v = textoDe(v).replace(/\s+/g, ' ');
+      /* Un número largo es un documento (DUI, NIT), no un nombre. */
+      if (!v || v.length > 80 || (/^[\d\s.,-]+$/.test(v) && v.length > 6)) return;
+      if (!c[campo]) c[campo] = v;
+    };
+    (Array.isArray(o.apendice) ? o.apendice : []).forEach(function (a) {
+      if (a && typeof a === 'object') poner('Apéndice: ' + (textoDe(a.etiqueta) || textoDe(a.campo) || 'sin nombre'), a.valor);
+    });
+    var ex = o.extension;
+    if (ex && typeof ex === 'object') {
+      poner('Extensión: quien entrega el documento', ex.nombEntrega);
+      var m = /(?:vendedor|vend\.|atendi[oó]|atendido por|cajero|usuario)\s*[:\-]\s*([^\n;|]+)/i.exec(textoDe(ex.observaciones));
+      if (m) poner('Extensión: vendedor en las observaciones', m[1]);
+    }
+    Object.keys(o).forEach(function (k) {
+      if (!DTE_ESTANDAR[k] && RE_VENDEDOR.test(k)) poner('Campo «' + k + '»', o[k]);
+    });
+    var em = o.emisor || {};
+    poner('Punto de venta (caja)', em.codPuntoVenta || em.codPuntoVentaMH);
+    return c;
+  }
+
   function normalizarDoc(o, ruta) {
     var id = o.identificacion || {};
     var tipo = textoDe(id.tipoDte);
@@ -220,6 +262,7 @@
       condicion: textoDe(res.condicionOperacion),
       totalPagar: num(res.totalPagar != null ? res.totalPagar : res.montoTotalOperacion),
       lineas: lineas, sinIva: sinIva, conIva: conIva,
+      vend: candidatosVendedor(o),
     };
   }
 
@@ -298,6 +341,7 @@
     DUI: ['DUI'], RAZON: ['RAZON SOCIAL'], EXENTA: ['EXENTA'], NOSUJ: ['NO SUJETA'],
     GRAVADA: ['GRAVADA LOCAL'], DEBITO: ['DEBITO FISCAL'], RET1: ['RETENCION 1%'], ISR: ['ISR 10%'],
     TOTAL: ['TOTAL VENTA'], ESTADO: ['ESTADO'], FECHAMH: ['FECHA MH'], MENSAJE: ['MENSAJE MH'],
+    VENDEDOR: ['VENDEDOR', 'NOMBRE VENDEDOR', 'USUARIO', 'CAJERO', 'ATENDIDO POR', 'ATENDIO', 'EMPLEADO', 'ASESOR'],
   };
 
   /* La fecha del inventario: FelTec la pone en el nombre del archivo
@@ -392,7 +436,10 @@
     var ws = wb.Sheets[wb.SheetNames[0]];
     var filas = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null, blankrows: false });
     var col = columnas(filas, COL_VENTAS);
-    if (!col || col.COD < 0 || col.ESTADO < 0) {
+    /* Un Excel con el código de generación y el vendedor, sin estado: es un
+       reporte de ventas por vendedor. Sirve para saber quién vendió qué. */
+    var soloVendedor = col && col.COD >= 0 && col.ESTADO < 0 && col.VENDEDOR >= 0;
+    if (!col || col.COD < 0 || (col.ESTADO < 0 && !soloVendedor)) {
       throw new Error('«' + file.name + '» no parece el Excel de ventas de FelTec: no encontré las ' +
         'columnas «Codigo de generacion» y «Estado».');
     }
@@ -400,7 +447,9 @@
     var celda = function (r, k) {
       return col[k] >= 0 ? ws[XLSX.utils.encode_cell({ r: r, c: col[k] })] : null;
     };
-    var x = { archivo: file.name, filas: [], facturadas: 0, invalidadas: 0, otrosEstados: 0, montoFacturado: 0 };
+    var x = { archivo: file.name, filas: [], facturadas: 0, invalidadas: 0, otrosEstados: 0, montoFacturado: 0,
+              soloVendedor: soloVendedor,
+              columnaVendedor: col.VENDEDOR >= 0 ? textoDe((filas[col.fila] || [])[col.VENDEDOR]) : '' };
     for (var r = col.fila + 1; r <= rango.e.r; r++) {
       var cod = textoCelda(celda(r, 'COD')).toUpperCase();
       if (!cod) continue;
@@ -412,7 +461,9 @@
         razon: textoCelda(celda(r, 'RAZON')),
         total: num(celda(r, 'TOTAL') && celda(r, 'TOTAL').v),
         mensaje: textoCelda(celda(r, 'MENSAJE')),
+        vendedor: textoCelda(celda(r, 'VENDEDOR')).replace(/\s+/g, ' '),
       };
+      if (soloVendedor) { x.filas.push(f); continue; }
       if (estado === 'FACTURADA') { x.facturadas++; x.montoFacturado += f.total; }
       else if (estado === 'INVALIDADO') x.invalidadas++;
       else x.otrosEstados++;
@@ -532,7 +583,177 @@
                     codigosVentas: Object.keys(codsVentas).length };
     }
     if (X && Z) d.cuadre = calcularCuadre(d, porCod, xlsPorCod);
+
+    /* --- 7.7 De dónde sale el vendedor --- */
+    d.xlsPorCod = xlsPorCod;
+    d.vendCampos = camposVendedor(d);
+    d.campoVendedor = elegirCampoVendedor(d.vendCampos);
     return d;
+  }
+
+  /* ======================= 7b. VENDEDORES ===============================
+     Qué datos de los documentos podrían ser el vendedor, y cuántos
+     documentos de venta lo traen. Los Excel también cuentan: el de ventas si
+     trae una columna «Vendedor» o «Usuario», o un reporte aparte con el
+     código de generación y el vendedor.                                   */
+  var XLS_VEND = 'xls:ventas', XLS_VEND2 = 'xls:vendedores';
+  function vendedorDe(doc, campo) {
+    if (!doc || !campo) return '';
+    if (campo === XLS_VEND || campo === XLS_VEND2) {
+      var mapa = campo === XLS_VEND ? D.xlsPorCod : D.vendXlsPorCod;
+      var f = mapa && mapa.get(doc.cod);
+      return f ? f.vendedor || '' : '';
+    }
+    return (doc.vend && doc.vend[campo]) || '';
+  }
+  function camposVendedor(d) {
+    var stats = {};
+    var contar = function (campo, etiqueta, v) {
+      var s = stats[campo] || (stats[campo] = { campo: campo, etiqueta: etiqueta, docs: 0, nombres: {} });
+      if (!v) return;
+      s.docs++;
+      var k = normEnc(v);
+      s.nombres[k] = (s.nombres[k] || 0) + 1;
+    };
+    var X = ESTADO.xls, V = ESTADO.vendXls;
+    d.vendXlsPorCod = null;
+    if (V) { d.vendXlsPorCod = new Map(); V.filas.forEach(function (f) { if (f.vendedor) d.vendXlsPorCod.set(f.cod, f); }); }
+    var conVendXls = X && X.filas.some(function (f) { return f.vendedor; });
+    d.ventas.forEach(function (doc) {
+      Object.keys(doc.vend || {}).forEach(function (k) { contar(k, k, doc.vend[k]); });
+      if (conVendXls) { var f = d.xlsPorCod.get(doc.cod); contar(XLS_VEND, 'Excel de ventas: columna «' + X.columnaVendedor + '»', f && f.vendedor); }
+      if (V) { var g = d.vendXlsPorCod.get(doc.cod); contar(XLS_VEND2, 'Archivo «' + V.archivo + '»: columna «' + V.columnaVendedor + '»', g && g.vendedor); }
+    });
+    return Object.keys(stats).map(function (k) {
+      var s = stats[k];
+      s.distintos = Object.keys(s.nombres).length;
+      s.ejemplos = Object.keys(s.nombres).sort(function (a, b) { return s.nombres[b] - s.nombres[a]; }).slice(0, 4);
+      return s;
+    }).filter(function (s) { return s.docs > 0; })
+      .sort(function (a, b) { return puntosCampo(b, d) - puntosCampo(a, d); });
+  }
+  /* Cuál tiene más pinta de ser el vendedor: lo que se llama «vendedor»
+     primero; luego usuario, cajero, quien entrega…; la caja, al final. Que lo
+     traigan casi todos los documentos y que haya más de un nombre, suma. */
+  function puntosCampo(s, d) {
+    var e = normTexto(s.etiqueta), p = 0;
+    if (s.campo === XLS_VEND || s.campo === XLS_VEND2) p = 5;
+    else if (/vende/.test(e)) p = 4;
+    else if (/usuari|cajer|atendi|asesor|emplead|responsab|digitad|elabor|user|seller/.test(e)) p = 3;
+    else if (/quien entrega/.test(e)) p = 2;
+    else if (/punto de venta/.test(e)) p = 0.5;
+    else p = 1;
+    var cobertura = d.ventas.length ? s.docs / d.ventas.length : 0;
+    return p + cobertura + (s.distintos > 1 ? 0.5 : 0);
+  }
+  function elegirCampoVendedor(campos) {
+    if (!campos.length) return '';
+    if (P.campoVendedor && campos.some(function (c) { return c.campo === P.campoVendedor; })) return P.campoVendedor;
+    return campos[0].campo;
+  }
+
+  /* Las cuentas de cada vendedor con el campo elegido. */
+  function calcularVendedores(campo) {
+    var I = ESTADO.inv, total = D.totales.conIva || 0;
+    /* El precio habitual de cada producto en el período: el que más se cobró.
+       Vender por debajo de él es «más barato que lo normal». */
+    var habitual = {};
+    D.prods.forEach(function (p, clave) {
+      var veces = {};
+      p.lineas.forEach(function (l) { var k = l.puCon.toFixed(2); veces[k] = (veces[k] || 0) + 1; });
+      var mejor = null;
+      Object.keys(veces).forEach(function (k) {
+        if (mejor == null || veces[k] > veces[mejor] || (veces[k] === veces[mejor] && +k > +mejor)) mejor = k;
+      });
+      habitual[clave] = mejor == null ? 0 : +mejor;
+    });
+    var costoU = function (clave) {
+      var it = I && I.items.get(clave);
+      if (!it || it.sinCosto) return null;
+      return P.compraConIva ? it.cCompra / 1.13 : it.cCompra;
+    };
+
+    var mapa = {};
+    var de = function (doc) {
+      var crudo = vendedorDe(doc, campo);
+      var k = crudo ? normEnc(crudo) : '';
+      var v = mapa[k];
+      if (!v) {
+        v = mapa[k] = { clave: k, formas: {}, docs: 0, facturas: 0, ccf: 0, conIva: 0, sinIva: 0, lineas: 0, unidades: 0,
+          descuento: 0, docsDescuento: 0, identificados: 0, clientes: {}, dias: {}, porDia: {}, porHora: new Array(24).fill(0),
+          credito: 0, medible: 0, costo: 0, noMedible: 0, bajoHab: 0, bajoHabDinero: 0, bajoCosto: 0, bajoCostoDinero: 0,
+          anuladas: 0, anuladasDinero: 0, prods: {}, detalleBajo: [], docsAnulados: [] };
+      }
+      if (crudo) v.formas[crudo] = (v.formas[crudo] || 0) + 1;
+      return v;
+    };
+
+    D.ventas.forEach(function (doc) {
+      var v = de(doc);
+      v.docs++;
+      if (doc.tipo === '01') v.facturas++; else if (doc.tipo === '03') v.ccf++;
+      v.conIva += doc.conIva; v.sinIva += doc.sinIva; v.lineas += doc.lineas.length;
+      if (!esVarios(doc.receptor)) {
+        v.identificados++;
+        v.clientes[doc.receptor.doc || doc.receptor.nrc || normEnc(doc.receptor.nombre)] = 1;
+      }
+      if (doc.condicion === '2') v.credito++;
+      v.dias[doc.fecha] = 1;
+      v.porDia[doc.fecha] = (v.porDia[doc.fecha] || 0) + doc.conIva;
+      var h = parseInt(String(doc.hora).slice(0, 2), 10);
+      if (h >= 0 && h < 24) v.porHora[h]++;
+      var conDescuento = false;
+      doc.lineas.forEach(function (l) {
+        v.unidades += l.cant;
+        if (l.descu > 0) { v.descuento += l.descu; conDescuento = true; }
+        var p = v.prods[l.clave] || (v.prods[l.clave] = { nombre: l.desc, u: 0, v: 0 });
+        p.u += l.cant; p.v += l.conIva;
+        if (l.cant > 0) {
+          var ef = l.conIva / l.cant, hab = habitual[l.clave] || 0;
+          if (hab > 0 && ef < hab * 0.99 - 0.005) {
+            var dif = (hab - ef) * l.cant;
+            v.bajoHab++; v.bajoHabDinero += dif;
+            v.detalleBajo.push({ cod: doc.cod, fecha: doc.fecha, codigo: codigoVisible(l.clave), nombre: l.desc,
+                                 cant: l.cant, cobrado: ef, habitual: hab, dif: dif });
+          }
+        }
+        var cu = costoU(l.clave);
+        if (cu == null) { v.noMedible += l.sinIva; return; }
+        v.medible += l.sinIva; v.costo += cu * l.cant;
+        if (l.cant > 0 && l.sinIva / l.cant < cu - 0.005) {
+          v.bajoCosto++; v.bajoCostoDinero += (cu - l.sinIva / l.cant) * l.cant;
+        }
+      });
+      if (conDescuento) v.docsDescuento++;
+    });
+    /* Lo anulado o invalidado también tiene vendedor: dice algo de cómo se
+       factura. No suma a las ventas. */
+    D.anuladosReg.concat(D.invalidadosXls).forEach(function (doc) {
+      var v = de(doc);
+      v.anuladas++; v.anuladasDinero += doc.conIva;
+      v.docsAnulados.push({ cod: doc.cod, fecha: doc.fecha, total: doc.conIva, receptor: doc.receptor.nombre });
+    });
+
+    return Object.keys(mapa).map(function (k) {
+      var v = mapa[k];
+      var formas = Object.keys(v.formas).sort(function (a, b) { return v.formas[b] - v.formas[a]; });
+      v.nombre = k ? formas[0] : '(sin vendedor en el documento)';
+      v.sinNombre = !k;
+      v.diasActivos = Object.keys(v.dias).length;
+      v.ticket = v.docs ? v.conIva / v.docs : 0;
+      v.lineasDoc = v.docs ? v.lineas / v.docs : 0;
+      v.share = total ? v.conIva / total : 0;
+      v.ventaDia = v.diasActivos ? v.conIva / v.diasActivos : 0;
+      v.margen = v.medible - v.costo;
+      v.margenPct = v.medible ? v.margen / v.medible : null;
+      v.pctIdent = v.docs ? v.identificados / v.docs : 0;
+      v.nClientes = Object.keys(v.clientes).length;
+      v.pctDescuento = v.conIva ? v.descuento / v.conIva : 0;
+      v.tasaAnul = (v.docs + v.anuladas) ? v.anuladas / (v.docs + v.anuladas) : 0;
+      v.top = Object.keys(v.prods).map(function (c) { return v.prods[c]; }).sort(function (a, b) { return b.v - a.v; });
+      v.detalleBajo.sort(function (a, b) { return b.dif - a.dif; });
+      return v;
+    }).sort(function (a, b) { return (a.sinNombre - b.sinNombre) || (b.conIva - a.conIva); });
   }
 
   /* Fórmulas (las de siempre de la ferretería):
@@ -672,7 +893,10 @@
           catch (e) { throw new Error('No se pudo abrir «' + f.name + '». Revisá que sea un Excel (.xlsx) exportado de FelTec.'); }
           var tipo = tipoDeExcel(wb);
           if (tipo === 'inventario') ESTADO.inv = leerInventario(wb, f);
-          else if (tipo === 'ventas') ESTADO.xls = leerVentasXls(wb, f);
+          else if (tipo === 'ventas') {
+            var lx = leerVentasXls(wb, f);
+            if (lx.soloVendedor) ESTADO.vendXls = lx; else ESTADO.xls = lx;
+          }
           else throw new Error('No reconozco «' + esc(f.name) + '». Del inventario espero las columnas ITEM y ' +
             'EXISTENCIA; del Excel de ventas, «Codigo de generacion» y «Estado». Revisá que sea uno de los dos reportes de FelTec.');
         } else {
@@ -718,6 +942,11 @@
         (D.anuladosReg.length ? c('Anulados (su anulación viene en el ZIP)', nf(D.anuladosReg.length)) : '') +
         (D.invalidadosXls.length ? c('INVALIDADO según el Excel (no cuentan)', nf(D.invalidadosXls.length)) : '');
       if (GERENCIA) h += c('Ventas sin IVA', dinero(D.totales.sinIva)) + c('Ventas con IVA', dinero(D.totales.conIva));
+    }
+    if (Z && GERENCIA) {
+      var cv = (D.vendCampos || []).find(function (x) { return x.campo === D.campoVendedor; });
+      h += c('Vendedor', cv ? esc(cv.etiqueta) + ' · ' + nf(cv.docs) + ' de ' + nf(D.ventas.length) + ' documentos'
+                         : 'no viene en los documentos');
     }
     if (I) {
       h += c('Inventario: productos', nf(I.items.size)) +
@@ -781,7 +1010,8 @@
       return;
     }
     var fn = { resumen: pintarResumen, rotacion: pintarRotacion, precios: pintarPrecios,
-               margenes: pintarMargenes, clientes: pintarClientes, calidad: pintarCalidad }[pestana];
+               margenes: pintarMargenes, clientes: pintarClientes, vendedores: pintarVendedores,
+               calidad: pintarCalidad }[pestana];
     box.innerHTML = '';
     (fn || pintarRotacion)(box);
   }
@@ -1255,7 +1485,165 @@
     alOrdenar($('cli-tabla'), CLI.orden, repintar);
   }
 
-  /* ---------- 9.6 Calidad de datos (gerencia) ---------- */
+  /* ---------- 9.6 Vendedores (gerencia) ----------
+     Cuánto vende cada uno y CÓMO vende: ticket, cuántas cosas por factura,
+     margen, descuentos, ventas por debajo del precio habitual o del costo,
+     clientes identificados y documentos anulados. Es para conversar con cada
+     vendedor con números, no para premiar solo al que más factura.        */
+  var VEN = { orden: { k: 'conIva', desc: true }, ver: null };   // ver: qué vendedor tiene abierto el detalle
+  var COLORES = ['#F15930', '#0475BB', '#2e7d43', '#8e44ad', '#c98a12', '#5b554c', '#d81b60', '#00897b'];
+
+  function pintarVendedores(box) {
+    var campos = D.vendCampos || [];
+    if (!campos.length) {
+      box.innerHTML = '<div class="tb-aviso ama"><b>Los documentos de este ZIP no dicen quién hizo cada venta.</b> ' +
+        'Busqué el vendedor en el apéndice, en quién entrega el documento, en las observaciones, en campos propios de ' +
+        'FelTec y en el punto de venta, y no viene en ninguno.</div>' +
+        '<div class="tb-bloque"><h3>Cómo tenerlo</h3><p class="tb-nota">' +
+        '1. En FelTec, que el vendedor salga en la factura: en el <b>apéndice</b> (por ejemplo «Vendedor») o como ' +
+        '<b>responsable de entrega</b>. Desde ese día, el ZIP ya lo trae y esta pestaña se llena sola.<br>' +
+        '2. Mientras tanto, si FelTec tiene un <b>reporte de ventas por vendedor o por usuario</b> en Excel que traiga el ' +
+        '<b>código de generación</b>, arrastralo junto con el ZIP: se cruza por ese código.</p></div>';
+      return;
+    }
+    var campo = D.campoVendedor;
+    var cActual = campos.find(function (x) { return x.campo === campo; }) || campos[0];
+    var L = calcularVendedores(campo);
+    var conNombre = L.filter(function (v) { return !v.sinNombre; });
+    var sinV = L.find(function (v) { return v.sinNombre; });
+    var total = D.totales.conIva || 0;
+    var hayInv = !!ESTADO.inv;
+    var kpi = function (v, t, cls) { return '<div class="tb-kpi ' + (cls || '') + '"><div class="v">' + v + '</div><div class="l">' + t + '</div></div>'; };
+    var mejor = conNombre[0];
+    var mayorTicket = conNombre.slice().filter(function (v) { return v.docs >= 5; }).sort(function (a, b) { return b.ticket - a.ticket; })[0];
+
+    box.innerHTML =
+      '<div class="tb-param"><label>El vendedor sale de <select id="ven-campo">' +
+        campos.map(function (c) {
+          return '<option value="' + esc(c.campo) + '"' + (c.campo === campo ? ' selected' : '') + '>' + esc(c.etiqueta) +
+            ' — ' + nf(c.docs) + ' de ' + nf(D.ventas.length) + ' documentos, ' + nf(c.distintos) + ' nombre(s)</option>';
+        }).join('') + '</select></label>' +
+        '<span class="ayuda">Ejemplos: ' + cActual.ejemplos.map(function (e) { return '<span class="chip">' + esc(e) + '</span>'; }).join(' ') +
+        '. Si no son vendedores, elegí otro dato; este equipo se acuerda.</span></div>' +
+      '<div class="tb-kpis">' +
+        kpi(nf(conNombre.length), 'Vendedores con ventas', 'n') +
+        kpi(mejor ? esc(mejor.nombre) : '—', mejor ? 'Más vendió: ' + dinero(mejor.conIva) + ' (' + pct(mejor.share) + ')' : 'Más vendió', 'a txt') +
+        kpi(mayorTicket ? dinero(mayorTicket.ticket) : '—', 'Mayor ticket promedio' + (mayorTicket ? ': ' + esc(mayorTicket.nombre) : '')) +
+        kpi(pct(total && sinV ? sinV.conIva / total : 0), 'De la venta sin vendedor en el documento') +
+      '</div>' +
+      '<div class="tb-graficas">' +
+        '<div class="tb-graf"><h3>Ventas por vendedor (con IVA)</h3><div class="lienzo" style="height:' +
+          Math.max(200, 34 * Math.min(conNombre.length, 14) + 40) + 'px"><canvas id="g-ven"></canvas></div></div>' +
+        '<div class="tb-graf"><h3>Ventas por día de los ' + Math.min(6, conNombre.length) + ' que más venden</h3>' +
+          '<div class="lienzo"><canvas id="g-ven-dia"></canvas></div></div>' +
+      '</div>' +
+      '<div class="tb-filtros"><button type="button" class="tb-btn pri" id="ven-excel">⬇ Descargar por vendedor en Excel</button></div>' +
+      '<div id="ven-tabla"></div>' +
+      '<p class="tb-nota"><b>Bajo el precio habitual</b>: líneas cobradas más baratas que el precio que más se cobró por ese ' +
+        'producto en el período (si el precio cambió a mitad de mes, lo vendido antes del cambio también sale aquí). ' +
+        (hayInv ? '<b>Margen</b> y <b>bajo el costo</b> usan el C. COMPRA del inventario. '
+                : 'Cargá el inventario para ver margen y ventas bajo el costo. ') +
+        '<b>Anuladas</b>: documentos con su anulación en el ZIP' + (ESTADO.xls ? ' o INVALIDADO en el Excel de ventas' : '') +
+        '; no suman a las ventas.</p>' +
+      '<div class="tb-bloque"><h3>Detalle de un vendedor</h3><div class="tb-filtros"><select id="ven-ver">' +
+        L.map(function (v) {
+          var abierto = VEN.ver != null ? v.clave === VEN.ver : v === conNombre[0];
+          return '<option value="' + esc(v.clave) + '"' + (abierto ? ' selected' : '') + '>' + esc(v.nombre) + '</option>';
+        }).join('') +
+      '</select></div><div id="ven-det"></div></div>';
+
+    var fPct = function (v) { return v == null ? '—' : '<span style="color:' + (v < 0 ? 'var(--rojo)' : 'inherit') + '">' + pct(v) + '</span>'; };
+    var cols = [
+      { k: 'nombre', t: 'Vendedor', cls: 'nom', h: function (v) { return v.sinNombre ? '<i>' + esc(v.nombre) + '</i>' : '<b>' + esc(v.nombre) + '</b>'; } },
+      { k: 'conIva', t: 'Ventas con IVA', n: 1, f: dinero },
+      { k: 'share', t: '% del total', n: 1, f: function (v) { return pct(v); } },
+      { k: 'docs', t: 'Documentos', n: 1, f: function (v) { return nf(v); } },
+      { k: 'ticket', t: 'Ticket promedio', n: 1, f: dinero },
+      { k: 'lineasDoc', t: 'Productos por factura', n: 1, f: function (v) { return nf(v, 1); } },
+      { k: 'diasActivos', t: 'Días con venta', n: 1, f: function (v) { return nf(v); } },
+      { k: 'ventaDia', t: 'Venta por día trabajado', n: 1, f: dinero },
+    ];
+    if (hayInv) cols.push({ k: 'margenPct', t: 'Margen %', n: 1, f: fPct },
+                          { k: 'margen', t: 'Margen $', n: 1, f: function (v) { return dinero(v); } });
+    cols.push(
+      { k: 'descuento', t: 'Descuentos dados', n: 1, f: function (v, x) { return v ? dinero(v) + ' <span class="chip">' + nf(x.docsDescuento) + ' fact.</span>' : '—'; } },
+      { k: 'bajoHabDinero', t: 'Bajo el precio habitual', n: 1, f: function (v, x) { return x.bajoHab ? dinero(v) + ' <span class="chip">' + nf(x.bajoHab) + ' líneas</span>' : '—'; } });
+    if (hayInv) cols.push({ k: 'bajoCosto', t: 'Bajo el costo', n: 1, f: function (v, x) { return v ? '<span style="color:var(--rojo)">' + nf(v) + ' líneas · ' + dinero(x.bajoCostoDinero) + '</span>' : '—'; } });
+    cols.push(
+      { k: 'pctIdent', t: 'Clientes identificados', n: 1, f: function (v, x) { return pct(v) + ' <span class="chip">' + nf(x.nClientes) + ' clientes</span>'; } },
+      { k: 'ccf', t: 'Créditos fiscales', n: 1, f: function (v) { return nf(v); } },
+      { k: 'anuladas', t: 'Anuladas', n: 1, f: function (v, x) { return v ? nf(v) + ' <span class="chip">' + pct(x.tasaAnul) + '</span>' : '—'; } });
+
+    var repintar = function () {
+      var l = ordenar(L, VEN.orden);
+      /* «Sin vendedor» siempre al final: no es una persona. */
+      l = l.filter(function (v) { return !v.sinNombre; }).concat(l.filter(function (v) { return v.sinNombre; }));
+      $('ven-tabla').innerHTML = tablaHTML('ven', cols, l, VEN.orden);
+    };
+    repintar();
+    alOrdenar($('ven-tabla'), VEN.orden, repintar);
+
+    var top = conNombre.slice(0, 14);
+    grafica($('g-ven'), { type: 'bar',
+      data: { labels: top.map(function (v) { return v.nombre; }),
+              datasets: [{ data: top.map(function (v) { return r2(v.conIva); }), backgroundColor: '#F15930' }] },
+      options: { indexAxis: 'y', scales: { x: { ticks: { callback: function (v) { return '$' + nf(v); } } } } } });
+    var etq = [], dias = [];
+    for (var f = D.inicio, n = 0; f && f <= D.fin && n < 400; f = sumarDias(f, 1), n++) { dias.push(f); etq.push(f.slice(8, 10) + '/' + f.slice(5, 7)); }
+    grafica($('g-ven-dia'), { type: 'line',
+      data: { labels: etq, datasets: conNombre.slice(0, 6).map(function (v, i) {
+        return { label: v.nombre, data: dias.map(function (d) { return r2(v.porDia[d] || 0); }),
+                 borderColor: COLORES[i], backgroundColor: COLORES[i], pointRadius: 0, borderWidth: 2, tension: 0.2 };
+      }) },
+      options: { plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12 } } },
+                 scales: { y: { ticks: { callback: function (v) { return '$' + nf(v); } } } } } });
+
+    var detalle = function () {
+      /* Sin elegir, el primero que vendió (no «sin vendedor»). */
+      var v = (VEN.ver != null && L.find(function (x) { return x.clave === VEN.ver; })) || conNombre[0] || L[0];
+      if (!v) { $('ven-det').innerHTML = ''; return; }
+      VEN.ver = v.clave;
+      var horas = v.porHora, h0 = horas.findIndex(function (x) { return x > 0; }), h1 = 23;
+      while (h1 > 0 && !horas[h1]) h1--;
+      $('ven-det').innerHTML =
+        '<div class="tb-kpis">' +
+          kpi(dinero(v.conIva), 'Ventas con IVA', 'n') + kpi(nf(v.docs), 'Documentos') + kpi(dinero(v.ticket), 'Ticket promedio') +
+          (hayInv ? kpi(v.margenPct == null ? '—' : pct(v.margenPct), 'Margen %', 'a') : '') +
+          kpi(dinero(v.descuento), 'Descuentos dados') + kpi(dinero(v.bajoHabDinero), 'Dejado de cobrar (bajo el habitual)') +
+        '</div>' +
+        '<div class="tb-graficas">' +
+          '<div class="tb-graf"><h3>Lo que más vende</h3>' + tablaHTML('x', [
+            { k: 'nombre', t: 'Producto' }, { k: 'u', t: 'Unidades', n: 1, f: function (x) { return nf(x, x % 1 ? 2 : 0); } },
+            { k: 'v', t: 'Venta con IVA', n: 1, f: dinero }], v.top.slice(0, 10)) + '</div>' +
+          '<div class="tb-graf"><h3>Documentos por hora</h3><div class="lienzo"><canvas id="g-ven-hora"></canvas></div></div>' +
+        '</div>' +
+        (v.detalleBajo.length ? '<h3>Vendido más barato que lo habitual</h3>' + tablaHTML('x', [
+            { k: 'fecha', t: 'Fecha', f: fechaBonita }, { k: 'codigo', t: 'Código', cls: 'cod' }, { k: 'nombre', t: 'Producto' },
+            { k: 'cant', t: 'Cant.', n: 1, f: function (x) { return nf(x, x % 1 ? 2 : 0); } },
+            { k: 'cobrado', t: 'Cobrado c/u', n: 1, f: dinero }, { k: 'habitual', t: 'Habitual c/u', n: 1, f: dinero },
+            { k: 'dif', t: 'Diferencia', n: 1, f: dinero }], v.detalleBajo.slice(0, 30)) +
+            (v.detalleBajo.length > 30 ? '<p class="tb-nota">Se ven 30 de ' + nf(v.detalleBajo.length) + ' (las de más diferencia).</p>' : '') : '') +
+        (v.docsAnulados.length ? '<h3>Documentos anulados</h3>' + tablaHTML('x', [
+            { k: 'cod', t: 'Código de generación', cls: 'cod' }, { k: 'fecha', t: 'Fecha', f: fechaBonita },
+            { k: 'receptor', t: 'Cliente' }, { k: 'total', t: 'Total', n: 1, f: dinero }], v.docsAnulados.slice(0, 50)) : '');
+      if (h0 >= 0) {
+        var eh = [], vh = [];
+        for (var h = h0; h <= h1; h++) { eh.push(h + ' h'); vh.push(horas[h]); }
+        grafica($('g-ven-hora'), { type: 'bar', data: { labels: eh, datasets: [{ data: vh, backgroundColor: '#0475BB' }] } });
+      }
+    };
+    detalle();
+
+    $('ven-ver').addEventListener('change', function (e) { VEN.ver = e.target.value; detalle(); });
+    $('ven-campo').addEventListener('change', function (e) {
+      P.campoVendedor = e.target.value; guardarParam();
+      D.campoVendedor = e.target.value; VEN.ver = null;
+      pintarLectura(); pintarContenido();
+    });
+    $('ven-excel').addEventListener('click', function () { descargarVendedores(L, cActual); });
+  }
+
+  /* ---------- 9.7 Calidad de datos (gerencia) ---------- */
   var PAGOS = { '01': 'Billetes y monedas', '02': 'Tarjeta débito', '03': 'Tarjeta crédito', '04': 'Cheque',
                 '05': 'Transferencia', '08': 'Dinero electrónico', '09': 'Monedero electrónico', '11': 'Bitcoin',
                 '12': 'Otras criptomonedas', '13': 'Cuentas por pagar del receptor', '14': 'Giro bancario', '99': 'Otros' };
@@ -1426,6 +1814,34 @@
     var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Pedido');
     XLSX.writeFile(wb, 'pedido-sugerido-' + hoyTexto() + '.xlsx');
+  }
+
+  /* Resumen por vendedor en Excel (para la planilla y las comisiones). Se arma
+     aquí y se descarga: no pasa por el sitio. */
+  function descargarVendedores(L, campo) {
+    var hayInv = !!ESTADO.inv;
+    var enc = ['Vendedor', 'Ventas con IVA', 'Ventas sin IVA', '% del total', 'Documentos', 'Facturas', 'Créditos fiscales',
+               'Ticket promedio', 'Productos por factura', 'Días con venta', 'Venta por día trabajado'];
+    if (hayInv) enc.push('Margen $', 'Margen %');
+    enc.push('Descuentos dados', 'Líneas bajo el precio habitual', 'Dejado de cobrar', 'Clientes identificados %',
+             'Clientes distintos', 'Anuladas');
+    if (hayInv) enc.push('Líneas bajo el costo');
+    var aoa = [['Ventas por vendedor — Ferretería San José'],
+      ['Del ' + fechaBonita(D.inicio) + ' al ' + fechaBonita(D.fin) + ' (' + D.dias + ' días) · vendedor según: ' + campo.etiqueta],
+      [], enc];
+    L.forEach(function (v) {
+      var f = [v.nombre, r2(v.conIva), r2(v.sinIva), Math.round(v.share * 1000) / 10, v.docs, v.facturas, v.ccf,
+               r2(v.ticket), Math.round(v.lineasDoc * 10) / 10, v.diasActivos, r2(v.ventaDia)];
+      if (hayInv) f.push(r2(v.margen), v.margenPct == null ? '' : Math.round(v.margenPct * 1000) / 10);
+      f.push(r2(v.descuento), v.bajoHab, r2(v.bajoHabDinero), Math.round(v.pctIdent * 1000) / 10, v.nClientes, v.anuladas);
+      if (hayInv) f.push(v.bajoCosto);
+      aoa.push(f);
+    });
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = enc.map(function (e, i) { return { wch: i === 0 ? 34 : 14 }; });
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Vendedores');
+    XLSX.writeFile(wb, 'ventas-por-vendedor-' + hoyTexto() + '.xlsx');
   }
 
   /* ===================== ARRANQUE: arrastrar y elegir archivos ============= */

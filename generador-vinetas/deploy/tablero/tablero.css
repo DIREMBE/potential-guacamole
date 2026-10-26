@@ -84,6 +84,8 @@ button,input,select{font:inherit}
 .tb-kpi .v{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
 .tb-kpi .l{font-size:12px;color:var(--tx-2);text-transform:uppercase;letter-spacing:.05em;margin-top:3px}
 .tb-kpi.n .v{color:var(--naranja)} .tb-kpi.a .v{color:var(--azul)}
+.tb-kpi.txt .v{font-size:16px;line-height:1.25}
+.tb-tabla td.nom{white-space:nowrap}
 .tb-graficas{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin-bottom:14px}
 .tb-graf{background:var(--tarjeta);border:1px solid var(--linea);border-radius:10px;padding:12px;min-width:0}
 .tb-graf h3,.tb-bloque h3{font-size:14px;margin:0 0 8px}
@@ -94,10 +96,10 @@ button,input,select{font:inherit}
 /* --------------------------- parámetros ------------------------------- */
 .tb-param{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;background:var(--param);
   border:1px solid #e9d36b;border-radius:10px;padding:10px 12px;margin-bottom:10px}
-.tb-param label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;font-weight:600;color:#5c4a00}
+.tb-param label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;font-weight:600;color:#5c4a00;min-width:0;max-width:100%}
 .tb-param input[type=number]{width:90px;padding:6px 8px;border:1px solid #d9c45a;border-radius:6px;background:#fffbe3;
   text-align:right;font-variant-numeric:tabular-nums}
-.tb-param select{padding:6px 8px;border:1px solid #d9c45a;border-radius:6px;background:#fffbe3}
+.tb-param select{padding:6px 8px;border:1px solid #d9c45a;border-radius:6px;background:#fffbe3;max-width:100%}
 .tb-param .ayuda{font-size:12px;font-weight:400;color:#6d5d17;flex-basis:100%}
 .tb-filtros{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
 .tb-filtros input[type=search]{flex:1;min-width:180px;padding:8px 10px;border:1px solid var(--linea-2);border-radius:7px}
